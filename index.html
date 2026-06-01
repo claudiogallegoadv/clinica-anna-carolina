@@ -297,6 +297,10 @@ textarea{resize:vertical;min-height:70px}
         <div class="fgr full"><label>Apelido / Como chamar</label><input type="text" id="f-apelido" placeholder="Ex: Ana Piffer"/></div>
         <div class="fgr"><label>Telefone *</label><input type="text" id="f-tel" placeholder="(17) 99999-9999"/></div>
         <div class="fgr"><label>Data de nascimento</label><input type="date" id="f-nasc"/></div>
+        <div class="fgr"><label>CPF</label><input type="text" id="f-cpf" placeholder="000.000.000-00"/></div>
+        <div class="fgr"><label>RG</label><input type="text" id="f-rg" placeholder="00.000.000-0"/></div>
+        <div class="fgr"><label>Sexo</label><select id="f-sexo"><option value="">Selecione</option><option>Feminino</option><option>Masculino</option></select></div>
+        <div class="fgr full"><label>Endereço completo</label><input type="text" id="f-end" placeholder="Rua, número, bairro, cidade"/></div>
         <div class="fgr"><label>Data do atendimento</label><input type="date" id="f-data"/></div>
         <div class="fgr"><label>📁 Link Google Drive</label><input type="url" id="f-drive" placeholder="Cole o link..."/></div>
         <div class="fgr"><label>Indicação (quem indicou)</label><input type="text" id="f-indic" placeholder="Ex: Ana Piffer"/></div>
@@ -341,6 +345,10 @@ textarea{resize:vertical;min-height:70px}
       <div class="fgr full"><label>Apelido / Como chamar</label><input type="text" id="e-apelido"/></div>
       <div class="fgr"><label>Telefone *</label><input type="text" id="e-tel"/></div>
       <div class="fgr"><label>Data de nascimento</label><input type="date" id="e-nasc"/></div>
+      <div class="fgr"><label>CPF</label><input type="text" id="e-cpf" placeholder="000.000.000-00"/></div>
+      <div class="fgr"><label>RG</label><input type="text" id="e-rg" placeholder="00.000.000-0"/></div>
+      <div class="fgr"><label>Sexo</label><select id="e-sexo"><option value="">Selecione</option><option>Feminino</option><option>Masculino</option></select></div>
+      <div class="fgr full"><label>Endereço completo</label><input type="text" id="e-end" placeholder="Rua, número, bairro, cidade"/></div>
       <div class="fgr"><label>Data do atendimento</label><input type="date" id="e-data"/></div>
       <div class="fgr"><label>📁 Link Google Drive</label><input type="url" id="e-drive"/></div>
       <div class="fgr"><label>Indicação</label><input type="text" id="e-indic"/></div>
@@ -933,7 +941,7 @@ document.getElementById('m-wpp').addEventListener('click',e=>{if(e.target===e.cu
 
 // EDITAR
 function abrEdit(p){
-  document.getElementById('e-id').value=p.id;document.getElementById('e-nome').value=p.nome;document.getElementById('e-apelido').value=p.apelido||'';document.getElementById('e-tel').value=p.telefone;document.getElementById('e-nasc').value=p.data_nascimento||'';document.getElementById('e-data').value=p.data_atendimento||'';document.getElementById('e-obs').value=p.observacoes||'';document.getElementById('e-drive').value=p.link_drive||'';document.getElementById('e-indic').value=p.indicacao||'';
+  document.getElementById('e-id').value=p.id;document.getElementById('e-nome').value=p.nome;document.getElementById('e-apelido').value=p.apelido||'';document.getElementById('e-tel').value=p.telefone;document.getElementById('e-nasc').value=p.data_nascimento||'';document.getElementById('e-cpf').value=p.cpf||'';document.getElementById('e-rg').value=p.rg||'';document.getElementById('e-sexo').value=p.sexo||'';document.getElementById('e-end').value=p.endereco||'';document.getElementById('e-data').value=p.data_atendimento||'';document.getElementById('e-obs').value=p.observacoes||'';document.getElementById('e-drive').value=p.link_drive||'';document.getElementById('e-indic').value=p.indicacao||'';
   document.getElementById('m-edit-titulo').textContent='✏️ Editar dados pessoais';
   document.getElementById('m-edit').classList.add('open');
 }
@@ -942,7 +950,7 @@ async function salvarEdit(){
   const id=document.getElementById('e-id').value;const nome=document.getElementById('e-nome').value.trim();const tel=document.getElementById('e-tel').value.trim();
   if(!nome||!tel){toast('Preencha nome e telefone!','vermelho');return;}
   const btn=document.getElementById('btn-edit-salvar');btn.disabled=true;btn.textContent='Salvando...';
-  const{error}=await db.from('pacientes').update({nome,telefone:tel,apelido:document.getElementById('e-apelido').value.trim()||null,data_nascimento:document.getElementById('e-nasc').value||null,data_atendimento:document.getElementById('e-data').value||null,observacoes:document.getElementById('e-obs').value.trim()||null,link_drive:document.getElementById('e-drive').value.trim()||null,indicacao:document.getElementById('e-indic').value.trim()||null,cadastro_pendente:false}).eq('id',id);
+  const{error}=await db.from('pacientes').update({nome,telefone:tel,apelido:document.getElementById('e-apelido').value.trim()||null,data_nascimento:document.getElementById('e-nasc').value||null,cpf:document.getElementById('e-cpf').value.trim()||null,rg:document.getElementById('e-rg').value.trim()||null,sexo:document.getElementById('e-sexo').value||null,endereco:document.getElementById('e-end').value.trim()||null,data_atendimento:document.getElementById('e-data').value||null,observacoes:document.getElementById('e-obs').value.trim()||null,link_drive:document.getElementById('e-drive').value.trim()||null,indicacao:document.getElementById('e-indic').value.trim()||null,cadastro_pendente:false}).eq('id',id);
   btn.disabled=false;btn.innerHTML='✓ Salvar dados';
   if(error){toast('Erro: '+error.message,'vermelho');return;}
   toast(`${nome} atualizado!`,'verde');fchEdit();carregar();
@@ -1065,7 +1073,8 @@ document.getElementById('m-lembr').addEventListener('click',e=>{if(e.target===e.
 
 // SALVAR PACIENTE
 function limpar(){
-  ['f-nome','f-apelido','f-tel','f-nasc','f-obs','f-drive','f-indic'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-nome','f-apelido','f-tel','f-nasc','f-cpf','f-rg','f-end','f-obs','f-drive','f-indic'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('f-sexo').value='';
   document.getElementById('f-data').value=HOJE_STR;document.getElementById('f-trats').innerHTML='';addTrat('f-trats');
 }
 async function salvar(){
@@ -1073,7 +1082,7 @@ async function salvar(){
   if(!nome||!tel||!trats.length){toast('Preencha nome, telefone e ao menos um tratamento!','vermelho');return;}
   const dataAtend=document.getElementById('f-data').value;const tc=tratsComDatas(trats,dataAtend);
   const btn=document.getElementById('btn-salvar');btn.disabled=true;btn.textContent='Salvando...';
-  const{error}=await db.from('pacientes').insert({nome,telefone:tel,apelido:document.getElementById('f-apelido').value.trim()||null,data_nascimento:document.getElementById('f-nasc').value||null,data_atendimento:dataAtend||null,observacoes:document.getElementById('f-obs').value.trim()||null,link_drive:document.getElementById('f-drive').value.trim()||null,indicacao:document.getElementById('f-indic').value.trim()||null,tratamentos_adicionais:tc,tratamento:tc[0]?.nome||null});
+  const{error}=await db.from('pacientes').insert({nome,telefone:tel,apelido:document.getElementById('f-apelido').value.trim()||null,data_nascimento:document.getElementById('f-nasc').value||null,cpf:document.getElementById('f-cpf').value.trim()||null,rg:document.getElementById('f-rg').value.trim()||null,sexo:document.getElementById('f-sexo').value||null,endereco:document.getElementById('f-end').value.trim()||null,data_atendimento:dataAtend||null,observacoes:document.getElementById('f-obs').value.trim()||null,link_drive:document.getElementById('f-drive').value.trim()||null,indicacao:document.getElementById('f-indic').value.trim()||null,tratamentos_adicionais:tc,tratamento:tc[0]?.nome||null});
   btn.disabled=false;btn.innerHTML='✓ Salvar paciente';
   if(error){toast('Erro: '+error.message,'vermelho');return;}
   toast(`${nome} cadastrado!`,'verde');limpar();await carregar();aba('hoje',document.querySelector('.tb'));

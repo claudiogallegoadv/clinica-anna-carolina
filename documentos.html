@@ -435,7 +435,7 @@ function selPac(p){
   document.getElementById('busca-pac').value=p.nome;
   document.getElementById('sug-pac').innerHTML='';
   document.getElementById('pac-selecionada').style.display='block';
-  document.getElementById('pac-selecionada').innerHTML=`<div class="pac-info"><div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}</div></div></div>`;
+  document.getElementById('pac-selecionada').innerHTML=`<div class="pac-info"><div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}${p.cpf?' · CPF: '+p.cpf:''}${p.rg?' · RG: '+p.rg:''}</div></div></div>`;
   document.getElementById('hdr-pac').textContent=p.nome;
   document.getElementById('sec-docs').style.display='block';
   carregarDocsSalvos();
@@ -507,6 +507,11 @@ const AN_CHECKS=[
 function abrirAnamnese(){
   const p=pacSelecionada;
   document.getElementById('anamnese-pac-info').innerHTML=`<div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}</div></div>`;
+  // Preencher campos com dados do cadastro
+  if(p.endereco) document.getElementById('an-endereco').value=p.endereco;
+  if(p.rg) document.getElementById('an-rg').value=p.rg;
+  if(p.cpf) document.getElementById('an-cpf').value=p.cpf;
+  if(p.sexo) document.getElementById('an-sexo').value=p.sexo;
   // Perguntas abertas
   document.getElementById('an-perguntas-abertas').innerHTML=AN_PERGUNTAS.map(q=>`
     <div class="resp-row">
@@ -597,6 +602,8 @@ function abrirAutorizacaoImagem(){
   const p=pacSelecionada;
   document.getElementById('imagem-pac-info').innerHTML=`<div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}</div></div>`;
   document.getElementById('img-nome-display').textContent=p.nome;
+  if(p.rg) document.getElementById('img-rg').value=p.rg;
+  if(p.cpf) document.getElementById('img-cpf').value=p.cpf;
   iniciarSig('sig-img-pac');iniciarSig('sig-img-pro');
 }
 
@@ -743,6 +750,9 @@ function abrirOdontograma(){
   const p=pacSelecionada;
   estadoDentes={};
   document.getElementById('odonto-pac-info').innerHTML=`<div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}</div></div>`;
+  if(p.rg) document.getElementById('od-rg').value=p.rg;
+  if(p.cpf) document.getElementById('od-cpf').value=p.cpf;
+  if(p.endereco){const end=p.endereco.split(',');document.getElementById('od-end').value=p.endereco;}
   renderOdontograma();
   document.getElementById('od-trats').innerHTML='';
   for(let i=0;i<5;i++) addLinhaOdonto();
@@ -827,6 +837,9 @@ const AO_BUCAL=[
 function abrirAnamneseOdonto(){
   const p=pacSelecionada;
   document.getElementById('anodonto-pac-info').innerHTML=`<div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}${p.data_nascimento?' · Nasc: '+fDt(p.data_nascimento):''}</div></div>`;
+  if(p.rg) document.getElementById('ao-rg').value=p.rg;
+  if(p.cpf) document.getElementById('ao-cpf').value=p.cpf;
+  if(p.endereco) document.getElementById('ao-end').value=p.endereco;
   document.getElementById('ao-perguntas').innerHTML=AO_PERGUNTAS.map((q,i)=>`
     <div class="resp-row">
       <span class="resp-label">${i+1}. ${q}</span>
