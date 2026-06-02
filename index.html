@@ -783,7 +783,6 @@ function renderHoje(){
 }
 
 // Injetar botões de ficha após renderizar
-  setTimeout(injetarBotoesFicha, 50);
 }
 
 // STATUS DE RETORNO
@@ -1101,39 +1100,6 @@ const DOCS_TIPOS=[
 }
 
 
-function abrFicha(btn){
-  const pid=btn.getAttribute('data-id');
-  const tel=btn.getAttribute('data-tel');
-  let p=pid?pacs.find(x=>x.id===pid):null;
-  if(!p&&tel)p=pacs.find(x=>x.telefone.replace(/\D/g,'')===tel);
-  if(!p){toast('Paciente não encontrado no cadastro','vermelho');return;}
-  abrAtend(p);
-}
-
-
-function injetarBotoesFicha(){
-  document.querySelectorAll('.ci').forEach(ci=>{
-    if(ci.querySelector('.btn-ficha')) return; // já tem
-    const ca=ci.querySelector('.ca');
-    if(!ca) return;
-    // Pegar nome e telefone do card
-    const nome=(ci.querySelector('.cn')||{}).textContent||'';
-    const cd=(ci.querySelector('.cd')||{}).textContent||'';
-    const telMatch=cd.match(/17\d{8,9}|55\d{10,11}/);
-    const tel=telMatch?telMatch[0].replace(/\D/g,''):'';
-    let p=pacs.find(x=>x.nome===nome||(x.apelido&&x.apelido===nome));
-    if(!p&&tel) p=pacs.find(x=>x.telefone.replace(/\D/g,'')===tel||x.telefone.replace(/\D/g,'')===tel.slice(2));
-    if(!p) return;
-    const btn=document.createElement('button');
-    btn.className='btn btn-ficha';
-    btn.style.cssText='padding:5px 8px;font-size:13px';
-    btn.title='Abrir ficha';
-    btn.textContent='👤';
-    btn._pac=p;
-    btn.onclick=function(){abrAtend(this._pac);};
-    ca.insertBefore(btn,ca.firstChild);
-  });
-}
 
 async function abrDocs(p){
   document.getElementById('docs-pac-nome').textContent=p.nome+(p.apelido?` (${p.apelido})`:'');
@@ -1226,7 +1192,6 @@ function renderConsDia(ds){
   if(!cs.length){el.innerHTML=`<div class="empty" style="padding:1.5rem"><div class="empty-icon">📋</div><p>Nenhuma consulta. Clique em "+ Agendar".</p></div>`;renderConsMes();return;}
   el.innerHTML=cs.map(c=>{const tel=c.telefone?'55'+c.telefone.replace(/\D/g,''):'';const cls=c.status==='cancelado'?'can':c.status==='pendente'?'pen':'';return`<div class="ci ${cls}"><div class="ch">${c.hora.slice(0,5)}</div><div style="flex:1"><div class="cn">${c.nome}${c.status==='cancelado'?' <span style="font-size:11px;color:var(--vermelho)">(cancelado)</span>':''}</div><div class="cd">${c.procedimento||'Sem procedimento'}${c.telefone?' · '+c.telefone:''}${c.observacao?' · '+c.observacao:''}</div></div><div class="ca">${tel?`<a href="https://wa.me/${tel}?text=${encodeURIComponent(msgConsulta(c))}" target="_blank" class="btn wpp">💬</a>`:''}<a href="${urlGcal(c)}" target="_blank" class="btn gcal">📆</a>`<button class="btn" style="padding:6px 9px;font-size:12px" onclick='editCons(${J(c)})'>✏️</button></div></div>`;}).join('');
   renderConsMes();
-  setTimeout(injetarBotoesFicha,50);
 }
 
 function renderConsMes(){
