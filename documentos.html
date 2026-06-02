@@ -1389,11 +1389,17 @@ carregar().then(()=>{
   const params=new URLSearchParams(window.location.search);
   const pacId=params.get('pac');
   const docTipo=params.get('doc');
+  const verId=params.get('ver'); // ID do documento para carregar via Ver
   if(pacId){
     const p=pacs.find(x=>x.id===pacId);
     if(p){
       selPac(p);
-      if(docTipo) setTimeout(()=>abrirDoc(docTipo),200);
+      if(verId){
+        // Carregar documento específico pelo ID
+        setTimeout(()=>verDoc(verId, docTipo||'orcamento'),300);
+      } else if(docTipo){
+        setTimeout(()=>abrirDoc(docTipo),200);
+      }
     }
   }
 });

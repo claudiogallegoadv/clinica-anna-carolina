@@ -1189,7 +1189,7 @@ async function carregarAtendDocs(pacId){
         <div style="font-size:13px;font-weight:500">${DOCS_NOMES[d.tipo]||d.tipo}</div>
         <div style="font-size:11px;color:var(--ct)">Salvo em ${fDt(d.data_assinatura||d.criado_em?.split('T')[0])}</div>
       </div>
-      <a href="documentos.html?pac=${pacId}&doc=${d.tipo}" target="_blank" class="btn" style="padding:5px 10px;font-size:12px">👁 Ver</a>
+      <a href="documentos.html?pac=${pacId}&ver=${d.id}&doc=${d.tipo}" target="_blank" class="btn" style="padding:5px 10px;font-size:12px">👁 Ver</a>
     </div>`).join('');
 }
 
