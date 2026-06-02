@@ -531,6 +531,7 @@ function abrirAnamnese(){
   // Checks
   document.getElementById('an-checks').innerHTML=AN_CHECKS.map((c,i)=>`<div class="check-item"><input type="checkbox" id="anck-${i}"><label for="anck-${i}">${c}</label></div>`).join('');
   iniciarSig('sig-an-pac');iniciarSig('sig-an-pro');
+  limparSig('sig-an-pac');limparSig('sig-an-pro');
 }
 
 // ── TERMOS DE CONSENTIMENTO ──
@@ -605,6 +606,7 @@ function abrirAutorizacaoImagem(){
   if(p.rg) document.getElementById('img-rg').value=p.rg;
   if(p.cpf) document.getElementById('img-cpf').value=p.cpf;
   iniciarSig('sig-img-pac');iniciarSig('sig-img-pro');
+  limparSig('sig-img-pac');limparSig('sig-img-pro');
 }
 
 // ── ORÇAMENTO ──
@@ -651,10 +653,12 @@ function getOrcItens(){
 // ── ASSINATURA DIGITAL ──
 const sigs={};
 function iniciarSig(id){
-  setTimeout(()=>{
-    const canvas=document.getElementById(id);if(!canvas)return;
+  // Configura eventos de desenho SEM limpar o canvas
+  // A limpeza só acontece via botão "Limpar" (limparSig)
+  const setup=()=>{
+    const canvas=document.getElementById(id);
+    if(!canvas){setTimeout(setup,100);return;}
     const ctx=canvas.getContext('2d');
-    ctx.clearRect(0,0,canvas.width,canvas.height);
     ctx.strokeStyle='#1A1916';ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';
     let drawing=false,lastX=0,lastY=0;
     function getPos(e){
@@ -667,7 +671,8 @@ function iniciarSig(id){
     canvas.onmouseup=canvas.ontouchend=()=>{drawing=false;};
     canvas.onmouseleave=()=>{drawing=false;};
     sigs[id]=canvas;
-  },100);
+  };
+  setTimeout(setup,80);
 }
 
 function limparSig(id){const canvas=document.getElementById(id);if(canvas)canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);}
@@ -771,12 +776,14 @@ async function verDoc(id,tipo){
   if(!data){toast('Erro ao carregar documento','vermelho');return;}
   const d=data.dados||{};
 
+  // Ativa modo visualização para o iniciarSig não apagar o canvas
+  _modoVer=true;
+
   // Abre o painel (já preenche os campos base via abrirDoc)
   abrirDoc(tipo);
 
   // Aguarda o DOM renderizar antes de preencher
   await new Promise(r=>setTimeout(r,120));
-
   if(tipo==='orcamento'){
     // Limpar linhas padrão e recriar com dados salvos
     document.getElementById('orc-itens').innerHTML='';
@@ -844,29 +851,30 @@ async function verDoc(id,tipo){
     }
   }
 
-  // Restaurar assinaturas se existirem
-  if(data.assinatura_paciente) restaurarSig(`sig-${tipo}-pac`,data.assinatura_paciente);
-  if(data.assinatura_profissional) restaurarSig(`sig-${tipo}-pro`,data.assinatura_profissional);
+  // Restaurar assinaturas - iniciarSig não limpa mais o canvas, então pode fazer direto
+  const sigIds={
+    pac: [`sig-${tipo}-pac`, `sig-an-pac`, `sig-img-pac`],
+    pro: [`sig-${tipo}-pro`, `sig-an-pro`, `sig-img-pro`]
+  };
+  setTimeout(()=>{
+    if(data.assinatura_paciente) sigIds.pac.forEach(id=>restaurarSig(id,data.assinatura_paciente));
+    if(data.assinatura_profissional) sigIds.pro.forEach(id=>restaurarSig(id,data.assinatura_profissional));
+  },150);
 
   toast('Documento carregado ✓','verde');
 }
 
 function restaurarSig(id,dataUrl){
   if(!dataUrl)return;
-  // Tenta até 5x esperando o canvas renderizar
-  let tentativas=0;
-  const tentar=()=>{
-    const canvas=document.getElementById(id);
-    if(!canvas){if(++tentativas<5)setTimeout(tentar,150);return;}
-    const img=new Image();
-    img.onload=()=>{
-      const ctx=canvas.getContext('2d');
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      ctx.drawImage(img,0,0,canvas.width,canvas.height);
-    };
-    img.src=dataUrl;
+  const canvas=document.getElementById(id);
+  if(!canvas)return;
+  const img=new Image();
+  img.onload=()=>{
+    const ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
   };
-  setTimeout(tentar,200);
+  img.src=dataUrl;
 }
 
 // ── PLANEJAMENTO ──
