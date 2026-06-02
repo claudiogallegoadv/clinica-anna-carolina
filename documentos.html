@@ -678,7 +678,14 @@ function getSig(id){
   const ctx=canvas.getContext('2d');
   const data=ctx.getImageData(0,0,canvas.width,canvas.height).data;
   const hasContent=data.some((v,i)=>i%4===3&&v>0);
-  return hasContent?canvas.toDataURL():null;
+  if(!hasContent)return null;
+  // Comprimir: criar canvas menor e usar JPEG 60%
+  const c2=document.createElement('canvas');
+  c2.width=280;c2.height=100;
+  const ctx2=c2.getContext('2d');
+  ctx2.fillStyle='#fff';ctx2.fillRect(0,0,280,100);
+  ctx2.drawImage(canvas,0,0,280,100);
+  return c2.toDataURL('image/jpeg',0.6);
 }
 
 // ── SALVAR DOCUMENTO ──
@@ -845,11 +852,21 @@ async function verDoc(id,tipo){
 }
 
 function restaurarSig(id,dataUrl){
-  const canvas=document.getElementById(id);
-  if(!canvas||!dataUrl)return;
-  const img=new Image();
-  img.onload=()=>canvas.getContext('2d').drawImage(img,0,0);
-  img.src=dataUrl;
+  if(!dataUrl)return;
+  // Tenta até 5x esperando o canvas renderizar
+  let tentativas=0;
+  const tentar=()=>{
+    const canvas=document.getElementById(id);
+    if(!canvas){if(++tentativas<5)setTimeout(tentar,150);return;}
+    const img=new Image();
+    img.onload=()=>{
+      const ctx=canvas.getContext('2d');
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    };
+    img.src=dataUrl;
+  };
+  setTimeout(tentar,200);
 }
 
 // ── PLANEJAMENTO ──
