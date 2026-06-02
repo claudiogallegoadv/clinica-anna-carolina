@@ -289,14 +289,18 @@ textarea{resize:vertical}
     </div>
     <div style="margin-bottom:1rem">
       <label style="font-size:11px;font-weight:600;color:var(--ct);text-transform:uppercase;letter-spacing:.04em">Verificação pós-procedimento</label>
-      <select id="modal-ver-dias" style="width:100%;padding:9px 11px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;margin-top:4px">
-        <option value="0">Sem verificação</option>
-        <option value="7">7 dias</option>
-        <option value="10">10 dias</option>
-        <option value="15" selected>15 dias</option>
-        <option value="21">21 dias</option>
-        <option value="30">30 dias</option>
-      </select>
+      <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;margin-top:4px;align-items:center">
+        <div style="position:relative">
+          <input type="number" id="modal-ver-dias" min="0" max="90" value="15" placeholder="Dias"
+            style="width:100%;padding:9px 11px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px"
+            oninput="calcDataVerificacao()"/>
+          <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--ct);pointer-events:none">dias</span>
+        </div>
+        <input type="date" id="modal-ver-data"
+          style="width:100%;padding:9px 11px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px"
+          oninput="sincDiasVerificacao()"/>
+      </div>
+      <div style="font-size:11px;color:var(--ct);margin-top:4px">← Digite os dias ou escolha a data diretamente · 0 dias = sem verificação</div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn" onclick="fecharModalRealizado()">Cancelar</button>
@@ -1255,6 +1259,29 @@ function abrirDoc(tipo){
   window.scrollTo(0,0);
 }
 
+function calcDataVerificacao(){
+  const dias=parseInt(document.getElementById('modal-ver-dias').value)||0;
+  const dataAtend=document.getElementById('modal-data').value;
+  if(dias>0&&dataAtend){
+    const dt=new Date(dataAtend+'T12:00:00');
+    dt.setDate(dt.getDate()+dias);
+    document.getElementById('modal-ver-data').value=dt.toISOString().split('T')[0];
+  } else {
+    document.getElementById('modal-ver-data').value='';
+  }
+}
+
+function sincDiasVerificacao(){
+  const dataVer=document.getElementById('modal-ver-data').value;
+  const dataAtend=document.getElementById('modal-data').value;
+  if(dataVer&&dataAtend){
+    const d1=new Date(dataAtend+'T12:00:00');
+    const d2=new Date(dataVer+'T12:00:00');
+    const diff=Math.round((d2-d1)/(1000*60*60*24));
+    document.getElementById('modal-ver-dias').value=diff>0?diff:0;
+  }
+}
+
 // ── MODAL PROCEDIMENTO REALIZADO ──
 function abrirModalRealizado(){
   if(!pacSelecionada){toast('Selecione um paciente primeiro!','vermelho');return;}
@@ -1263,6 +1290,9 @@ function abrirModalRealizado(){
 
   document.getElementById('modal-pac-nome').textContent=pacSelecionada.nome+(pacSelecionada.apelido?` (${pacSelecionada.apelido})`:'');
   document.getElementById('modal-data').value=HOJE;
+  document.getElementById('modal-data').oninput=calcDataVerificacao;
+  document.getElementById('modal-ver-dias').value=15;
+  calcDataVerificacao(); // calcular data inicial
 
   // Montar lista de checkboxes com tratamentos e valores
   document.getElementById('modal-lista-trats').innerHTML=itens.map((item,i)=>`
@@ -1292,12 +1322,7 @@ async function confirmarRealizado(){
   if(!selecionados.length){toast('Marque ao menos um tratamento!','vermelho');return;}
 
   const verDias=parseInt(document.getElementById('modal-ver-dias').value)||0;
-  let verificacaoData=null;
-  if(verDias>0){
-    const dt=new Date(dataAtend+'T12:00:00');
-    dt.setDate(dt.getDate()+verDias);
-    verificacaoData=dt.toISOString().split('T')[0];
-  }
+  const verificacaoData=document.getElementById('modal-ver-data').value||null;
 
   // Montar tratamentos no formato do sistema
   const PRAZOS={
