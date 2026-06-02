@@ -624,14 +624,57 @@ function abrirOrcamento(){
 
 function addItemOrc(){
   const el=document.getElementById('orc-itens');
-  const idx=Date.now(); // ID único para não colidir
   const d=document.createElement('div');
   d.className='orc-linha';
   d.style.cssText='display:grid;grid-template-columns:1fr 120px 32px;gap:8px;align-items:center;margin-bottom:7px';
-  d.innerHTML=`<input type="text" class="orc-trat" placeholder="Tratamento..."/>
+  d.innerHTML=`<input type="text" class="orc-trat" list="lista-trats-orc" placeholder="Tratamento..."/>
     <input type="number" class="orc-val" placeholder="R$" min="0" step="0.01" oninput="calcTotal()" style="text-align:right"/>
     <button class="btn dan" style="padding:6px 8px" onclick="this.closest('.orc-linha').remove();calcTotal()">✕</button>`;
   el.appendChild(d);
+}
+
+// Lista completa de tratamentos (igual ao cadastro)
+if(!document.getElementById('lista-trats-orc')){
+  const dl=document.createElement('datalist');
+  dl.id='lista-trats-orc';
+  [
+    '── Harmonização Orofacial ──',
+    'Botox (toxina botulínica)','Botox para bruxismo (masseter)','Botox para sorriso gengival',
+    'Preenchimento labial','Preenchimento de bigode chinês','Preenchimento de olheiras',
+    'Preenchimento de mandíbula','Preenchimento de mento (queixo)','Preenchimento de têmporas',
+    'Preenchimento de maçãs do rosto','Radiesse (hidroxiapatita de cálcio)',
+    'Enzima hialuronidase (dissolução)','Bichectomia','Rinomodelação',
+    'Lifting com fios de PDO','Bioestimulador de colágeno','Skinbooster',
+    'PRP / PRF (plasma rico em plaquetas)','Lipo de papada (Deoxicolato)',
+    '── Odontologia Estética ──',
+    'Harmonização do sorriso','Clareamento dental (consultório)','Clareamento dental (caseiro)',
+    'Facetas de porcelana','Facetas de resina','Lentes de contato dental',
+    'Design de sorriso','Restauração estética (resina)','Contorno gengival / Gengivoplastia',
+    'Alongamento de coroa clínica','Micropigmentação labial','Fechamento de diastema (resina)',
+    '── Odontologia Geral ──',
+    'Profilaxia (limpeza dental)','Raspagem e alisamento radicular','Aplicação de flúor',
+    'Aplicação de selante','Consulta de manutenção','Radiografia (RX)',
+    'Restauração (resina composta)','Restauração (amálgama)','Restauração de urgência',
+    '── Endodontia ──',
+    'Tratamento de canal (unirradicular)','Tratamento de canal (birradicular)',
+    'Tratamento de canal (multirradicular)','Retratamento de canal',
+    '── Implantes ──',
+    'Implante dentário','Coroa sobre implante','Enxerto ósseo','Regeneração óssea guiada (ROG)',
+    '── Periodontia ──',
+    'Tratamento periodontal','Cirurgia periodontal','Manutenção periodontal','Enxerto gengival',
+    '── Ortodontia ──',
+    'Aparelho ortodôntico (metálico)','Aparelho ortodôntico (estético)',
+    'Alinhador invisível','Manutenção ortodôntica','Contenção ortodôntica',
+    '── Cirurgia ──',
+    'Extração simples','Extração de siso (terceiro molar)','Frenectomia',
+    'Cirurgia ortognática','Osteotomia',
+    '── Outros ──',
+    'Placa de bruxismo (esplinte)','Placa clareadora','Consulta / avaliação',
+    'Urgência odontológica','Outro'
+  ].forEach(t=>{
+    const op=document.createElement('option');op.value=t;dl.appendChild(op);
+  });
+  document.body.appendChild(dl);
 }
 
 function calcTotal(){
