@@ -470,11 +470,11 @@ textarea{resize:vertical;min-height:70px}
       <div id="atend-docs-lista" style="margin-bottom:10px;max-height:160px;overflow-y:auto"></div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px" id="atend-docs-btns"></div>
     </div>
-    <div class="br">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--borda)">
       <button class="btn" onclick="fchAtend()">Fechar</button>
-      <button class="btn" onclick="toggleAtendDocs()" id="btn-atend-docs">📄 Documentos</button>
-      <button class="btn" id="btn-atend-inf" onclick="abrirInformativosAtend()" title="Enviar informativo pós-procedimento">📲</button>
-      <button class="btn pri" id="btn-atend-salvar" onclick="salvarAtend()">✓ Salvar atendimento</button>
+      <button class="btn" onclick="toggleAtendDocs()" id="btn-atend-docs">📄 Docs</button>
+      <button class="btn" id="btn-atend-inf" onclick="abrirInformativosAtend()" title="Enviar informativo pós-procedimento" style="background:var(--azul-c);border-color:var(--azul);color:var(--azul)">📲 Pós-proc.</button>
+      <button class="btn pri" id="btn-atend-salvar" onclick="salvarAtend()">✓ Salvar</button>
     </div>
   </div>
 </div>
