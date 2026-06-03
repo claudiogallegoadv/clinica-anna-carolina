@@ -401,7 +401,8 @@ textarea{resize:vertical;min-height:70px}
             </select>
             <input type="date" id="a-ver-data-input"
               style="padding:7px 10px;font-size:13px;border:1.5px solid var(--borda);border-radius:8px"
-              oninput="sincVerDias()" title="Ou escolha a data diretamente"/>
+              oninput="sincVerDias();atualizarDiaSemana('a-ver-data-input','a-ver-diasem')" title="Ou escolha a data diretamente"/>
+            <span id="a-ver-diasem" style="font-size:12px;color:var(--verde-e);font-weight:600;white-space:nowrap"></span>
           </div>
         </div>
       </div>
@@ -711,6 +712,18 @@ function calcVerData(){
     const dt=new Date(dataAtend+'T12:00:00');dt.setDate(dt.getDate()+dias);
     inp.value=dt.toISOString().split('T')[0];
   } else {inp.value='';}
+  atualizarDiaSemana('a-ver-data-input','a-ver-diasem');
+}
+
+
+function atualizarDiaSemana(inputId, spanId){
+  const dias=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  const val=document.getElementById(inputId)?.value;
+  const span=document.getElementById(spanId);
+  if(!span)return;
+  if(!val){span.textContent='';return;}
+  const dt=new Date(val+'T12:00:00');
+  span.textContent=dias[dt.getDay()];
 }
 
 function sincVerDias(){
