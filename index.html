@@ -248,6 +248,7 @@ textarea{resize:vertical;min-height:70px}
     <div class="sl2">🔬 Verificações pós-procedimento</div><div id="l-verificacoes"></div>
     <div class="sl2">🎂 Aniversariantes</div><div id="l-aniv"></div>
     <div class="sl2">📌 Lembretes</div><div id="l-lembr"></div>
+    <div class="sl2">💰 Cobranças pendentes (próx. 7 dias)</div><div id="l-fin-hoje"></div>
     <div class="sl2">🔔 Retornos nos próximos 15 dias</div><div id="l-ret-hoje"></div>
   </div>
 
@@ -281,6 +282,14 @@ textarea{resize:vertical;min-height:70px}
       <button class="filtro-btn" onclick="setFiltro('pendente',this)">🔔 Pendentes</button>
       <button class="filtro-btn" onclick="setFiltro('aguardando',this)">💬 Aguardando</button>
       <button class="filtro-btn" onclick="setFiltro('atrasado',this)">⚠️ Atrasados</button>
+      <select id="alerta-periodo" onchange="renderAlertas()" style="margin-left:auto;padding:6px 10px;font-size:12px;border:1.5px solid var(--borda);border-radius:20px;background:var(--card)">
+        <option value="30">Próx. 30 dias</option>
+        <option value="60">Próx. 60 dias</option>
+        <option value="90">Próx. 90 dias</option>
+        <option value="180">Próx. 180 dias</option>
+        <option value="365">Próx. 1 ano</option>
+        <option value="9999">Todos</option>
+      </select>
     </div>
     <div id="l-alertas"></div>
   </div>
@@ -882,6 +891,35 @@ function renderHoje(){
 }
 
 setTimeout(injetarBtnFicha,80);
+  renderAlertasFinHoje();
+
+// ── ALERTAS FINANCEIROS NA TELA HOJE ──
+async function renderAlertasFinHoje(){
+  const el=document.getElementById('l-fin-hoje');
+  if(!el) return;
+  const hoje=new Date();
+  const ini=new Date(hoje);ini.setDate(ini.getDate()-3); // 3 dias antes
+  const fim=new Date(hoje);fim.setDate(fim.getDate()+7); // 7 dias depois
+  const{data}=await db.from('financeiro').select('*')
+    .eq('tipo','receita').eq('status','pendente')
+    .gte('data',ini.toISOString().split('T')[0])
+    .lte('data',fim.toISOString().split('T')[0])
+    .order('data',{ascending:true});
+  if(!data||!data.length){el.innerHTML='<div class="empty" style="padding:8px"><p>Nenhum pagamento pendente nos próximos 7 dias.</p></div>';return;}
+  el.innerHTML=data.map(l=>{
+    const d=dias(l.data);
+    const urgente=d<=0;
+    return `<div class="ai ${urgente?'urg':'lem'}" style="margin-bottom:6px">
+      <div style="flex:1">
+        <div class="an">💰 ${l.descricao}</div>
+        <div class="ad">${urgente?`${Math.abs(d)}d atrasado`:(d===0?'Vence hoje!':`Vence em ${d}d`)} · ${fmtBRL(l.valor)}</div>
+      </div>
+      <div class="aa">
+        <button class="btn" style="padding:6px 10px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde)" onclick="marcarRecebidoFin('${l.id}')">✓ Recebido</button>
+      </div>
+    </div>`;
+  }).join('');
+}
 
 // STATUS DE RETORNO
 function getStatusRetorno(p, nomeTrat) {
@@ -911,6 +949,23 @@ async function setStatusRetorno(pacId, nomeTrat, status) {
   carregar();
 }
 
+
+// ── ARQUIVAR ALERTA ──
+async function arquivarAlerta(pacId, nomeTrat){
+  if(!confirm('Arquivar este alerta? O paciente não aparecerá mais nos alertas de retorno.')) return;
+  const p = pacs.find(x=>x.id===pacId);
+  if(!p) return;
+  // Marcar o tratamento como arquivado usando retornos_status
+  const chave = `${pacId}_${nomeTrat}`;
+  const status = p.retornos_status||{};
+  status[chave] = 'arquivado';
+  await db.from('pacientes').update({retornos_status:status}).eq('id',pacId);
+  // Atualizar local
+  p.retornos_status = status;
+  toast('Alerta arquivado ✓','verde');
+  renderAlertas();
+}
+
 function cardAlerta(p, d, nomeTrat) {
   const status = getStatusRetorno(p, nomeTrat);
   const cls = status==='aguardando' ? 'agua' : (d<=5||d<0 ? 'urg' : 'ate');
@@ -921,7 +976,8 @@ function cardAlerta(p, d, nomeTrat) {
   const botoes = status==='aguardando'
     ? `<button class="btn" style="padding:7px 11px;font-size:12px;color:var(--verde);border-color:var(--verde)" onclick="setStatusRetorno('${p.id}',${JSON.stringify(nomeTrat)},'confirmado')">✅ Retornou</button>
        <button class="btn" style="padding:7px 11px;font-size:12px;color:var(--vermelho)" onclick="setStatusRetorno('${p.id}',${JSON.stringify(nomeTrat)},'pendente')">↩ Reabrir</button>`
-    : `<button class="btn wpp" onclick='abrRet(${J(p)},${JSON.stringify(nomeTrat)})'>🔔 WhatsApp</button>`;
+    : `<button class="btn wpp" onclick='abrRet(${J(p)},${JSON.stringify(nomeTrat)})'>🔔 WhatsApp</button>
+       <button class="btn" style="padding:7px 11px;font-size:12px;color:var(--ct);opacity:.7" onclick="arquivarAlerta('${p.id}',${JSON.stringify(nomeTrat)})" title="Arquivar — paciente não retorna mais">📁</button>`;
   return `<div class="ai ${cls}">
     <div><div class="an">${p.nome}</div><div class="ad">${nomeTrat} · ${p.telefone} · Retorno: ${fDt(p.tratamentos_adicionais?.find(t=>t.nome===nomeTrat)?.dataRetorno)}</div></div>
     <div class="aa">${statusBadge}${botoes}</div>
@@ -941,9 +997,10 @@ function renderAlertas(){
   const todos=[];
   pacs.forEach(p=>(p.tratamentos_adicionais||[]).forEach(t=>{
     const d=dias(t.dataRetorno);
-    if(d!==null&&d<=30){
+    const periodoAlert=parseInt(document.getElementById('alerta-periodo')?.value||30);
+    if(d!==null&&d<=periodoAlert){
       const status=getStatusRetorno(p,t.nome);
-      todos.push({...p,_t:t,_d:d,_status:status});
+      if(status!=='arquivado') todos.push({...p,_t:t,_d:d,_status:status});
     }
   }));
   todos.sort((a,b)=>a._d-b._d);
@@ -999,7 +1056,7 @@ function renderPac(){
 async function excluir(id,nome){if(!confirm(`Excluir ${nome}?`))return;const{error}=await db.from('pacientes').delete().eq('id',id);if(error){toast('Erro','vermelho');return;}toast('Excluído');carregar();}
 
 // RELATÓRIO
-function renderRel(){
+async function renderRel(){
   const mesesAtras=parseInt(document.getElementById('rel-mes').value);
   const hoje2=new Date();
   const cutoff=mesesAtras===99?null:new Date(hoje2.getFullYear(),hoje2.getMonth()-mesesAtras,1);
@@ -1023,12 +1080,20 @@ function renderRel(){
 
   const totalAtend=todosAtends.length;
   const totalFat=todosAtends.reduce((s,a)=>s+(a.trats||[]).reduce((ts,t)=>ts+(parseFloat(t.valor)||0),0),0);
+  // Buscar faturamento real do financeiro para o período
+  let totalFatReal=0;
+  try{
+    const ini=cutoff?cutoff.toISOString().split('T')[0]:'2000-01-01';
+    const{data:finData}=await db.from('financeiro').select('valor,status').eq('tipo','receita').gte('data',ini);
+    if(finData) totalFatReal=finData.filter(l=>l.status==='recebido').reduce((s,l)=>s+(l.valor||0),0);
+  }catch(e){}
   const pacAtivos=new Set(todosAtends.map(a=>a.pac.id)).size;
 
   document.getElementById('rel-stats').innerHTML=`
     <div class="rel-card"><div class="rel-num">${totalAtend}</div><div class="rel-label">Atendimentos</div></div>
     <div class="rel-card"><div class="rel-num">${pacAtivos}</div><div class="rel-label">Pacientes atendidos</div></div>
-    <div class="rel-card"><div class="rel-num" style="font-size:20px">${fmtBRL(totalFat)}</div><div class="rel-label">Faturamento estimado</div></div>`;
+    <div class="rel-card"><div class="rel-num" style="font-size:20px">${totalAtend>0?fmtBRL(totalFatReal/totalAtend):"—"}</div><div class="rel-label">Ticket médio</div></div>
+    <div class="rel-card"><div class="rel-num" style="font-size:20px">${totalFatReal>0?fmtBRL(totalFatReal):totalFat>0?fmtBRL(totalFat):"—"}</div><div class="rel-label">Faturamento ${totalFatReal>0?"real (financeiro)":"estimado"}</div></div>`;
 
   // Procedimentos
   const procs={};
@@ -1374,7 +1439,17 @@ const CAT_DESPESA = [
 ];
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const META_MENSAL = 15000; // padrão - editável futuramente
+let META_MENSAL = parseFloat(localStorage.getItem('meta_mensal')||'15000');
+
+function abrirConfMeta(){
+  const nova = prompt('Meta mensal (R$):', META_MENSAL);
+  if(nova && !isNaN(parseFloat(nova))){
+    META_MENSAL = parseFloat(nova);
+    localStorage.setItem('meta_mensal', META_MENSAL);
+    renderFinDashboard();
+    toast('Meta atualizada: '+fmtBRL(META_MENSAL),'verde');
+  }
+}
 
 let _finTab = 'receitas';
 let _finLancs = [];
@@ -1484,7 +1559,7 @@ function renderFinDashboard(){
     <div style="background:var(--verde-c);border-radius:12px;padding:14px;border:1.5px solid var(--verde)">
       <div style="font-size:11px;color:var(--verde-e);font-weight:600;text-transform:uppercase;letter-spacing:.04em">💚 Receitas do Mês</div>
       <div style="font-size:22px;font-weight:700;color:var(--verde-e);margin:4px 0">${fmtBRL(totalRec)}</div>
-      <div style="font-size:11px;color:var(--verde-e)">Meta: ${fmtBRL(META_MENSAL)} · ${pct}%</div>
+      <div style="font-size:11px;color:var(--verde-e)">Meta: ${fmtBRL(META_MENSAL)} · ${pct}% <button onclick="abrirConfMeta()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--verde-e);text-decoration:underline">✏️ editar</button></div>
       <div style="background:rgba(0,0,0,.1);border-radius:99px;height:6px;margin-top:6px">
         <div style="background:var(--verde);height:6px;border-radius:99px;width:${pct}%;transition:.3s"></div>
       </div>
