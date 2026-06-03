@@ -633,7 +633,7 @@ function opsPrazo(sel){return PRAZOS.map(m=>`<option value="${m}" ${sel==m?'sele
 function addTrat(lid,nome='',prazo=0,valor=''){
   const el=document.getElementById(lid);
   const d=document.createElement('div');d.className='ti';
-  d.innerHTML=`<select onchange="onTS(this)"><option value="">Selecione...</option>${opsTrat()}</select><select onchange="calcDRf(this)">${opsPrazo(prazo)}</select><input type="text" readonly style="font-size:12px;color:var(--verde-e);background:var(--verde-c);border-color:var(--verde-c);font-weight:500;text-align:center"/><input type="number" placeholder="0,00" min="0" step="0.01" value="${valor}" style="font-size:12px" title="Valor R$"/><button class="btn-rt" onclick="this.parentElement.remove()">✕</button>`;
+  d.innerHTML=`<select onchange="onTS(this)"><option value="">Selecione...</option>${opsTrat()}</select><select onchange="calcDRf(this)">${opsPrazo(prazo)}</select><input type="date" title="Data de retorno (editável)" style="font-size:12px;color:var(--verde-e);background:var(--verde-c);border-color:var(--verde-c);font-weight:500;text-align:center;cursor:pointer" onchange="this.style.background='var(--amarelo-c)';this.style.color='#8a6000'" /><input type="number" placeholder="0,00" min="0" step="0.01" value="${valor}" style="font-size:12px" title="Valor R$"/><button class="btn-rt" onclick="this.parentElement.remove()">✕</button>`;
   el.appendChild(d);
   if(nome){const s=d.querySelector('select');const op=Array.from(s.options).find(o=>o.value===nome);if(op)s.value=nome;}
   calcDRf(d.querySelectorAll('select')[1],null);
@@ -642,7 +642,7 @@ function addTrat(lid,nome='',prazo=0,valor=''){
 function addTratComData(lid,nome='',prazo=0,valor=''){
   const el=document.getElementById(lid);
   const d=document.createElement('div');d.className='ti';
-  d.innerHTML=`<select onchange="onTSa(this)"><option value="">Selecione...</option>${opsTrat()}</select><select onchange="calcDR(this)">${opsPrazo(prazo)}</select><input type="text" readonly style="font-size:12px;color:var(--verde-e);background:var(--verde-c);border-color:var(--verde-c);font-weight:500;text-align:center"/><input type="number" placeholder="0,00" min="0" step="0.01" value="${valor}" style="font-size:12px" title="Valor R$"/><button class="btn-rt" onclick="this.parentElement.remove()">✕</button>`;
+  d.innerHTML=`<select onchange="onTSa(this)"><option value="">Selecione...</option>${opsTrat()}</select><select onchange="calcDR(this)">${opsPrazo(prazo)}</select><input type="date" title="Data de retorno (editável)" style="font-size:12px;color:var(--verde-e);background:var(--verde-c);border-color:var(--verde-c);font-weight:500;text-align:center;cursor:pointer" onchange="this.style.background='var(--amarelo-c)';this.style.color='#8a6000'" /><input type="number" placeholder="0,00" min="0" step="0.01" value="${valor}" style="font-size:12px" title="Valor R$"/><button class="btn-rt" onclick="this.parentElement.remove()">✕</button>`;
   el.appendChild(d);
   if(nome){const s=d.querySelector('select');const op=Array.from(s.options).find(o=>o.value===nome);if(op)s.value=nome;}
   calcDR(d.querySelectorAll('select')[1]);
@@ -658,11 +658,12 @@ function onTSa(s){const op=s.options[s.selectedIndex];const m=parseInt(op.datase
 function calcDRf(prazoSel,data){
   const dt=data||document.getElementById('f-data').value;
   const prazo=parseInt(prazoSel.value);
-  const inp=prazoSel.parentElement.querySelector('input[readonly]');
+  const inp=prazoSel.parentElement.querySelector('input[type=date]');
   if(!inp)return;
-  if(!dt||prazo===0){inp.value='Sem retorno';inp.style.color='var(--ct)';return;}
+  if(!dt||prazo===0){inp.value='';inp.style.background='var(--verde-c)';inp.style.color='var(--ct)';return;}
   const d=new Date(dt+'T12:00:00');d.setMonth(d.getMonth()+prazo);
-  inp.value=fDt(d.toISOString().split('T')[0]);inp.style.color='var(--verde-e)';
+  const iso=d.toISOString().split('T')[0];
+  inp.value=iso;inp.style.background='var(--verde-c)';inp.style.color='var(--verde-e)';
 }
 
 function calcDR(prazoSel){
@@ -702,14 +703,15 @@ function getTrats(lid){
   return Array.from(document.querySelectorAll(`#${lid} .ti`)).map(item=>{
     const ss=item.querySelectorAll('select');
     const val=item.querySelectorAll('input[type="number"]')[0];
-    return{nome:ss[0].value,prazo:parseInt(ss[1].value),valor:parseFloat(val?.value)||null};
+    const dtInp=item.querySelector('input[type="date"]');
+    return{nome:ss[0].value,prazo:parseInt(ss[1].value),valor:parseFloat(val?.value)||null,dataRetornoCustom:dtInp?.value||null};
   }).filter(t=>t.nome);
 }
 
 function tratsComDatas(trats,dataAtend){
   return trats.map(t=>{
-    let dataRetorno=null;
-    if(t.prazo>0&&dataAtend){const dt=new Date(dataAtend+'T12:00:00');dt.setMonth(dt.getMonth()+t.prazo);dataRetorno=dt.toISOString().split('T')[0];}
+    let dataRetorno=t.dataRetornoCustom||null; // respeitar data editada manualmente
+    if(!dataRetorno&&t.prazo>0&&dataAtend){const dt=new Date(dataAtend+'T12:00:00');dt.setMonth(dt.getMonth()+t.prazo);dataRetorno=dt.toISOString().split('T')[0];}
     return{...t,dataRetorno,dataAtendimento:dataAtend||null};
   });
 }
