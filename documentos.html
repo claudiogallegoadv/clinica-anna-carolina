@@ -1658,5 +1658,129 @@ carregar().then(()=>{
 });
 </script>
 <div class="toast" id="toast"></div>
+<script>
+(async function autoOpenDoc() {
+  const params = new URLSearchParams(window.location.search);
+  const pacId  = params.get('pac');
+  const docId  = params.get('doc');
+  const tipo   = params.get('tipo');
+
+  if (!pacId) return;
+
+  let tentativas = 0;
+  const aguardar = setInterval(async () => {
+    tentativas++;
+    if (typeof pacs === 'undefined' || !pacs.length) {
+      if (tentativas > 30) clearInterval(aguardar);
+      return;
+    }
+    clearInterval(aguardar);
+
+    const pac = pacs.find(p => p.id === pacId);
+    if (!pac) return;
+
+    selPac(pac);
+
+    if (!docId || !tipo) return;
+
+    await new Promise(r => setTimeout(r, 400));
+
+    const { data: doc } = await db
+      .from('documentos')
+      .select('*')
+      .eq('id', docId)
+      .single();
+
+    if (!doc) return;
+
+    abrirDoc(tipo);
+
+    await new Promise(r => setTimeout(r, 300));
+
+    preencherDocSalvo(tipo, doc.dados || {});
+
+    window.scrollTo(0, 0);
+  }, 300);
+})();
+
+function preencherDocSalvo(tipo, dados) {
+  try {
+    if (tipo === 'anamnese') {
+      if (dados.endereco) setVal('an-endereco', dados.endereco);
+      if (dados.cpf)      setVal('an-cpf', dados.cpf);
+      if (dados.rg)       setVal('an-rg', dados.rg);
+      if (dados.sexo)     setVal('an-sexo', dados.sexo);
+      if (dados.obs)      setVal('an-obs', dados.obs);
+      if (dados.respostas) {
+        Object.entries(dados.respostas).forEach(([id, r]) => {
+          const radio = document.querySelector(`input[name="${id}"][value="${r.v}"]`);
+          if (radio) { radio.checked = true; radio.dispatchEvent(new Event('change')); }
+          if (r.qual) setVal('qual-' + id, r.qual);
+        });
+      }
+      if (dados.checks) {
+        Object.entries(dados.checks).forEach(([i, v]) => {
+          const el = document.getElementById('anck-' + i);
+          if (el) el.checked = v;
+        });
+      }
+    } else if (tipo === 'orcamento') {
+      if (dados.pagamento) setVal('orc-pagamento', dados.pagamento);
+      if (dados.obs)       setVal('orc-obs', dados.obs);
+      if (dados.validade)  setVal('orc-validade', dados.validade);
+      if (dados.itens && dados.itens.length) {
+        const cont = document.getElementById('orc-itens');
+        if (cont) cont.innerHTML = '';
+        dados.itens.forEach(item => {
+          if (typeof addItemOrc === 'function') addItemOrc();
+          const linhas = document.querySelectorAll('#orc-itens .orc-linha');
+          const ultima = linhas[linhas.length - 1];
+          if (ultima) {
+            const trat = ultima.querySelector('.orc-trat');
+            const val  = ultima.querySelector('.orc-val');
+            if (trat) trat.value = item.trat || '';
+            if (val)  val.value  = item.val  || 0;
+          }
+        });
+        if (typeof calcTotal === 'function') calcTotal();
+      }
+    } else if (tipo === 'autorizacao-imagem') {
+      if (dados.rg)  setVal('img-rg', dados.rg);
+      if (dados.cpf) setVal('img-cpf', dados.cpf);
+    } else if (tipo === 'planejamento') {
+      if (dados.validade)  setVal('plan-validade', dados.validade);
+      if (dados.lote)      setVal('plan-lote', dados.lote);
+      if (dados.diluicao)  setVal('plan-diluicao', dados.diluicao);
+      if (dados.anotacoes) setVal('plan-anotacoes', dados.anotacoes);
+      if (dados.outros) dados.outros.forEach((v,i) => { if(v) setVal('plan-outros'+(i+1),v); });
+    } else if (tipo === 'odontograma') {
+      if (dados.end)       setVal('od-end', dados.end);
+      if (dados.bairro)    setVal('od-bairro', dados.bairro);
+      if (dados.cidade)    setVal('od-cidade', dados.cidade);
+      if (dados.rg)        setVal('od-rg', dados.rg);
+      if (dados.cpf)       setVal('od-cpf', dados.cpf);
+      if (dados.resp)      setVal('od-resp', dados.resp);
+      if (dados.obs)       setVal('od-obs', dados.obs);
+      if (dados.pagamento) setVal('od-pagamento', dados.pagamento);
+    } else if (tipo === 'anamnese-odonto') {
+      if (dados.rg)   setVal('ao-rg', dados.rg);
+      if (dados.cpf)  setVal('ao-cpf', dados.cpf);
+      if (dados.end)  setVal('ao-end', dados.end);
+      if (dados.resp) setVal('ao-resp', dados.resp);
+      if (dados.obs)  setVal('ao-obs', dados.obs);
+    } else if (tipo.startsWith('termo-')) {
+      if (dados.cpf) setVal(tipo + '-cpf', dados.cpf);
+    }
+    if (typeof toast === 'function') toast('Documento carregado ✅', 'verde');
+  } catch(e) {
+    console.error('Erro ao preencher documento:', e);
+  }
+}
+
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val;
+}
+</script>
 </body>
 </html>
