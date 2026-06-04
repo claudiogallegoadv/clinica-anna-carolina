@@ -2182,64 +2182,6 @@ document.getElementById('modal-inf').addEventListener('click',function(e){if(e.t
   </div>
 </div>
 <script>
-<script>
-(function injetarBotaoFicha() {
-  function injetar(root) {
-    (root || document).querySelectorAll('.pr:not([data-ficha])').forEach(row => {
-      let pacId = row.dataset.id;
-      if (!pacId) {
-        row.querySelectorAll('[onclick]').forEach(btn => {
-          if (!pacId) {
-            const m = btn.getAttribute('onclick')?.match(/['"]([a-f0-9-]{36})['"]/);
-            if (m) pacId = m[1];
-          }
-        });
-      }
-      if (pacId) {
-        const pa = row.querySelector('.pa');
-        if (pa && !pa.querySelector('[href^="paciente.html"]')) {
-          const a = document.createElement('a');
-          a.href = `paciente.html?id=${pacId}`;
-          a.className = 'btn';
-          a.style.cssText = 'padding:7px 11px;font-size:12px';
-          a.textContent = '👤 Ficha';
-          pa.insertBefore(a, pa.firstChild);
-        }
-        row.setAttribute('data-ficha', '1');
-      }
-    });
-    (root || document).querySelectorAll('.ai:not([data-ficha])').forEach(ai => {
-      const aa = ai.querySelector('.aa');
-      if (!aa) return;
-      let pacId = ai.dataset.id;
-      if (!pacId) {
-        aa.querySelectorAll('[onclick]').forEach(btn => {
-          if (!pacId) {
-            const m = btn.getAttribute('onclick')?.match(/['"]([a-f0-9-]{36})['"]/);
-            if (m) pacId = m[1];
-          }
-        });
-      }
-      if (pacId && !aa.querySelector('[href^="paciente.html"]')) {
-        const a = document.createElement('a');
-        a.href = `paciente.html?id=${pacId}`;
-        a.className = 'btn';
-        a.style.cssText = 'padding:6px 10px;font-size:12px';
-        a.textContent = '👤 Ficha';
-        aa.insertBefore(a, aa.firstChild);
-        ai.setAttribute('data-ficha', '1');
-      }
-    });
-  }
 
-  // Roda na primeira vez após carregar
-  setTimeout(injetar, 1000);
-  setTimeout(injetar, 2500);
-
-  // Observa mudanças no DOM (quando renderPac() renderiza os pacientes)
-  const observer = new MutationObserver(() => injetar());
-  observer.observe(document.body, { childList: true, subtree: true });
-})();
-</script>
 </body>
 </html>
