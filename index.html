@@ -2180,6 +2180,69 @@ document.getElementById('modal-inf').addEventListener('click',function(e){if(e.t
     </div>
   </div>
 </div>
+<script>
+(function injetarBotaoFicha() {
+  const INTERVAL_MS = 800;
+  const MAX_ATTEMPTS = 40;
+  let attempts = 0;
 
+  function injetar() {
+    attempts++;
+
+    // Lista de pacientes
+    document.querySelectorAll('.pr:not([data-ficha])').forEach(row => {
+      let pacId = row.dataset.id;
+      if (!pacId) {
+        row.querySelectorAll('[onclick]').forEach(btn => {
+          if (!pacId) {
+            const m = btn.getAttribute('onclick')?.match(/['"]([a-f0-9-]{36})['"]/);
+            if (m) pacId = m[1];
+          }
+        });
+      }
+      if (pacId) {
+        const pa = row.querySelector('.pa');
+        if (pa && !pa.querySelector('[href^="paciente.html"]')) {
+          const a = document.createElement('a');
+          a.href = `paciente.html?id=${pacId}`;
+          a.className = 'btn';
+          a.style.cssText = 'padding:7px 11px;font-size:12px';
+          a.textContent = '👤 Ficha';
+          pa.insertBefore(a, pa.firstChild);
+        }
+        row.setAttribute('data-ficha', '1');
+      }
+    });
+
+    // Cards de alertas
+    document.querySelectorAll('.ai:not([data-ficha])').forEach(ai => {
+      const aa = ai.querySelector('.aa');
+      if (!aa) return;
+      let pacId = ai.dataset.id;
+      if (!pacId) {
+        aa.querySelectorAll('[onclick]').forEach(btn => {
+          if (!pacId) {
+            const m = btn.getAttribute('onclick')?.match(/['"]([a-f0-9-]{36})['"]/);
+            if (m) pacId = m[1];
+          }
+        });
+      }
+      if (pacId && !aa.querySelector('[href^="paciente.html"]')) {
+        const a = document.createElement('a');
+        a.href = `paciente.html?id=${pacId}`;
+        a.className = 'btn';
+        a.style.cssText = 'padding:6px 10px;font-size:12px';
+        a.textContent = '👤 Ficha';
+        aa.insertBefore(a, aa.firstChild);
+        ai.setAttribute('data-ficha', '1');
+      }
+    });
+
+    if (attempts < MAX_ATTEMPTS) setTimeout(injetar, INTERVAL_MS);
+  }
+
+  setTimeout(injetar, 1200);
+})();
+</script>
 </body>
 </html>
