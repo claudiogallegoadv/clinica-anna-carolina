@@ -1329,7 +1329,7 @@ async function salvarEditAtend() {
 }
 
 // ─── FINANCEIRO ───
-async function renderFinanceiro(){
+function renderFinanceiro(){
   const trats = pac.tratamentos_adicionais || [];
   const ats = pac.atendimentos || [];
 
@@ -1343,22 +1343,8 @@ async function renderFinanceiro(){
 
   const datas = Object.keys(porData).filter(d=>d!=='—').sort((a,b)=>b.localeCompare(a));
 
-  // Stats — buscar também da tabela financeiro do Supabase
+  // Stats — usar apenas tratamentos_adicionais do paciente
   let totalGasto = 0, totalPago = 0, totalPendente = 0, nAtend = 0;
-
-  // Buscar lançamentos financeiros do paciente
-  let lancamentos = [];
-  try {
-    const { data: finData } = await db.from('financeiro').select('*')
-      .eq('tipo','receita')
-      .ilike('descricao', '%' + pac.nome.split(' ')[0] + '%');
-    lancamentos = finData || [];
-  } catch(e) {}
-
-  // Calcular pendente dos lançamentos financeiros
-  const pendenteFin = lancamentos
-    .filter(l => l.status === 'pendente')
-    .reduce((s, l) => s + (parseFloat(l.valor) || 0), 0);
 
   datas.forEach(data=>{
     const ts = porData[data];
@@ -1368,14 +1354,17 @@ async function renderFinanceiro(){
     const vPend = parseFloat(ts.find(t=>t.valorPendente)?.valorPendente) || 0;
     totalGasto += total;
     nAtend++;
-    if(vPago > 0) { totalPago += vPago; totalPendente += vPend; }
-    else if(status==='recebido') totalPago += total;
-    else if(status==='pendente') totalPendente += total;
-    else totalPago += total;
+    if(vPago > 0) {
+      totalPago += vPago;
+      totalPendente += vPend;
+    } else if(status==='recebido') {
+      totalPago += total;
+    } else if(status==='pendente') {
+      totalPendente += total;
+    } else {
+      totalPago += total;
+    }
   });
-
-  // Adicionar pendente do financeiro se não estiver nos tratamentos
-  if(pendenteFin > totalPendente) totalPendente = pendenteFin;
 
   const ticket = nAtend > 0 ? totalGasto / nAtend : 0;
 
