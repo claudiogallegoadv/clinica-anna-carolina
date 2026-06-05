@@ -2233,13 +2233,28 @@ window.confirmarRealizado = async function() {
     }
 
     // 2. Marcar realizados como 'realizado' ou 'pago'
+    // Garantir que temos os itens do plano para mapear itemIds
+    if (planoId) {
+      const { data: itensAtuais } = await db.from('plano_itens').select('*').eq('plano_id', planoId).eq('status','orcado');
+      // Para cada realizado sem itemId, tentar encontrar pelo nome do procedimento
+      realizados.forEach(r => {
+        if (!r.itemId && itensAtuais) {
+          const item = itensAtuais.find(i => i.procedimento === r.trat || r.trat.includes(i.procedimento) || i.procedimento.includes(r.trat));
+          if (item) r.itemId = item.id;
+        }
+      });
+    }
+
     for (const r of realizados) {
       const novoStatus = statusPgto === 'recebido' && !isParcial ? 'pago' : 'realizado';
       if (r.itemId) {
-        await db.from('plano_itens').update({ 
+        const {error: eItem} = await db.from('plano_itens').update({ 
           status: novoStatus, 
           data_realizacao: dataAtend 
         }).eq('id', r.itemId);
+        if (eItem) console.error('[FIN DEBUG] Erro atualizar item:', eItem, r);
+      } else {
+        console.warn('[FIN DEBUG] itemId não encontrado para:', r.trat);
       }
     }
 
