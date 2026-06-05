@@ -1856,7 +1856,7 @@ window.abrirOrcamento = async function() {
     window._planoAtual = { id: plano.id, itens: plano.plano_itens || [] };
     document.getElementById('orc-validade').value = plano.validade || '';
     document.getElementById('orc-pagamento').value = plano.condicoes_pagamento || '';
-    document.getElementById('orc-obs').value = plano.obs || '';
+    document.getElementById('orc-obs').value = '';
     renderItensPlano();
     mostrarBannerPlanoAtivo();
   } else {
@@ -2175,7 +2175,7 @@ window.confirmarRealizado = async function() {
       const descReal = realizados.map(r => r.trat).join(' + ');
       await db.from('financeiro').insert({
         paciente_id: pacSelecionada.id,
-        plano_id: planoId,
+        orcamento_id: planoId,
         tipo: 'receita',
         data: dataAtend,
         descricao: `${descReal} — ${pacSelecionada.nome}`,
@@ -2192,7 +2192,7 @@ window.confirmarRealizado = async function() {
       const descReal = realizados.map(r => r.trat).join(' + ');
       await db.from('financeiro').insert({
         paciente_id: pacSelecionada.id,
-        plano_id: planoId,
+        orcamento_id: planoId,
         tipo: 'receita',
         data: lembrData || dataAtend,
         descricao: `${descReal} — ${pacSelecionada.nome} (restante)`,
