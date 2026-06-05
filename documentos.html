@@ -2133,7 +2133,7 @@ window.confirmarRealizado = async function() {
       ];
 
       const descProcs = [...realizados, ...pendentes].map(t => t.trat).join(' + ');
-      const { data: novoPlano } = await db.from('planos_tratamento').insert({
+      const { data: novoPlano, error: ePlano } = await db.from('planos_tratamento').insert({
         paciente_id: pacSelecionada.id,
         status: 'ativo',
         validade: document.getElementById('orc-validade')?.value || null,
@@ -2141,7 +2141,8 @@ window.confirmarRealizado = async function() {
         obs: descProcs || document.getElementById('orc-obs')?.value || null
       }).select().single();
 
-      planoId = novoPlano.id;
+      if (ePlano) { console.error('[FIN DEBUG] Erro criar plano:', ePlano); toast('Erro ao criar plano: ' + ePlano.message, 'vermelho'); if (btn) { btn.disabled=false; btn.textContent='✅ Confirmar e registrar'; } return; }
+      planoId = novoPlano?.id;
 
       // Inserir itens
       await db.from('plano_itens').insert(
