@@ -1823,5 +1823,196 @@ window.confirmarRealizado = async function() {
     .eq('id', pacSelecionada.id);
 };
 </script>
+<script>
+// ══════════════════════════════════════════════════════
+// PATCH: Checkboxes no orçamento + modal simplificado
+// Cole logo antes do </body> no documentos.html
+// ══════════════════════════════════════════════════════
+
+// 1. Sobrescrever addItemOrc para incluir checkbox
+const _addItemOrcOriginal = window.addItemOrc;
+window.addItemOrc = function() {
+  const el = document.getElementById('orc-itens');
+  const d = document.createElement('div');
+  d.className = 'orc-linha';
+  d.style.cssText = 'display:grid;grid-template-columns:32px 1fr 120px 32px;gap:8px;align-items:center;margin-bottom:7px';
+  d.innerHTML = `
+    <input type="checkbox" class="orc-check" checked title="Realizado" 
+      style="width:18px;height:18px;cursor:pointer;accent-color:var(--verde)" 
+      onchange="atualizarVisualLinha(this)"/>
+    <input type="text" class="orc-trat" list="lista-trats-orc" placeholder="Tratamento..."/>
+    <input type="number" class="orc-val" placeholder="R$" min="0" step="0.01" 
+      oninput="calcTotal()" style="text-align:right"/>
+    <button class="btn dan" style="padding:6px 8px" 
+      onclick="this.closest('.orc-linha').remove();calcTotal()">✕</button>
+  `;
+  el.appendChild(d);
+};
+
+// 2. Atualizar visual quando desmarca checkbox
+window.atualizarVisualLinha = function(checkbox) {
+  const linha = checkbox.closest('.orc-linha');
+  const inputs = linha.querySelectorAll('input[type=text], input[type=number]');
+  inputs.forEach(inp => {
+    inp.style.opacity = checkbox.checked ? '1' : '0.4';
+    inp.style.textDecoration = checkbox.checked ? 'none' : 'line-through';
+  });
+  calcTotal();
+};
+
+// 3. Recalcular total considerando apenas os marcados
+const _calcTotalOriginal = window.calcTotal;
+window.calcTotal = function() {
+  let tTotal = 0, tRealizados = 0;
+  document.querySelectorAll('#orc-itens .orc-linha').forEach(linha => {
+    const val = parseFloat(linha.querySelector('.orc-val')?.value) || 0;
+    const check = linha.querySelector('.orc-check');
+    tTotal += val;
+    if (!check || check.checked) tRealizados += val;
+  });
+  
+  const totalEl = document.getElementById('orc-total');
+  if (totalEl) {
+    if (tRealizados < tTotal) {
+      totalEl.innerHTML = `<span style="font-size:13px;text-decoration:line-through;opacity:.5">${fmtBRL(tTotal)}</span> <span style="color:var(--verde-e)">${fmtBRL(tRealizados)}</span>`;
+    } else {
+      totalEl.textContent = fmtBRL(tTotal);
+    }
+  }
+};
+
+// 4. Simplificar modal — remover lista de tratamentos, mostrar só financeiro
+const _abrirModalOriginal = window.abrirModalRealizado;
+window.abrirModalRealizado = function() {
+  if (!pacSelecionada) { toast('Selecione um paciente', 'vermelho'); return; }
+  
+  // Coletar tratamentos marcados no orçamento
+  const realizados = [];
+  const pendentes = [];
+  document.querySelectorAll('#orc-itens .orc-linha').forEach(linha => {
+    const trat = linha.querySelector('.orc-trat')?.value || '';
+    const val = parseFloat(linha.querySelector('.orc-val')?.value) || 0;
+    const check = linha.querySelector('.orc-check');
+    if (!trat) return;
+    if (!check || check.checked) realizados.push({ trat, val });
+    else pendentes.push({ trat, val });
+  });
+
+  const totalRealizados = realizados.reduce((s, t) => s + t.val, 0);
+  const totalPendentes = pendentes.reduce((s, t) => s + t.val, 0);
+
+  // Atualizar modal
+  document.getElementById('modal-pac-nome').textContent = pacSelecionada.nome;
+  document.getElementById('modal-data').value = new Date().toISOString().split('T')[0];
+  
+  // Substituir lista de tratamentos do modal por resumo
+  const listaEl = document.getElementById('modal-lista-trats');
+  if (listaEl) {
+    let html = '';
+    if (realizados.length) {
+      html += `<div style="margin-bottom:8px">
+        <div style="font-size:11px;font-weight:600;color:var(--verde-e);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">✅ Realizados hoje</div>
+        ${realizados.map(t => `
+          <div style="display:flex;justify-content:space-between;padding:7px 10px;background:var(--verde-c);border-radius:7px;margin-bottom:4px;font-size:13px">
+            <span>${t.trat}</span>
+            <span style="font-weight:600;color:var(--verde-e)">${fmtBRL(t.val)}</span>
+          </div>`).join('')}
+      </div>`;
+    }
+    if (pendentes.length) {
+      html += `<div style="margin-bottom:8px">
+        <div style="font-size:11px;font-weight:600;color:var(--amarelo);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">⏸ Pendentes (não realizados hoje)</div>
+        ${pendentes.map(t => `
+          <div style="display:flex;justify-content:space-between;padding:7px 10px;background:var(--amarelo-c);border-radius:7px;margin-bottom:4px;font-size:13px;opacity:.8">
+            <span>${t.trat}</span>
+            <span style="font-weight:600;color:#8a6000">${fmtBRL(t.val)}</span>
+          </div>`).join('')}
+      </div>`;
+    }
+    listaEl.innerHTML = html;
+  }
+
+  // Atualizar total
+  const totalEl = document.getElementById('modal-total-sel');
+  if (totalEl) {
+    totalEl.textContent = fmtBRL(totalRealizados);
+    if (totalPendentes > 0) {
+      totalEl.innerHTML = `${fmtBRL(totalRealizados)} <span style="font-size:12px;color:#8a6000;font-weight:400">(${fmtBRL(totalPendentes)} pendente)</span>`;
+    }
+  }
+
+  // Guardar dados para usar no confirmar
+  window._modalRealizados = realizados;
+  window._modalPendentes = pendentes;
+
+  calcDataVerificacao();
+  document.getElementById('modal-realizado').style.display = 'flex';
+};
+
+// 5. Interceptar confirmarRealizado para salvar realizados vs pendentes
+const _confirmarOriginal2 = window.confirmarRealizado;
+window.confirmarRealizado = async function() {
+  const realizados = window._modalRealizados || [];
+  const pendentes = window._modalPendentes || [];
+  
+  // Chamar função original
+  await _confirmarOriginal2.apply(this, arguments);
+
+  // Após salvar, atualizar tratamentos_adicionais com info de realizados/pendentes
+  if (!pacSelecionada) return;
+  await new Promise(r => setTimeout(r, 600));
+
+  const { data: pac } = await db.from('pacientes')
+    .select('tratamentos_adicionais')
+    .eq('id', pacSelecionada.id)
+    .single();
+
+  if (!pac?.tratamentos_adicionais) return;
+
+  const data = document.getElementById('modal-data')?.value || '';
+  
+  // Marcar quais foram realizados e quais são pendentes
+  const trats = pac.tratamentos_adicionais.map(t => {
+    const realizado = realizados.find(r => r.trat === t.nome);
+    const pendente = pendentes.find(p => p.trat === t.nome);
+    if (realizado) return { ...t, statusTrat: 'realizado' };
+    if (pendente) return { ...t, statusTrat: 'pendente_realizacao' };
+    return t;
+  });
+
+  await db.from('pacientes')
+    .update({ tratamentos_adicionais: trats })
+    .eq('id', pacSelecionada.id);
+};
+
+// 6. Ao carregar orçamento salvo — restaurar checkboxes
+const _verDocOriginalOrc = window.verDoc;
+window.verDoc = async function(id, tipo) {
+  await _verDocOriginalOrc.apply(this, arguments);
+  
+  if (tipo === 'orcamento') {
+    // Aguardar renderização e recriar linhas com checkboxes
+    await new Promise(r => setTimeout(r, 200));
+    const linhas = document.querySelectorAll('#orc-itens .orc-linha');
+    linhas.forEach(linha => {
+      if (!linha.querySelector('.orc-check')) {
+        // Linha antiga sem checkbox — adicionar
+        const check = document.createElement('input');
+        check.type = 'checkbox';
+        check.className = 'orc-check';
+        check.checked = true;
+        check.title = 'Realizado';
+        check.style.cssText = 'width:18px;height:18px;cursor:pointer;accent-color:var(--verde)';
+        check.onchange = () => atualizarVisualLinha(check);
+        linha.style.gridTemplateColumns = '32px 1fr 120px 32px';
+        linha.insertBefore(check, linha.firstChild);
+      }
+    });
+  }
+};
+
+console.log('✅ Patch orçamento carregado');
+</script>
+
 </body>
 </html>
