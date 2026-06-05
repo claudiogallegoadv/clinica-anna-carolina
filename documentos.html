@@ -337,7 +337,7 @@ textarea{resize:vertical}
 
     <!-- Info parcelas -->
     <div id="modal-info-parcelas" style="display:none;background:var(--amarelo-c,#fffbea);border-radius:8px;padding:10px 12px;font-size:13px;color:#8a6000">
-      📅 As parcelas seguintes serão lançadas automaticamente nos meses seguintes como <strong>pendentes</strong>.
+      📅 As parcelas seguintes serão lançadas automaticamente nos meses seguintes como <strong>a receber</strong>.
     </div>
 
     <!-- Status pagamento -->
@@ -350,7 +350,7 @@ textarea{resize:vertical}
         </label>
         <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:2px solid var(--borda);border-radius:8px;cursor:pointer">
           <input type="radio" name="modal-status" value="pendente" style="width:16px;height:16px"/>
-          <span style="font-size:13px;font-weight:500;color:var(--ct)">⏳ Pendente</span>
+          <span style="font-size:13px;font-weight:500;color:var(--ct)">⏳ A receber</span>
         </label>
       </div>
     </div>
@@ -396,7 +396,7 @@ textarea{resize:vertical}
         <div id="modal-lembrete-diasem" style="font-size:12px;color:#8a6000;font-weight:600"></div>
         <div style="font-size:11px;color:#8a6000">
           📌 Um lembrete será criado automaticamente para cobrar o restante na data escolhida.<br>
-          ⏳ O valor restante será lançado no financeiro como <strong>pendente</strong>.
+          ⏳ O valor restante será lançado no financeiro como <strong>a receber</strong>.
         </div>
       </div>
     </div>
@@ -2026,7 +2026,7 @@ window.calcTotal = function() {
     if (tPago > 0) html += `<span style="font-size:12px;opacity:.7">Pago: ${fmtBRL(tPago)} · </span>`;
     if (tRealizados > 0) html += `<span>Hoje: ${fmtBRL(tRealizados)}</span>`;
     const restante = tTotal - tPago - tRealizados;
-    if (restante > 0) html += `<span style="font-size:12px;color:#8a6000"> · Pendente: ${fmtBRL(restante)}</span>`;
+    if (restante > 0) html += `<span style="font-size:12px;color:#8a6000"> · A receber: ${fmtBRL(restante)}</span>`;
     totalEl.innerHTML = html;
   } else {
     totalEl.textContent = fmtBRL(tTotal);
@@ -2085,7 +2085,7 @@ window.abrirModalRealizado = async function() {
   const totalEl = document.getElementById('modal-total-sel');
   if (totalEl) {
     totalEl.innerHTML = fmtBRL(totalRealizados) + (totalPendentes > 0 
-      ? ` <span style="font-size:12px;color:#8a6000;font-weight:400">(+ ${fmtBRL(totalPendentes)} no plano)</span>` 
+      ? ` <span style="font-size:12px;color:#8a6000;font-weight:400">(+ ${fmtBRL(totalPendentes)} a receber)</span>` 
       : '');
   }
 
