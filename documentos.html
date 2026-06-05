@@ -2132,12 +2132,13 @@ window.confirmarRealizado = async function() {
         ...pendentes.map(t => ({ procedimento: t.trat, valor: t.val, status: 'orcado' }))
       ];
 
+      const descProcs = [...realizados, ...pendentes].map(t => t.trat).join(' + ');
       const { data: novoPlano } = await db.from('planos_tratamento').insert({
         paciente_id: pacSelecionada.id,
         status: 'ativo',
         validade: document.getElementById('orc-validade')?.value || null,
         condicoes_pagamento: document.getElementById('orc-pagamento')?.value || null,
-        obs: document.getElementById('orc-obs')?.value || null
+        obs: descProcs || document.getElementById('orc-obs')?.value || null
       }).select().single();
 
       planoId = novoPlano.id;
@@ -2311,7 +2312,8 @@ window.salvarDoc = async function(tipo) {
 
   if (window._planoAtual?.id) {
     // Atualizar plano existente
-    await db.from('planos_tratamento').update({ validade, condicoes_pagamento: condicoes, obs, atualizado_em: new Date().toISOString() }).eq('id', window._planoAtual.id);
+    const descProcsUpd = itens.map(i => i.trat).join(' + ');
+    await db.from('planos_tratamento').update({ validade, condicoes_pagamento: condicoes, obs: descProcsUpd || obs, atualizado_em: new Date().toISOString() }).eq('id', window._planoAtual.id);
     
     // Adicionar novos itens (que não têm itemId)
     for (const item of itens) {
@@ -2328,12 +2330,13 @@ window.salvarDoc = async function(tipo) {
     toast('Plano de tratamento atualizado ✓', 'verde');
   } else {
     // Criar novo plano + itens
+    const descProcsOrc = itens.map(i => i.trat).join(' + ');
     const { data: novoPlano } = await db.from('planos_tratamento').insert({
       paciente_id: pacSelecionada.id,
       status: 'ativo',
       validade,
       condicoes_pagamento: condicoes,
-      obs
+      obs: descProcsOrc || obs
     }).select().single();
 
     await db.from('plano_itens').insert(
