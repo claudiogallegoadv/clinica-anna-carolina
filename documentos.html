@@ -2170,10 +2170,12 @@ window.confirmarRealizado = async function() {
       }
     }
 
-    // 3. Lançar no financeiro — valor recebido
+    // 3. Lançar no financeiro
+    const descReal = realizados.map(r => r.trat).join(' + ');
+    console.log('[FIN DEBUG] planoId:', planoId, 'valorPago:', valorPago, 'valorPendente:', valorPendente, 'totalReal:', totalReal, 'statusPgto:', statusPgto, 'isParcial:', isParcial);
+
     if (valorPago > 0) {
-      const descReal = realizados.map(r => r.trat).join(' + ');
-      await db.from('financeiro').insert({
+      const {error: eFin1} = await db.from('financeiro').insert({
         paciente_id: pacSelecionada.id,
         orcamento_id: planoId,
         tipo: 'receita',
@@ -2185,12 +2187,27 @@ window.confirmarRealizado = async function() {
         status: 'recebido',
         obs: obs
       });
+      if (eFin1) console.error('[FIN DEBUG] Erro insert recebido:', eFin1);
+    } else if (totalReal > 0 && statusPgto === 'pendente') {
+      // Status marcado como A receber sem parcial
+      const {error: eFin2} = await db.from('financeiro').insert({
+        paciente_id: pacSelecionada.id,
+        orcamento_id: planoId,
+        tipo: 'receita',
+        data: dataAtend,
+        descricao: `${descReal} — ${pacSelecionada.nome}`,
+        categoria: 'Harmonização Orofacial',
+        valor: totalReal,
+        forma_pagamento: pgto,
+        status: 'pendente',
+        obs: obs
+      });
+      if (eFin2) console.error('[FIN DEBUG] Erro insert pendente:', eFin2);
     }
 
-    // 4. Lançar no financeiro — valor pendente
+    // 4. Lançar no financeiro — valor a receber (parcial)
     if (valorPendente > 0) {
-      const descReal = realizados.map(r => r.trat).join(' + ');
-      await db.from('financeiro').insert({
+      const {error: eFin3} = await db.from('financeiro').insert({
         paciente_id: pacSelecionada.id,
         orcamento_id: planoId,
         tipo: 'receita',
@@ -2202,6 +2219,7 @@ window.confirmarRealizado = async function() {
         status: 'pendente',
         obs: obs
       });
+      if (eFin3) console.error('[FIN DEBUG] Erro insert restante:', eFin3);
     }
 
     // 5. Salvar atendimento no paciente (tratamentos_adicionais)
