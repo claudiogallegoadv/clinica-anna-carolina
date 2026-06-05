@@ -778,14 +778,29 @@ function abrirAutorizacaoImagem(){
 
 // ── ORÇAMENTO ──
 // ── ORÇAMENTO ──
-function abrirOrcamento(){
+async function abrirOrcamento(){
   const p=pacSelecionada;
+  if(!p) return;
   document.getElementById('orc-pac-info').innerHTML=`<div><div class="pac-info-nome">${p.nome}${p.apelido?` (${p.apelido})`:''}</div><div class="pac-info-sub">${p.telefone}</div></div>`;
-  document.getElementById('orc-itens').innerHTML='';
-  document.getElementById('orc-validade').value=HOJE;
-  document.getElementById('orc-pagamento').value='';
-  document.getElementById('orc-obs').value='';
-  addItemOrc();addItemOrc();addItemOrc();
+  // Buscar plano ativo
+  const{data:planos}=await db.from('planos_tratamento').select('*, plano_itens(*)').eq('paciente_id',p.id).eq('status','ativo').order('criado_em',{ascending:false}).limit(1);
+  const plano=planos?.[0];
+  if(plano){
+    window._planoAtual={id:plano.id,itens:plano.plano_itens||[]};
+    document.getElementById('orc-validade').value=plano.validade||'';
+    document.getElementById('orc-pagamento').value=plano.condicoes_pagamento||'';
+    document.getElementById('orc-obs').value='';
+    renderItensPlano();
+    mostrarBannerPlanoAtivo();
+  } else {
+    window._planoAtual=null;
+    document.getElementById('orc-itens').innerHTML='';
+    document.getElementById('orc-validade').value=HOJE;
+    document.getElementById('orc-pagamento').value='';
+    document.getElementById('orc-obs').value='';
+    addItemOrc();addItemOrc();addItemOrc();
+    esconderBannerPlanoAtivo();
+  }
   calcTotal();
 }
 
@@ -1905,43 +1920,6 @@ window.confirmarRealizado = async function() {
 // ── ESTADO GLOBAL DO PLANO ──
 window._planoAtual = null; // { id, itens: [{id, procedimento, valor, status, data_realizacao}] }
 
-// ── SOBRESCREVER abrirOrcamento ──
-window.abrirOrcamento = async function() {
-  const p = pacSelecionada;
-  if (!p) return;
-
-  document.getElementById('orc-pac-info').innerHTML = `
-    <div><div class="pac-info-nome">${p.nome}${p.apelido ? ` (${p.apelido})` : ''}</div>
-    <div class="pac-info-sub">${p.telefone}</div></div>`;
-
-  // Buscar plano ativo existente
-  const { data: planos } = await db.from('planos_tratamento')
-    .select('*, plano_itens(*)')
-    .eq('paciente_id', p.id)
-    .eq('status', 'ativo')
-    .order('criado_em', { ascending: false })
-    .limit(1);
-
-  const plano = planos?.[0];
-
-  if (plano) {
-    window._planoAtual = { id: plano.id, itens: plano.plano_itens || [] };
-    document.getElementById('orc-validade').value = plano.validade || '';
-    document.getElementById('orc-pagamento').value = plano.condicoes_pagamento || '';
-    document.getElementById('orc-obs').value = '';
-    renderItensPlano();
-    mostrarBannerPlanoAtivo();
-  } else {
-    window._planoAtual = null;
-    document.getElementById('orc-itens').innerHTML = '';
-    document.getElementById('orc-validade').value = HOJE;
-    document.getElementById('orc-pagamento').value = '';
-    document.getElementById('orc-obs').value = '';
-    addItemOrc(); addItemOrc(); addItemOrc();
-    esconderBannerPlanoAtivo();
-  }
-  calcTotal();
-};
 
 // ── BANNER PLANO ATIVO ──
 function mostrarBannerPlanoAtivo() {
