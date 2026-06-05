@@ -1642,10 +1642,10 @@ async function carregarFinanceiro(){
   const {data,error} = await db.from('financeiro').select('*')
     .gte('data',ini).lte('data',fim).order('data',{ascending:false});
   if(error){console.error('Financeiro:',error);return;}
-  // Pendentes com data futura (fora do mês) — para card A Receber
-  const {data:pend} = await db.from('financeiro').select('*')
+  // Todos os pendentes — carteira geral a receber (sem filtro de data)
+  const {data:pend} = await db.from('financeiro').select('*, pacientes(nome)')
     .eq('tipo','receita').eq('status','pendente')
-    .gt('data',fim).order('data',{ascending:true});
+    .order('data',{ascending:true});
   _finLancs = data||[];
   _finPendFuturos = pend||[];
   renderFinDashboard();
@@ -2130,6 +2130,111 @@ function aba(id,btn){
   if(id==='alertas')renderAlertas();
   if(id==='pacientes')renderPac();
   if(id==='relatorio')renderRel();
+}
+
+// ── CARTEIRA A RECEBER ──
+function abrirCarteiraReceber(){
+  const todos = _finPendFuturos || [];
+  if(!todos.length){ toast('Nenhum valor a receber no momento','verde'); return; }
+
+  const HOJE = new Date(); HOJE.setHours(0,0,0,0);
+
+  // Agrupar por paciente
+  const porPac = {};
+  todos.forEach(l => {
+    const nome = l.pacientes?.nome || l.descricao?.split('—')[1]?.trim() || 'Paciente';
+    if(!porPac[nome]) porPac[nome] = [];
+    porPac[nome].push(l);
+  });
+
+  // Separar vencidos / este mês / futuros
+  const mesAtual = new Date().getMonth();
+  const anoAtual = new Date().getFullYear();
+  const vencidos = todos.filter(l => new Date(l.data+'T12:00:00') < HOJE);
+  const esteMes = todos.filter(l => { const d=new Date(l.data+'T12:00:00'); return d >= HOJE && d.getMonth()===mesAtual && d.getFullYear()===anoAtual; });
+  const futuros = todos.filter(l => { const d=new Date(l.data+'T12:00:00'); return d >= HOJE && !(d.getMonth()===mesAtual && d.getFullYear()===anoAtual); });
+
+  const totalVenc = vencidos.reduce((s,l)=>s+(l.valor||0),0);
+  const totalMes = esteMes.reduce((s,l)=>s+(l.valor||0),0);
+  const totalFut = futuros.reduce((s,l)=>s+(l.valor||0),0);
+  const totalGeral = todos.reduce((s,l)=>s+(l.valor||0),0);
+
+  function renderGrupo(lista, titulo, cor){
+    if(!lista.length) return '';
+    return `<div style="margin-bottom:1rem">
+      <div style="font-size:11px;font-weight:700;color:${cor};text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">${titulo} — ${fmtBRL(lista.reduce((s,l)=>s+(l.valor||0),0))}</div>
+      ${lista.map(l => {
+        const nome = l.pacientes?.nome || l.descricao?.split('—')[1]?.trim() || '';
+        const desc = l.descricao?.split('—')[0]?.trim() || '';
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:8px;background:var(--bg);margin-bottom:6px;gap:8px;flex-wrap:wrap">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nome}</div>
+            <div style="font-size:11px;color:var(--ct);margin-top:2px">📅 ${fDt(l.data)} · ${desc}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+            <span style="font-size:15px;font-weight:700;color:#8a6000">${fmtBRL(l.valor)}</span>
+            <button class="btn sm" style="font-size:11px;padding:4px 8px;background:var(--verde);color:white;border-color:var(--verde)" onclick="marcarRecebidoCarteira('${l.id}')">✓ Recebido</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  const html = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.2rem">
+      <div style="background:var(--vermelho-c);border-radius:10px;padding:10px;text-align:center;border:1px solid var(--vermelho)">
+        <div style="font-size:10px;color:var(--vermelho);font-weight:700;text-transform:uppercase">Vencido</div>
+        <div style="font-size:16px;font-weight:700;color:var(--vermelho)">${fmtBRL(totalVenc)}</div>
+      </div>
+      <div style="background:var(--amarelo-c);border-radius:10px;padding:10px;text-align:center;border:1px solid var(--amarelo)">
+        <div style="font-size:10px;color:#8a6000;font-weight:700;text-transform:uppercase">Este mês</div>
+        <div style="font-size:16px;font-weight:700;color:#8a6000">${fmtBRL(totalMes)}</div>
+      </div>
+      <div style="background:var(--azul-c);border-radius:10px;padding:10px;text-align:center;border:1px solid var(--azul)">
+        <div style="font-size:10px;color:var(--azul);font-weight:700;text-transform:uppercase">Próximos</div>
+        <div style="font-size:16px;font-weight:700;color:var(--azul)">${fmtBRL(totalFut)}</div>
+      </div>
+    </div>
+    ${renderGrupo(vencidos,'🔴 Vencidos','var(--vermelho)')}
+    ${renderGrupo(esteMes,'🟡 Este mês','#8a6000')}
+    ${renderGrupo(futuros,'🔵 Próximos meses','var(--azul)')}
+  `;
+
+  // Abrir modal
+  let modal = document.getElementById('modal-carteira');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'modal-carteira';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:3000;align-items:center;justify-content:center;padding:1rem';
+    modal.innerHTML = `<div style="background:var(--card);border-radius:16px;width:100%;max-width:520px;max-height:88vh;display:flex;flex-direction:column;box-shadow:var(--sm)">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:1.2rem 1.2rem .8rem;flex-shrink:0;border-bottom:1px solid var(--borda)">
+        <div>
+          <div style="font-size:16px;font-weight:700">💰 Carteira a Receber</div>
+          <div id="cart-total" style="font-size:13px;color:var(--ct);margin-top:2px"></div>
+        </div>
+        <button onclick="document.getElementById('modal-carteira').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--ct)">✕</button>
+      </div>
+      <div id="cart-body" style="overflow-y:auto;padding:1.2rem;flex:1"></div>
+    </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if(e.target===modal) modal.style.display='none'; });
+  }
+
+  document.getElementById('cart-total').textContent = `Total geral: ${fmtBRL(totalGeral)} · ${todos.length} pagamento${todos.length!==1?'s':''}`;
+  document.getElementById('cart-body').innerHTML = html;
+  modal.style.display = 'flex';
+}
+
+async function marcarRecebidoCarteira(id){
+  const {error} = await db.from('financeiro').update({status:'recebido'}).eq('id',id);
+  if(error){ toast('Erro ao atualizar','vermelho'); return; }
+  toast('Recebido ✅','verde');
+  // Recarregar pendentes e fechar modal
+  const {data:pend} = await db.from('financeiro').select('*, pacientes(nome)')
+    .eq('tipo','receita').eq('status','pendente').order('data',{ascending:true});
+  _finPendFuturos = pend||[];
+  renderFinDashboard();
+  abrirCarteiraReceber();
 }
 
 // PWA
