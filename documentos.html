@@ -627,15 +627,16 @@ async function excluirDoc(id){
 }
 
 // ABRIR DOCUMENTO
-function abrirDoc(tipo){
+async function abrirDoc(tipo){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('sec-docs').style.display='none';
   document.getElementById('sec-busca').style.display='none';
   if(tipo==='anamnese') abrirAnamnese();
   else if(tipo==='autorizacao-imagem') abrirAutorizacaoImagem();
-  else if(tipo==='orcamento') abrirOrcamento();
+  else if(tipo==='orcamento') await abrirOrcamento();
   else if(tipo.startsWith('termo-')) abrirTermo(tipo);
-  document.getElementById('panel-'+tipo).classList.add('active');
+  const panel=document.getElementById('panel-'+tipo);
+  if(panel) panel.classList.add('active');
   window.scrollTo(0,0);
 }
 
@@ -1738,10 +1739,9 @@ carregar().then(()=>{
     if(p){
       selPac(p);
       if(verId){
-        // Carregar documento específico pelo ID
-        setTimeout(()=>verDoc(verId, docTipo||'orcamento'),300);
+        setTimeout(()=>verDoc(verId, docTipo||'orcamento'),500);
       } else if(docTipo){
-        setTimeout(()=>abrirDoc(docTipo),200);
+        setTimeout(()=>abrirDoc(docTipo),500);
       }
     }
   }
@@ -1783,7 +1783,7 @@ carregar().then(()=>{
 
     if (!doc) return;
 
-    abrirDoc(tipo);
+    await abrirDoc(tipo);
 
     await new Promise(r => setTimeout(r, 300));
 
@@ -1818,7 +1818,8 @@ function preencherDocSalvo(tipo, dados) {
       if (dados.pagamento) setVal('orc-pagamento', dados.pagamento);
       if (dados.obs)       setVal('orc-obs', dados.obs);
       if (dados.validade)  setVal('orc-validade', dados.validade);
-      if (dados.itens && dados.itens.length) {
+      // Só sobrescrever itens se NÃO há plano ativo
+      if (!window._planoAtual?.id && dados.itens && dados.itens.length) {
         const cont = document.getElementById('orc-itens');
         if (cont) cont.innerHTML = '';
         dados.itens.forEach(item => {
