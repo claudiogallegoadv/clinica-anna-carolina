@@ -1242,23 +1242,54 @@ async function salvarAtend(){
   const id=document.getElementById('a-id').value;const dataAtend=document.getElementById('a-data').value;
   if(!dataAtend){toast('Informe a data!','vermelho');return;}
   const items=Array.from(document.querySelectorAll('#a-trats .ti'));
-  const trats=items.map(item=>{const ss=item.querySelectorAll('select');return{nome:ss[0].value,prazo:parseInt(ss[1].value)};}).filter(t=>t.nome);
+  const trats=items.map(item=>{const ss=item.querySelectorAll('select');const valInput=item.querySelector('input[type="number"]');return{nome:ss[0].value,prazo:parseInt(ss[1].value),valor:parseFloat(valInput?.value)||0};}).filter(t=>t.nome);
   if(!trats.length){toast('Adicione ao menos um tratamento!','vermelho');return;}
   const tc=tratsComDatas(trats,dataAtend);
   const pacAtual=pacs.find(p=>p.id===id);
   const tratsAntigos=(pacAtual?.tratamentos_adicionais||[]);
   const tratsOutrasDatas=tratsAntigos.filter(t=>t.dataAtendimento!==dataAtend);
   const tratsFinais=[...tratsOutrasDatas,...tc];
-  // Atendimento com valor e verificação
-  const valor=tc.reduce((s,t)=>s+(parseFloat(t.valor)||0),0)||null;
+  const valorTotal=tc.reduce((s,t)=>s+(parseFloat(t.valor)||0),0)||null;
   const verDias=parseInt(document.getElementById('a-ver-dias').value)||0;
   const verificacaoData=document.getElementById('a-ver-data-input')?.value||null;
   const atends=(pacAtual?.atendimentos||[]).filter(a=>a.data!==dataAtend);
-  atends.push({data:dataAtend,valor,verificacaoDias:verDias,verificacaoData,trats:tc.map(t=>({nome:t.nome,prazo:t.prazo}))});
+  atends.push({data:dataAtend,valor:valorTotal,verificacaoDias:verDias,verificacaoData,trats:tc.map(t=>({nome:t.nome,prazo:t.prazo}))});
   const btn=document.getElementById('btn-atend-salvar');btn.disabled=true;btn.textContent='Salvando...';
+  // 1. Salvar atendimento no paciente
   const{error}=await db.from('pacientes').update({tratamentos_adicionais:tratsFinais,tratamento:tratsFinais[tratsFinais.length-1]?.nome||null,data_atendimento:dataAtend,atendimentos:atends}).eq('id',id);
   btn.disabled=false;btn.innerHTML='✓ Salvar atendimento';
   if(error){toast('Erro: '+error.message,'vermelho');return;}
+  // 2. Criar plano_tratamento
+  if(valorTotal){
+    const descProcedimentos=tc.map(t=>t.nome).join(' + ');
+    const pacNome=pacAtual?.nome||'';
+    const {data:plano,error:ePlano}=await db.from('planos_tratamento').insert({
+      paciente_id:id,status:'aberto',
+      obs:descProcedimentos,
+      validade:null,condicoes_pagamento:'A combinar'
+    }).select().single();
+    if(!ePlano&&plano){
+      // 3. Criar plano_itens (um por tratamento)
+      const itens=tc.map(t=>({
+        plano_id:plano.id,paciente_id:id,
+        procedimento:t.nome,valor:parseFloat(t.valor)||0,
+        status:'pendente',data_realizacao:dataAtend
+      }));
+      if(itens.length) await db.from('plano_itens').insert(itens);
+      // 4. Lançar receita no financeiro vinculada ao plano
+      await db.from('financeiro').insert({
+        tipo:'receita',data:dataAtend,
+        descricao:`${descProcedimentos} — ${pacNome}`,
+        categoria:'Harmonização Orofacial',
+        valor:valorTotal,
+        forma_pagamento:'pix',
+        status:'pendente',
+        paciente_id:id,
+        orcamento_id:plano.id,
+        obs:'Entrada — aguardando pagamento'
+      });
+    }
+  }
   toast('Atendimento salvo! ✓','verde');await carregar();
   const pac=pacs.find(p=>p.id===id);if(pac)renderHistorico(pac);
   document.getElementById('a-trats').innerHTML='';addTratComData('a-trats');document.getElementById('a-data').value=HOJE_STR;document.getElementById('a-ver-dias').value=15;atualizarVerLabel(HOJE_STR);

@@ -1329,129 +1329,282 @@ async function salvarEditAtend() {
 }
 
 // ─── FINANCEIRO ───
+function fmtPgto(p){
+  if(!p) return '';
+  return p.replace('pix','Pix').replace('dinheiro','Dinheiro').replace('debito','Débito')
+         .replace('credito-1x','Crédito 1x').replace(/credito-(\d+)x?/,'Crédito $1x')
+         .replace('transferencia','Transferência');
+}
+
 async function renderFinanceiro(){
-  // Buscar lançamentos financeiros do paciente diretamente da tabela financeiro
+  const histEl = document.getElementById('fin-historico');
+  const pendEl = document.getElementById('fin-pendencias');
+  histEl.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><p>Carregando...</p></div>';
+
+  // 1. Buscar planos do paciente
+  const { data: planos } = await db.from('planos_tratamento')
+    .select('*').eq('paciente_id', pac.id).order('criado_em', { ascending: false });
+
+  // 2. Buscar TODOS os lançamentos financeiros do paciente
   const { data: lancamentos } = await db.from('financeiro')
-    .select('*')
-    .eq('paciente_id', pac.id)
-    .eq('tipo', 'receita')
+    .select('*').eq('paciente_id', pac.id).eq('tipo', 'receita')
     .order('data', { ascending: false });
 
   const fins = lancamentos || [];
+  const planosArr = planos || [];
 
-  // Stats
+  // 3. Separar lançamentos: vinculados a plano x legado (sem orcamento_id)
+  const finsPorPlano = {};
+  const finsLegado = [];
+  fins.forEach(l => {
+    if (l.orcamento_id) {
+      if (!finsPorPlano[l.orcamento_id]) finsPorPlano[l.orcamento_id] = [];
+      finsPorPlano[l.orcamento_id].push(l);
+    } else {
+      finsLegado.push(l);
+    }
+  });
+
+  // 4. Calcular totais globais
   let totalGasto = 0, totalPago = 0, totalPendente = 0;
   fins.forEach(l => {
-    const val = parseFloat(l.valor) || 0;
-    totalGasto += val;
-    if (l.status === 'recebido') totalPago += val;
-    else if (l.status === 'pendente') totalPendente += val;
+    const v = parseFloat(l.valor) || 0;
+    totalGasto += v;
+    if (l.status === 'recebido') totalPago += v;
+    else totalPendente += v;
   });
-
-  // Complementar com atendimentos que não têm paciente_id no financeiro (legado)
-  const trats = pac.tratamentos_adicionais || [];
-  const porData = {};
-  trats.forEach(t=>{
-    const key = t.dataAtendimento || '—';
-    if(!porData[key]) porData[key] = [];
-    porData[key].push(t);
-  });
-  const datas = Object.keys(porData).filter(d=>d!=='—').sort((a,b)=>b.localeCompare(a));
-
-  // Se não tem lançamentos no financeiro, usar legado
-  if (!fins.length) {
-    datas.forEach(data=>{
-      const ts = porData[data];
-      const total = ts.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
-      const status = ts.find(t=>t.statusPagamento)?.statusPagamento || '';
-      const vPago = parseFloat(ts.find(t=>t.valorPago)?.valorPago) || 0;
-      const vPend = parseFloat(ts.find(t=>t.valorPendente)?.valorPendente) || 0;
-      totalGasto += total;
-      if(vPago > 0) { totalPago += vPago; totalPendente += vPend; }
-      else if(status==='recebido') totalPago += total;
-      else if(status==='pendente') totalPendente += total;
-      else totalPago += total;
+  // Legado sem financeiro: usar tratamentos_adicionais
+  const tratsLeg = pac.tratamentos_adicionais || [];
+  if (!fins.length && tratsLeg.length) {
+    const porDataLeg = {};
+    tratsLeg.forEach(t => {
+      const k = t.dataAtendimento || '—';
+      if (!porDataLeg[k]) porDataLeg[k] = [];
+      porDataLeg[k].push(t);
+    });
+    Object.keys(porDataLeg).filter(d => d !== '—').forEach(data => {
+      const ts = porDataLeg[data];
+      const tot = ts.reduce((s,t) => s + (parseFloat(t.valor)||0), 0);
+      const st = ts.find(t => t.statusPagamento)?.statusPagamento || 'recebido';
+      totalGasto += tot;
+      if (st === 'recebido') totalPago += tot; else totalPendente += tot;
     });
   }
 
-  const nAtend = datas.length;
-
-  const ticket = nAtend > 0 ? totalGasto / nAtend : 0;
-
-  const ticketMedio = nAtend > 0 ? totalGasto / nAtend : 0;
+  // 5. Stats
   document.getElementById('fin-resumo-stats').innerHTML = `
     <div class="rc"><div class="ri" style="background:var(--verde-c)">💰</div><div><div class="rn">${fmtBRL(totalGasto)}</div><div class="rl">Total gasto</div></div></div>
     <div class="rc"><div class="ri" style="background:var(--verde-c)">✅</div><div><div class="rn">${fmtBRL(totalPago)}</div><div class="rl">Total pago</div></div></div>
-    <div class="rc"><div class="ri" style="background:${totalPendente>0?'var(--amarelo-c)':'var(--verde-c)'}">⏳</div><div><div class="rn" style="color:${totalPendente>0?'var(--amarelo)':'var(--verde)'}">${totalPendente>0?fmtBRL(totalPendente):'—'}</div><div class="rl">Pendente</div></div></div>
+    <div class="rc"><div class="ri" style="background:${totalPendente>0?'var(--amarelo-c)':'var(--verde-c)'}">⏳</div><div><div class="rn" style="color:${totalPendente>0?'var(--amarelo)':'var(--verde)'}">${totalPendente>0?fmtBRL(totalPendente):'Quitado'}</div><div class="rl">Pendente</div></div></div>
   `;
 
-  // Histórico — usar lançamentos financeiros se disponíveis
-  const histEl = document.getElementById('fin-historico');
-  
-  const itensHist = fins.length ? fins : datas.flatMap(data => {
-    const ts = porData[data];
-    return ts.map(t => ({
-      data,
-      descricao: t.nome,
-      valor: t.valor || 0,
-      forma_pagamento: t.formaPagamento || '',
-      status: t.statusPagamento || 'recebido'
-    }));
-  });
+  // ── Renderizar card de plano ──
+  function renderCardPlano(plano, lancsDoPlano) {
+    const totalPlano = lancsDoPlano.reduce((s,l) => s + (parseFloat(l.valor)||0), 0);
+    const pagosPlano = lancsDoPlano.filter(l => l.status === 'recebido').reduce((s,l) => s + (parseFloat(l.valor)||0), 0);
+    const pendPlano = totalPlano - pagosPlano;
+    const pct = totalPlano > 0 ? Math.min(100, Math.round((pagosPlano / totalPlano) * 100)) : 0;
+    const quitado = pendPlano <= 0;
+    const corBorda = quitado ? 'var(--verde)' : 'var(--amarelo)';
+    const desc = plano.obs || 'Atendimento';
+    const dataPlano = lancsDoPlano[0]?.data || plano.criado_em?.split('T')[0];
 
-  if (!itensHist.length) {
-    histEl.innerHTML='<div class="empty"><div class="empty-icon">💰</div><p>Nenhum pagamento registrado.</p></div>';
+    const linhasLanc = lancsDoPlano.map(l => {
+      const pgto = fmtPgto(l.forma_pagamento);
+      const recebido = l.status === 'recebido';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;background:${recebido?'var(--bg)':'var(--amarelo-c)'};margin-top:6px;gap:8px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:12px;color:var(--ct)">📅 ${fDt(l.data)} ${l.obs?'· <em>'+l.obs+'</em>':''}</div>
+          ${pgto?`<span style="font-size:11px;padding:2px 7px;border-radius:20px;background:var(--azul-c);color:var(--azul);font-weight:500;margin-top:3px;display:inline-block">💳 ${pgto}</span>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <span style="font-size:14px;font-weight:700;color:${recebido?'var(--txt)':'#8a6000'}">${fmtBRL(l.valor)}</span>
+          ${recebido
+            ? `<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:var(--verde-c);color:var(--verde);font-weight:600">✅ Recebido</span>`
+            : `<button class="btn sm" style="padding:4px 10px;font-size:11px;background:var(--verde);color:white;border-color:var(--verde)" onclick="marcarRecebidoPaciente('${l.id}')">✓ Recebido</button>`
+          }
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div style="border:1.5px solid ${corBorda};border-radius:12px;padding:14px;margin-bottom:14px;background:var(--card)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--txt)">${desc}</div>
+          <div style="font-size:12px;color:var(--ct);margin-top:2px">📅 ${fDt(dataPlano)}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:15px;font-weight:700;color:var(--txt)">${fmtBRL(totalPlano)}</div>
+          ${quitado
+            ? `<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:var(--verde-c);color:var(--verde);font-weight:600">✅ Quitado</span>`
+            : `<span style="font-size:11px;color:#8a6000;font-weight:600">Pendente: ${fmtBRL(pendPlano)}</span>`
+          }
+        </div>
+      </div>
+      <div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ct);margin-bottom:3px">
+          <span>Progresso de pagamento</span><span>${pct}%</span>
+        </div>
+        <div style="height:6px;border-radius:4px;background:var(--borda);overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${quitado?'var(--verde)':'var(--amarelo)'};border-radius:4px;transition:width .4s"></div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--borda);padding-top:6px">
+        <div style="font-size:11px;font-weight:600;color:var(--ct);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">Lançamentos</div>
+        ${linhasLanc || '<div style="font-size:12px;color:var(--ct);padding:6px 0">Nenhum lançamento</div>'}
+        <button class="btn sm" style="margin-top:8px;font-size:12px" onclick="adicionarPagamentoPlano('${plano.id}','${desc.replace(/'/g,"\\'")}')">+ Adicionar pagamento</button>
+      </div>
+    </div>`;
+  }
+
+  // 6. Montar HTML principal
+  let html = '';
+
+  if (planosArr.length) {
+    html += `<div style="font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">📋 POR ATENDIMENTO / ORÇAMENTO</div>`;
+    planosArr.forEach(plano => {
+      const lancsDoPlano = finsPorPlano[plano.id] || [];
+      html += renderCardPlano(plano, lancsDoPlano);
+    });
+  }
+
+  // 7. Legado: lançamentos sem orcamento_id + tratamentos_adicionais
+  const temLegado = finsLegado.length > 0 || (!fins.length && tratsLeg.length);
+  if (temLegado) {
+    html += `<div style="font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.05em;margin:${planosArr.length?'1.5rem 0':'0'} 0 10px">📁 HISTÓRICO ANTERIOR</div>`;
+
+    if (finsLegado.length) {
+      html += finsLegado.map(l => {
+        const pgto = fmtPgto(l.forma_pagamento);
+        const recebido = l.status === 'recebido';
+        return `<div style="padding:12px 14px;border-radius:10px;background:${recebido?'var(--bg)':'var(--amarelo-c)'};margin-bottom:8px;border:1px solid ${recebido?'var(--borda)':'var(--amarelo)'}">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:6px">
+            <span style="font-size:13px;font-weight:600;color:var(--verde-e)">📅 ${fDt(l.data)}</span>
+            <span style="font-size:15px;font-weight:700;color:${recebido?'var(--txt)':'#8a6000'}">${fmtBRL(l.valor)}</span>
+          </div>
+          <div style="font-size:13px;color:var(--txt);margin-bottom:6px">${l.descricao||''}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              ${pgto?`<span style="font-size:12px;padding:2px 8px;border-radius:20px;background:var(--azul-c);color:var(--azul);font-weight:500">💳 ${pgto}</span>`:''}
+              <span style="font-size:12px;padding:2px 8px;border-radius:20px;background:${recebido?'var(--verde-c)':'var(--amarelo-c)'};color:${recebido?'var(--verde)':'var(--amarelo)'};font-weight:500">${recebido?'✅ Recebido':'⏳ Pendente'}</span>
+            </div>
+            ${!recebido?`<button class="btn sm" style="padding:5px 10px;font-size:12px;background:var(--verde);color:white;border-color:var(--verde)" onclick="marcarRecebidoPaciente('${l.id}')">✓ Recebido</button>`:''}
+          </div>
+        </div>`;
+      }).join('');
+    } else if (!fins.length) {
+      // tratamentos_adicionais legado puro
+      const porDataLeg = {};
+      tratsLeg.forEach(t => { const k=t.dataAtendimento||'—'; if(!porDataLeg[k])porDataLeg[k]=[]; porDataLeg[k].push(t); });
+      const datasLeg = Object.keys(porDataLeg).filter(d=>d!=='—').sort((a,b)=>b.localeCompare(a));
+      html += datasLeg.map(data => {
+        const ts = porDataLeg[data];
+        const tot = ts.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
+        const st = ts.find(t=>t.statusPagamento)?.statusPagamento||'recebido';
+        const recebido = st === 'recebido';
+        return `<div style="padding:12px 14px;border-radius:10px;background:${recebido?'var(--bg)':'var(--amarelo-c)'};margin-bottom:8px;border:1px solid ${recebido?'var(--borda)':'var(--amarelo)'}">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:600;color:var(--verde-e)">📅 ${fDt(data)}</span>
+            <span style="font-size:15px;font-weight:700">${fmtBRL(tot)}</span>
+          </div>
+          <div style="font-size:13px;color:var(--ct)">${ts.map(t=>t.nome).join(' + ')}</div>
+          <div style="margin-top:4px"><span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${recebido?'var(--verde-c)':'var(--amarelo-c)'};color:${recebido?'var(--verde)':'var(--amarelo)'};font-weight:500">${recebido?'✅ Recebido':'⏳ Pendente'}</span></div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  if (!html) {
+    histEl.innerHTML = '<div class="empty"><div class="empty-icon">💰</div><p>Nenhum pagamento registrado.</p></div>';
+    document.getElementById('fin-pendencias-card').style.display = 'none';
     return;
   }
 
-  histEl.innerHTML = itensHist.map(l => {
-    const pgto = (l.forma_pagamento||'').replace('pix','Pix').replace('dinheiro','Dinheiro').replace('debito','Débito').replace('transferencia','Transferência').replace('credito-','Crédito ');
-    const statusCor = l.status==='recebido'?'var(--verde)':l.status==='pendente'?'var(--amarelo)':'var(--ct)';
-    const statusLabel = l.status==='recebido'?'✅ Recebido':l.status==='pendente'?'⏳ Pendente':'—';
-    const bgCard = l.status==='pendente'?'var(--amarelo-c)':'var(--bg)';
-    const borderCard = l.status==='pendente'?'var(--amarelo)':'var(--borda)';
+  histEl.innerHTML = html;
 
-    return `<div style="padding:12px 14px;border-radius:10px;background:${bgCard};margin-bottom:8px;border:1px solid ${borderCard}">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:6px">
-        <span style="font-size:13px;font-weight:600;color:var(--verde-e)">📅 ${fDt(l.data)}</span>
-        <span style="font-size:15px;font-weight:700;color:${l.status==='pendente'?'#8a6000':'var(--txt)'}">${fmtBRL(l.valor)}</span>
-      </div>
-      <div style="font-size:13px;color:var(--txt);margin-bottom:6px">${l.descricao||''}</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between">
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${pgto?`<span style="font-size:12px;padding:2px 8px;border-radius:20px;background:var(--azul-c);color:var(--azul);font-weight:500">💳 ${pgto}</span>`:''}
-          <span style="font-size:12px;padding:2px 8px;border-radius:20px;background:${l.status==='recebido'?'var(--verde-c)':'var(--amarelo-c)'};color:${statusCor};font-weight:500">${statusLabel}</span>
-        </div>
-        ${l.status==='pendente'?`<button class="btn sm" style="padding:5px 10px;font-size:12px;background:var(--verde);color:white;border-color:var(--verde)" onclick="marcarRecebidoPaciente('${l.id}')">✓ Recebido</button>`:''}
-      </div>
-    </div>`;
-  }).join('');
-
-  // Pendências
-  const pendencias = datas.filter(data=>{
-    const ts = porData[data];
-    const status = ts.find(t=>t.statusPagamento)?.statusPagamento || '';
-    const vPend = parseFloat(ts.find(t=>t.valorPendente)?.valorPendente) || 0;
-    return status==='pendente' || vPend > 0;
-  });
-
-  if(pendencias.length > 0){
-    document.getElementById('fin-pendencias-card').style.display='block';
-    document.getElementById('fin-pendencias').innerHTML = pendencias.map(data=>{
-      const ts = porData[data];
-      const total = ts.reduce((s,t)=>s+(parseFloat(t.valor)||0),0);
-      const vPend = parseFloat(ts.find(t=>t.valorPendente)?.valorPendente) || total;
+  // 8. Pendências globais
+  const temPend = totalPendente > 0;
+  document.getElementById('fin-pendencias-card').style.display = temPend ? 'block' : 'none';
+  if (temPend) {
+    const planosPend = planosArr.filter(pl => {
+      const lancs = finsPorPlano[pl.id] || [];
+      const pago = lancs.filter(l=>l.status==='recebido').reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+      const tot = lancs.reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+      return tot - pago > 0;
+    });
+    pendEl.innerHTML = planosPend.map(pl => {
+      const lancs = finsPorPlano[pl.id] || [];
+      const pago = lancs.filter(l=>l.status==='recebido').reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+      const tot = lancs.reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+      const pend = tot - pago;
+      const dataP = lancs[0]?.data || pl.criado_em?.split('T')[0];
       return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--amarelo-c);border-radius:8px;margin-bottom:6px;border-left:4px solid var(--amarelo)">
         <div>
-          <div style="font-weight:600;font-size:14px">📅 ${fDt(data)}</div>
-          <div style="font-size:12px;color:var(--ct);margin-top:2px">${ts.map(t=>t.nome).join(', ')}</div>
+          <div style="font-weight:600;font-size:14px">📅 ${fDt(dataP)}</div>
+          <div style="font-size:12px;color:var(--ct);margin-top:2px">${pl.obs||'Atendimento'}</div>
         </div>
-        <span style="font-size:16px;font-weight:700;color:#8a6000">${fmtBRL(vPend)}</span>
+        <span style="font-size:16px;font-weight:700;color:#8a6000">${fmtBRL(pend)}</span>
       </div>`;
-    }).join('');
-  } else {
-    document.getElementById('fin-pendencias-card').style.display='none';
+    }).join('') || '';
   }
+}
+
+// ─── ADICIONAR PAGAMENTO A PLANO EXISTENTE ───
+async function adicionarPagamentoPlano(planoId, descPlano) {
+  // Modal simples inline
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem';
+  const box = document.createElement('div');
+  box.style.cssText = 'background:var(--card);border-radius:16px;padding:1.5rem;max-width:380px;width:100%;box-shadow:var(--sm)';
+  box.innerHTML = `
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px">💳 Adicionar pagamento</div>
+    <div style="font-size:12px;color:var(--ct);margin-bottom:1rem">${descPlano}</div>
+    <div class="fg">
+      <div class="fgr"><label>Data *</label><input type="date" id="ap-data" value="${new Date().toISOString().split('T')[0]}"/></div>
+      <div class="fgr"><label>Valor R$ *</label><input type="number" id="ap-valor" min="0" step="0.01" placeholder="0,00"/></div>
+      <div class="fgr full"><label>Forma de pagamento</label>
+        <select id="ap-pgto">
+          <option value="pix">Pix</option><option value="dinheiro">Dinheiro</option>
+          <option value="debito">Débito</option><option value="credito-1x">Crédito 1x</option>
+          <option value="credito-2x">Crédito 2x</option><option value="credito-3x">Crédito 3x</option>
+          <option value="transferencia">Transferência</option>
+        </select>
+      </div>
+      <div class="fgr full"><label>Observação (opcional)</label><input type="text" id="ap-obs" placeholder="Ex: Restante, entrada..."/></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
+      <button class="btn" id="ap-cancel">Cancelar</button>
+      <button class="btn pri" id="ap-ok">✓ Salvar</button>
+    </div>
+  `;
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  document.getElementById('ap-cancel').onclick = () => document.body.removeChild(overlay);
+  document.getElementById('ap-ok').onclick = async () => {
+    const data = document.getElementById('ap-data').value;
+    const valor = parseFloat(document.getElementById('ap-valor').value) || 0;
+    const pgto = document.getElementById('ap-pgto').value;
+    const obs = document.getElementById('ap-obs').value.trim() || null;
+    if (!data || !valor) { toast('Preencha data e valor', 'vermelho'); return; }
+    const { error } = await db.from('financeiro').insert({
+      tipo: 'receita', data, valor,
+      descricao: `${descPlano} — ${pac.nome}`,
+      categoria: 'Harmonização Orofacial',
+      forma_pagamento: pgto, status: 'recebido',
+      paciente_id: pac.id, orcamento_id: planoId, obs
+    });
+    if (error) { toast('Erro ao salvar', 'vermelho'); return; }
+    // Verificar se plano está quitado e atualizar status
+    const { data: lancsPlano } = await db.from('financeiro').select('valor,status').eq('orcamento_id', planoId);
+    if (lancsPlano) {
+      const tot = lancsPlano.reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+      const pago = lancsPlano.filter(l=>l.status==='recebido').reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+      if (pago >= tot) await db.from('planos_tratamento').update({status:'quitado'}).eq('id', planoId);
+    }
+    document.body.removeChild(overlay);
+    toast('Pagamento registrado ✅', 'verde');
+    renderFinanceiro();
+  };
 }
 
 // ─── MARCAR RECEBIDO NA FICHA ───
