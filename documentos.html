@@ -1040,30 +1040,33 @@ async function verDoc(id,tipo){
   _modoVer=true;
 
   // Abre o painel (já preenche os campos base via abrirDoc)
-  abrirDoc(tipo);
+  await abrirDoc(tipo);
 
   // Aguarda o DOM renderizar antes de preencher
   await new Promise(r=>setTimeout(r,120));
   if(tipo==='orcamento'){
-    // Limpar linhas padrão e recriar com dados salvos
-    document.getElementById('orc-itens').innerHTML='';
-    const itens=d.itens||[];
-    if(itens.length===0){addItemOrc();addItemOrc();addItemOrc();}
-    else{
-      itens.forEach(item=>{
-        addItemOrc();
-        const linhas=document.querySelectorAll('#orc-itens .orc-linha');
-        const ultima=linhas[linhas.length-1];
-        if(ultima){
-          ultima.querySelector('.orc-trat').value=item.trat||'';
-          ultima.querySelector('.orc-val').value=item.val||'';
-        }
-      });
-    }
-    calcTotal();
+    // Não sobrescrever itens do plano ativo — apenas condições e validade do documento histórico
     if(d.pagamento) document.getElementById('orc-pagamento').value=d.pagamento;
     if(d.obs) document.getElementById('orc-obs').value=d.obs;
     if(d.validade) document.getElementById('orc-validade').value=d.validade;
+    // Se não tem plano ativo, carregar itens do histórico
+    if(!window._planoAtual?.id){
+      document.getElementById('orc-itens').innerHTML='';
+      const itens=d.itens||[];
+      if(itens.length===0){addItemOrc();addItemOrc();addItemOrc();}
+      else{
+        itens.forEach(item=>{
+          addItemOrc();
+          const linhas=document.querySelectorAll('#orc-itens .orc-linha');
+          const ultima=linhas[linhas.length-1];
+          if(ultima){
+            ultima.querySelector('.orc-trat').value=item.trat||'';
+            ultima.querySelector('.orc-val').value=item.val||'';
+          }
+        });
+      }
+      calcTotal();
+    }
 
   } else if(tipo==='autorizacao-imagem'){
     if(d.rg) document.getElementById('img-rg').value=d.rg;
