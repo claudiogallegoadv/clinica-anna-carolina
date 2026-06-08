@@ -794,22 +794,29 @@ async function abrirOrcamento(){
   // Buscar plano ativo
   const{data:planos}=await db.from('planos_tratamento').select('*, plano_itens(*)').eq('paciente_id',p.id).eq('status','ativo').order('criado_em',{ascending:false}).limit(1);
   const plano=planos?.[0];
+  // Buscar último orçamento salvo para recuperar produtos
+  const{data:docsSalvos}=await db.from('documentos').select('dados').eq('paciente_id',p.id).eq('tipo','orcamento').order('criado_em',{ascending:false}).limit(1);
+  const ultimoOrc=docsSalvos?.[0]?.dados||{};
   if(plano){
     window._planoAtual={id:plano.id,itens:plano.plano_itens||[]};
-    document.getElementById('orc-validade').value=plano.validade||'';
-    document.getElementById('orc-pagamento').value=plano.condicoes_pagamento||'';
+    document.getElementById('orc-validade').value=plano.validade||ultimoOrc.validade||'';
+    document.getElementById('orc-pagamento').value=plano.condicoes_pagamento||ultimoOrc.pagamento||'';
     document.getElementById('orc-obs').value='';
     renderItensPlano();
     mostrarBannerPlanoAtivo();
   } else {
     window._planoAtual=null;
     document.getElementById('orc-itens').innerHTML='';
-    document.getElementById('orc-validade').value=HOJE;
-    document.getElementById('orc-pagamento').value='';
+    document.getElementById('orc-validade').value=ultimoOrc.validade||HOJE;
+    document.getElementById('orc-pagamento').value=ultimoOrc.pagamento||'';
     document.getElementById('orc-obs').value='';
-    limparProdutosOrc();
     addItemOrc();addItemOrc();addItemOrc();
     esconderBannerPlanoAtivo();
+  }
+  // Restaurar produtos do último orçamento salvo
+  limparProdutosOrc();
+  if(ultimoOrc.produtos&&ultimoOrc.produtos.length){
+    ultimoOrc.produtos.forEach(prod=>adicionarProdutoOrc(prod));
   }
   calcTotal();
 }
@@ -1735,6 +1742,12 @@ if(!selecionados.length){toast('Marque ao menos um tratamento!','vermelho');retu
   const produtosUsados = getProdutosOrcamento();
   if(produtosUsados.length > 0){
     await baixarProdutosEstoque(produtosUsados, pacSelecionada?.id, planoId);
+    // Zerar produtos no último orçamento salvo (já foram usados/baixados)
+    const{data:docOrc}=await db.from('documentos').select('id,dados').eq('paciente_id',pacSelecionada.id).eq('tipo','orcamento').order('criado_em',{ascending:false}).limit(1);
+    if(docOrc&&docOrc[0]){
+      const dadosAtualiz={...docOrc[0].dados, produtos:[]};
+      await db.from('documentos').update({dados:dadosAtualiz}).eq('id',docOrc[0].id);
+    }
   }
 
   btn.disabled=false;btn.textContent='✅ Confirmar e registrar';
@@ -1762,7 +1775,11 @@ function adicionarProdutoOrc(dados){
   const div = document.createElement('div');
   div.className = 'prod-orc-linha';
   div.style.cssText = 'display:grid;grid-template-columns:1fr 70px 110px 130px auto;gap:6px;align-items:start;margin-bottom:8px;padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--borda)';
+  // Sempre gerar opts do _produtosEstoque atual
   const opts = _produtosEstoque.map(p=>`<option value="${p.id}" data-codigo="${p.codigo||''}" data-anvisa="${p.anvisa||''}" data-fabricante="${encodeURIComponent(p.fabricante||'')}">${p.nome}</option>`).join('');
+  const qtdVal = (dados&&dados.qtd!=null) ? dados.qtd : 1;
+  const loteVal = (dados&&dados.lote) ? dados.lote : '';
+  const valVal = (dados&&dados.validade) ? dados.validade : '';
   div.innerHTML = `
     <div>
       <select class="prod-orc-sel" onchange="preencherDadosProduto(this)" style="width:100%;padding:7px 9px;border:1.5px solid var(--borda);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--card);color:var(--txt)">
@@ -1770,15 +1787,26 @@ function adicionarProdutoOrc(dados){
       </select>
       <div class="prod-orc-rastro" style="font-size:11px;color:var(--ct);margin-top:3px;min-height:14px"></div>
     </div>
-    <input type="number" class="prod-orc-qtd" placeholder="Qtd" min="0.01" step="0.01" value="${dados&&dados.qtd?dados.qtd:1}" style="padding:7px 9px;border:1.5px solid var(--borda);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--card);color:var(--txt);width:100%;text-align:center"/>
-    <input type="text" class="prod-orc-lote" placeholder="Lote" value="${dados&&dados.lote?dados.lote:''}" style="padding:7px 9px;border:1.5px solid var(--borda);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--card);color:var(--txt);width:100%"/>
-    <input type="date" class="prod-orc-val" value="${dados&&dados.validade?dados.validade:''}" style="padding:7px 9px;border:1.5px solid var(--borda);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--card);color:var(--txt);width:100%"/>
+    <input type="number" class="prod-orc-qtd" placeholder="Qtd" min="0.01" step="0.01" value="${qtdVal}" style="padding:7px 9px;border:1.5px solid var(--borda);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--card);color:var(--txt);width:100%;text-align:center"/>
+    <input type="text" class="prod-orc-lote" placeholder="Lote" value="${loteVal}" style="padding:7px 9px;border:1.5px solid var(--borda);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--card);color:var(--txt);width:100%"/>
+    <input type="date" class="prod-orc-val" value="${valVal}" style="padding:7px 9px;border:1.5px solid var(--borda);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--card);color:var(--txt);width:100%"/>
     <button onclick="this.closest('.prod-orc-linha').remove()" style="background:none;border:none;cursor:pointer;color:var(--vermelho);font-size:18px;padding:4px 2px;line-height:1;margin-top:6px">✕</button>
   `;
   cont.appendChild(div);
+  // Setar produto selecionado APÓS o DOM estar pronto
   if(dados&&dados.produto_id){
-    div.querySelector('.prod-orc-sel').value = dados.produto_id;
-    preencherDadosProduto(div.querySelector('.prod-orc-sel'));
+    const sel = div.querySelector('.prod-orc-sel');
+    sel.value = dados.produto_id;
+    // Forçar exibição da rastreabilidade
+    preencherDadosProduto(sel);
+    // Se o select não achou o valor (produto não carregado ainda), tentar novamente
+    if(!sel.value || sel.value !== dados.produto_id){
+      sel.value = dados.produto_id;
+      setTimeout(()=>{
+        sel.value = dados.produto_id;
+        preencherDadosProduto(sel);
+      }, 300);
+    }
   }
 }
 
@@ -1810,11 +1838,14 @@ function preencherDadosProduto(sel){
 function getProdutosOrcamento(){
   const result = [];
   document.querySelectorAll('.prod-orc-linha').forEach(div=>{
-    const prodId = div.querySelector('.prod-orc-sel').value;
+    const sel = div.querySelector('.prod-orc-sel');
+    const prodId = sel ? sel.value : '';
     const qtd = parseFloat(div.querySelector('.prod-orc-qtd').value)||0;
     const lote = div.querySelector('.prod-orc-lote').value.trim();
     const validade = div.querySelector('.prod-orc-val').value;
-    if(prodId&&qtd>0) result.push({produto_id:prodId,qtd,lote:lote||null,validade:validade||null});
+    // Pegar nome do produto da option selecionada
+    const nomeProd = sel && sel.selectedIndex > 0 ? sel.options[sel.selectedIndex].text : '';
+    if(prodId&&qtd>0) result.push({produto_id:prodId,nome:nomeProd,qtd,lote:lote||null,validade:validade||null});
   });
   return result;
 }
