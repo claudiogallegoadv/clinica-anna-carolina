@@ -105,7 +105,17 @@ textarea{resize:vertical}
   body { background: white !important; font-size: 12px; }
   .card { box-shadow: none !important; border: 1px solid #ddd; page-break-inside: avoid; }
   .sig-area { border: 1px solid #ccc !important; }
+  /* Orçamento — esconder campos de edição, mostrar versão impressa */
+  #orc-produtos { display: none !important; }
+  .orc-print-produtos { display: block !important; }
+  .sec-title .btn { display: none !important; }
+  #orc-itens .orc-linha button { display: none !important; }
+  .orc-linha { border: none !important; background: none !important; }
+  /* Rodapé de assinatura */
+  .orc-print-footer { display: block !important; }
 }
+.orc-print-produtos { display: none; margin-top: 1rem; }
+.orc-print-footer { display: none; margin-top: 2rem; }
 </style>
 </head>
 <body>
@@ -272,6 +282,8 @@ textarea{resize:vertical}
         <button class="btn sm" onclick="adicionarProdutoOrc()" style="font-size:12px">+ Adicionar produto</button>
       </div>
       <div id="orc-produtos" style="margin-bottom:1rem"></div>
+      <!-- Versão de impressão dos produtos -->
+      <div class="orc-print-produtos" id="orc-print-produtos"></div>
       <!-- FIM SEÇÃO PRODUTOS -->
       <div class="sec-title">Condições de Pagamento</div>
       <textarea id="orc-pagamento" rows="3" placeholder="Ex: À vista com 10% de desconto. Parcelado em até 6x sem juros no cartão."></textarea>
@@ -281,9 +293,23 @@ textarea{resize:vertical}
         <label>Validade do Orçamento</label>
         <input type="date" id="orc-validade"/>
       </div>
+      <!-- Rodapé de impressão -->
+      <div class="orc-print-footer">
+        <div style="margin-top:2rem;padding-top:1rem;border-top:1px solid #ddd;display:grid;grid-template-columns:1fr 1fr;gap:2rem">
+          <div style="text-align:center">
+            <div style="border-top:1px solid #333;padding-top:8px;margin-top:3rem;font-size:12px">Assinatura do Paciente</div>
+          </div>
+          <div style="text-align:center">
+            <div style="border-top:1px solid #333;padding-top:8px;margin-top:3rem;font-size:12px">Dra. Anna Carolina Dias — CRO 82281</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:1rem;font-size:10px;color:#888">
+          Este orçamento tem validade indicada acima. Valores sujeitos a alteração após o vencimento.
+        </div>
+      </div>
       <div class="br no-print">
         <button class="btn" onclick="voltarDocs()">← Voltar</button>
-        <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn" onclick="imprimirOrcamento()">🖨️ Imprimir</button>
         <button class="btn" style="background:var(--verde);color:white;border-color:var(--verde)" onclick="abrirModalRealizado()">✅ Procedimento realizado</button>
         <button class="btn pri" onclick="salvarDoc('orcamento')">✓ Salvar orçamento</button>
       </div>
@@ -1885,6 +1911,53 @@ async function baixarProdutosEstoque(produtosUsados, pacienteId, planoId){
 
 function limparProdutosOrc(){
   document.getElementById('orc-produtos').innerHTML='';
+}
+
+function imprimirOrcamento(){
+  // Montar versão de impressão dos produtos
+  const produtos = getProdutosOrcamento();
+  const printDiv = document.getElementById('orc-print-produtos');
+  if(produtos.length > 0){
+    printDiv.innerHTML = `
+      <div style="margin-top:1rem">
+        <div style="font-size:13px;font-weight:700;color:#2d6a4f;border-bottom:2px solid #2d6a4f;padding-bottom:4px;margin-bottom:8px">📦 Produtos Utilizados</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="background:#f0f7f4">
+              <th style="text-align:left;padding:6px 8px;border:1px solid #ddd">Produto</th>
+              <th style="text-align:center;padding:6px 8px;border:1px solid #ddd">Qtd</th>
+              <th style="text-align:left;padding:6px 8px;border:1px solid #ddd">Lote</th>
+              <th style="text-align:left;padding:6px 8px;border:1px solid #ddd">Fabricação</th>
+              <th style="text-align:left;padding:6px 8px;border:1px solid #ddd">Validade</th>
+              <th style="text-align:left;padding:6px 8px;border:1px solid #ddd">Cód. / ANVISA</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${produtos.map(p=>{
+              const sel = document.querySelector(`.prod-orc-sel option[value="${p.produto_id}"]`);
+              const codigo = sel?.dataset?.codigo||'';
+              const anvisa = sel?.dataset?.anvisa||'';
+              const fabricante = sel?decodeURIComponent(sel.dataset?.fabricante||''):'';
+              const fabricacao = sel?.dataset?.fabricacao||'';
+              return `<tr>
+                <td style="padding:6px 8px;border:1px solid #ddd">
+                  <strong>${p.nome||'—'}</strong>
+                  ${fabricante?`<br><span style="font-size:10px;color:#666">${fabricante}</span>`:''}
+                </td>
+                <td style="text-align:center;padding:6px 8px;border:1px solid #ddd">${p.qtd}</td>
+                <td style="padding:6px 8px;border:1px solid #ddd">${p.lote||'—'}</td>
+                <td style="padding:6px 8px;border:1px solid #ddd">${fabricacao?fDt(fabricacao):'—'}</td>
+                <td style="padding:6px 8px;border:1px solid #ddd">${p.validade?fDt(p.validade):'—'}</td>
+                <td style="padding:6px 8px;border:1px solid #ddd;font-size:10px">${codigo||''}${anvisa?` / ${anvisa}`:''}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } else {
+    printDiv.innerHTML = '';
+  }
+  window.print();
 }
 
 // INICIAR

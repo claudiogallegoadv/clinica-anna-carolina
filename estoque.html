@@ -139,7 +139,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-
   <div id="sec-dashboard">
     <div id="alertas-container"></div>
     <div class="card">
-      <div class="card-title">📊 Visão geral do estoque</div>
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>📊 Visão geral do estoque</span>
+        <button class="btn pri" onclick="exportarEstoqueExcel()" style="font-size:12px;padding:7px 12px">📥 Exportar Excel</button>
+      </div>
       <div id="dashboard-lista"></div>
     </div>
   </div>
@@ -424,10 +427,10 @@ async function carregar(){
 function renderStats(){
   const criticos=_produtos.filter(p=>p.estoque_minimo>0&&p.quantidade<=p.estoque_minimo).length;
   const hoje30=new Date();hoje30.setDate(hoje30.getDate()+30);
-  // Vencendo: verificar movimentos de entrada com validade nos próximos 30 dias
-  const vencendo=_movimentos.filter(m=>{
-    if(!m.validade||m.tipo!=='entrada')return false;
-    const d=new Date(m.validade+'T12:00:00');
+  // Vencendo: produtos com validade_atual nos próximos 30 dias
+  const vencendo=_produtos.filter(p=>{
+    if(!p.validade_atual||p.quantidade<=0)return false;
+    const d=new Date(p.validade_atual+'T12:00:00');
     return d>=new Date()&&d<=hoje30;
   }).length;
   document.getElementById('st-produtos').textContent=_produtos.length;
@@ -447,25 +450,25 @@ function renderDashboard(){
   if(criticos.length){
     alertas+=`<div class="alerta verm">🚨 <strong>${criticos.length} produto${criticos.length>1?'s':''} com estoque crítico:</strong> ${criticos.map(p=>p.nome).join(', ')}</div>`;
   }
-  // Validades próximas
+  // Validades próximas — baseado em validade_atual do produto
+  const hoje=new Date();
   const hoje30=new Date();hoje30.setDate(hoje30.getDate()+30);
-  const vencEnts=_movimentos.filter(m=>{
-    if(!m.validade)return false;
-    const d=new Date(m.validade+'T12:00:00');
-    return d>=new Date()&&d<=hoje30&&m.tipo==='entrada';
+  const vencendo=_produtos.filter(p=>{
+    if(!p.validade_atual||p.quantidade<=0)return false;
+    const d=new Date(p.validade_atual+'T12:00:00');
+    return d>=hoje&&d<=hoje30;
   });
-  if(vencEnts.length){
-    alertas+=`<div class="alerta amar">⏰ <strong>${vencEnts.length} lote${vencEnts.length>1?'s':''} vencendo em 30 dias</strong> — verifique a aba Movimentações</div>`;
+  if(vencendo.length){
+    alertas+=`<div class="alerta amar">⏰ <strong>${vencendo.length} produto${vencendo.length>1?'s':''} vencendo em 30 dias:</strong> ${vencendo.map(p=>`${p.nome} (val: ${new Date(p.validade_atual+'T12:00:00').toLocaleDateString('pt-BR')})`).join(', ')}</div>`;
   }
-  // Vencidos
-  const vencidos=_movimentos.filter(m=>{
-    if(!m.validade)return false;
-    return new Date(m.validade+'T12:00:00')<new Date()&&m.tipo==='entrada';
+  // Vencidos — produtos com estoque e validade passada
+  const vencidos=_produtos.filter(p=>{
+    if(!p.validade_atual||p.quantidade<=0)return false;
+    return new Date(p.validade_atual+'T12:00:00')<hoje;
   });
   if(vencidos.length){
-    alertas+=`<div class="alerta verm">❌ <strong>${vencidos.length} lote${vencidos.length>1?'s':''} vencido${vencidos.length>1?'s':''}</strong> — descarte imediato necessário</div>`;
+    alertas+=`<div class="alerta verm">❌ <strong>${vencidos.length} produto${vencidos.length>1?'s':''} vencido${vencidos.length>1?'s':''}:</strong> ${vencidos.map(p=>p.nome).join(', ')} — descarte imediato!</div>`;
   }
-  cont.innerHTML=alertas;
 
   // Lista de produtos com barra de estoque
   if(!_produtos.length){
@@ -874,6 +877,67 @@ function popularSelects(){
   const opts='<option value="">Selecione um produto...</option>'+_produtos.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
   const movProd=document.getElementById('mov-produto');
   if(movProd)movProd.innerHTML=opts;
+}
+
+// ── EXPORT EXCEL ──
+function exportarEstoqueExcel(){
+  // Criar CSV com BOM para Excel reconhecer UTF-8
+  const bom='\uFEFF';
+  const sep=';';
+  const linhas=[];
+  // Cabeçalho — Produtos
+  linhas.push(['RELATÓRIO DE ESTOQUE — Clínica Dra. Anna Carolina','','','','','','','',''].join(sep));
+  linhas.push(['Gerado em: '+new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR'),'','','','','','','',''].join(sep));
+  linhas.push([]);
+  linhas.push(['PRODUTOS','','','','','','','',''].join(sep));
+  linhas.push(['Produto','Categoria','Unidade','Qtd Atual','Estoque Mínimo','Status','Lote Atual','Fabricação','Validade','Fornecedor','Código','ANVISA','Fabricante'].join(sep));
+  _produtos.forEach(p=>{
+    const forn=_fornecedores.find(f=>f.id===p.fornecedor_id);
+    const status=p.estoque_minimo>0&&p.quantidade<=p.estoque_minimo?'CRÍTICO':'OK';
+    linhas.push([
+      p.nome,
+      p.categoria||'',
+      p.unidade||'unidade',
+      p.quantidade||0,
+      p.estoque_minimo||0,
+      status,
+      p.lote_atual||'',
+      p.fabricacao_atual?new Date(p.fabricacao_atual+'T12:00:00').toLocaleDateString('pt-BR'):'',
+      p.validade_atual?new Date(p.validade_atual+'T12:00:00').toLocaleDateString('pt-BR'):'',
+      forn?.nome||'',
+      p.codigo||'',
+      p.anvisa||'',
+      p.fabricante||''
+    ].join(sep));
+  });
+  linhas.push([]);
+  // Movimentações
+  linhas.push(['MOVIMENTAÇÕES','','','','','','','',''].join(sep));
+  linhas.push(['Data','Produto','Tipo','Quantidade','Lote','Fabricação','Validade','Paciente','Observações'].join(sep));
+  const tipoLabel={entrada:'Entrada',saida:'Saída',uso:'Uso em procedimento',descarte:'Descarte',ajuste:'Ajuste'};
+  _movimentos.forEach(m=>{
+    const prod=_produtos.find(p=>p.id===m.produto_id);
+    linhas.push([
+      m.criado_em?new Date(m.criado_em).toLocaleDateString('pt-BR'):'',
+      prod?.nome||'',
+      tipoLabel[m.tipo]||m.tipo,
+      m.quantidade||0,
+      m.lote||'',
+      m.fabricacao?new Date(m.fabricacao+'T12:00:00').toLocaleDateString('pt-BR'):'',
+      m.validade?new Date(m.validade+'T12:00:00').toLocaleDateString('pt-BR'):'',
+      m.paciente_nome||'',
+      m.obs||''
+    ].join(sep));
+  });
+  const csv=bom+linhas.map(l=>Array.isArray(l)?'':l).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`estoque_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Exportado com sucesso ✓','verde');
 }
 
 // ── FECHAR MODAIS AO CLICAR FORA ──
