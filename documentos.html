@@ -2402,7 +2402,7 @@ window.confirmarRealizado = async function() {
 
     // 3. Lançar no financeiro
     const descReal = realizados.map(r => r.trat).join(' + ');
-    console.log('[FIN DEBUG] planoId:', planoId, 'valorPago:', valorPago, 'valorPendente:', valorPendente, 'totalReal:', totalReal, 'statusPgto:', statusPgto, 'isParcial:', isParcial);
+
 
     if (valorPago > 0) {
       const {error: eFin1} = await db.from('financeiro').insert({
@@ -2417,7 +2417,7 @@ window.confirmarRealizado = async function() {
         status: 'recebido',
         obs: obs
       });
-      if (eFin1) console.error('[FIN DEBUG] Erro insert recebido:', eFin1);
+
     } else if (totalReal > 0 && statusPgto === 'pendente') {
       // Status marcado como A receber sem parcial
       const {error: eFin2} = await db.from('financeiro').insert({
@@ -2432,7 +2432,7 @@ window.confirmarRealizado = async function() {
         status: 'pendente',
         obs: obs
       });
-      if (eFin2) console.error('[FIN DEBUG] Erro insert pendente:', eFin2);
+
     }
 
     // 4. Lançar no financeiro — valor a receber (parcial)
@@ -2449,7 +2449,7 @@ window.confirmarRealizado = async function() {
         status: 'pendente',
         obs: obs
       });
-      if (eFin3) console.error('[FIN DEBUG] Erro insert restante:', eFin3);
+
     }
 
     // 5. Salvar atendimento no paciente (tratamentos_adicionais)
@@ -2516,6 +2516,18 @@ window.confirmarRealizado = async function() {
       atendimentos: atsAtualizados,
       lembretes
     }).eq('id', pacSelecionada.id);
+
+    // ── BAIXA DE ESTOQUE ──
+    const produtosUsados = getProdutosOrcamento();
+    if(produtosUsados.length > 0){
+      await baixarProdutosEstoque(produtosUsados, pacSelecionada.id, planoId);
+      // Zerar produtos no último orçamento salvo
+      const{data:docOrc}=await db.from('documentos').select('id,dados').eq('paciente_id',pacSelecionada.id).eq('tipo','orcamento').order('criado_em',{ascending:false}).limit(1);
+      if(docOrc&&docOrc[0]){
+        await db.from('documentos').update({dados:{...docOrc[0].dados,produtos:[]}}).eq('id',docOrc[0].id);
+      }
+    }
+    limparProdutosOrc();
 
     toast('Atendimento e lançamento financeiro registrados! ✓', 'verde');
     
