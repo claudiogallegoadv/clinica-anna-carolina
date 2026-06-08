@@ -1858,17 +1858,27 @@ function getProdutosOrcamento(){
 
 async function baixarProdutosEstoque(produtosUsados, pacienteId, planoId){
   for(const item of produtosUsados){
-    await db.from('estoque_movimentos').insert({
+    const movObj={
       produto_id:item.produto_id, tipo:'uso', quantidade:item.qtd,
       lote:item.lote||null, fabricacao:item.fabricacao||null, validade:item.validade||null,
-      paciente_id:pacienteId||null, plano_id:planoId||null,
+      paciente_id:pacienteId||null,
       obs:'Baixa automática — procedimento realizado'
-    });
+    };
+    // plano_id opcional — só inclui se a coluna existir
+    if(planoId) movObj.plano_id = planoId;
+    const{error:eB}=await db.from('estoque_movimentos').insert(movObj);
+    if(eB){
+      console.error('[ERRO baixarProdutos]', eB.message, JSON.stringify(movObj));
+      // Tentar sem plano_id
+      delete movObj.plano_id;
+      const{error:eB2}=await db.from('estoque_movimentos').insert(movObj);
+      if(eB2){console.error('[ERRO baixarProdutos sem plano_id]', eB2.message); continue;}
+    }
     const prod = _produtosEstoque.find(p=>p.id===item.produto_id);
     if(prod){
       const novaQtd = Math.max(0,(prod.quantidade||0)-item.qtd);
       await db.from('produtos').update({quantidade:novaQtd}).eq('id',item.produto_id);
-      prod.quantidade = novaQtd; // atualizar local
+      prod.quantidade = novaQtd;
     }
   }
 }
