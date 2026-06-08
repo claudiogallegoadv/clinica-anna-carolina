@@ -2531,13 +2531,12 @@ window.confirmarRealizado = async function() {
 
     toast('Atendimento e lançamento financeiro registrados! ✓', 'verde');
     
+    // Não recarregar do banco — apenas limpar produtos (já baixados)
+    limparProdutosOrc();
     // Fechar modal
     document.getElementById('modal-realizado').style.display = 'none';
     document.getElementById('modal-parcial-check').checked = false;
     document.getElementById('modal-parcial-box').style.display = 'none';
-
-    // Recarregar orçamento para refletir status atualizados
-    await window.abrirOrcamento();
 
   } catch(e) {
     console.error('Erro ao confirmar:', e);
