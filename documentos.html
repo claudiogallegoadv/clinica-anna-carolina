@@ -1849,9 +1849,9 @@ function getProdutosOrcamento(){
     const qtd = parseFloat(div.querySelector('.prod-orc-qtd').value)||0;
     const lote = div.querySelector('.prod-orc-lote').value.trim();
     const validade = div.querySelector('.prod-orc-val').value;
-    // Pegar nome do produto da option selecionada
     const nomeProd = sel && sel.selectedIndex > 0 ? sel.options[sel.selectedIndex].text : '';
-    if(prodId&&qtd>0) result.push({produto_id:prodId,nome:nomeProd,qtd,lote:lote||null,validade:validade||null});
+    const fabricacao = sel && sel.selectedIndex > 0 ? (sel.options[sel.selectedIndex].dataset.fabricacao||null) : null;
+    if(prodId&&qtd>0) result.push({produto_id:prodId,nome:nomeProd,qtd,lote:lote||null,validade:validade||null,fabricacao:fabricacao||null});
   });
   return result;
 }
@@ -1860,7 +1860,7 @@ async function baixarProdutosEstoque(produtosUsados, pacienteId, planoId){
   for(const item of produtosUsados){
     await db.from('estoque_movimentos').insert({
       produto_id:item.produto_id, tipo:'uso', quantidade:item.qtd,
-      lote:item.lote||null, validade:item.validade||null,
+      lote:item.lote||null, fabricacao:item.fabricacao||null, validade:item.validade||null,
       paciente_id:pacienteId||null, plano_id:planoId||null,
       obs:'Baixa automática — procedimento realizado'
     });

@@ -192,7 +192,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-
     <div class="card" style="padding:0;overflow:hidden">
       <table class="tbl">
         <thead><tr>
-          <th>Data</th><th>Produto</th><th>Tipo</th><th>Qtd</th><th>Lote</th><th>Validade</th><th>Paciente</th><th>Obs</th>
+          <th>Data</th><th>Produto</th><th>Tipo</th><th>Qtd</th><th>Lote</th><th>Fabricação</th><th>Validade</th><th>Paciente</th><th>Obs</th>
         </tr></thead>
         <tbody id="tbl-movimentos"></tbody>
       </table>
@@ -644,7 +644,7 @@ async function salvarEntradaRapida(){
   const obs=document.getElementById('er-obs').value.trim()||null;
   // Registrar movimento
   const{error:eM}=await db.from('estoque_movimentos').insert({
-    produto_id:prodId,tipo:'entrada',quantidade:qtd,lote,validade,obs
+    produto_id:prodId,tipo:'entrada',quantidade:qtd,lote,fabricacao,validade,obs
   });
   if(eM){toast('Erro ao registrar','vermelho');return;}
   // Atualizar quantidade + lote atual se fornecido
@@ -695,7 +695,7 @@ async function salvarMovimento(){
   const pacId=document.getElementById('mov-paciente').value||null;
   const obs=document.getElementById('mov-obs').value.trim()||null;
   const{error:eM}=await db.from('estoque_movimentos').insert({
-    produto_id:prodId,tipo,quantidade:qtd,lote,validade,paciente_id:pacId,obs
+    produto_id:prodId,tipo,quantidade:qtd,lote,fabricacao,validade,paciente_id:pacId,obs
   });
   if(eM){toast('Erro: '+eM.message,'vermelho');return;}
   // Atualizar quantidade do produto + lote atual se entrada
@@ -734,7 +734,7 @@ function renderMovimentos(){
 function renderTblMovimentos(lista){
   const tb=document.getElementById('tbl-movimentos');
   if(!lista.length){
-    tb.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-icon">🔄</div><p>Nenhuma movimentação encontrada.</p></div></td></tr>`;
+    tb.innerHTML=`<tr><td colspan="9"><div class="empty"><div class="empty-icon">🔄</div><p>Nenhuma movimentação encontrada.</p></div></td></tr>`;
     return;
   }
   const tipoLabel={entrada:'📥 Entrada',saida:'📤 Saída',uso:'💉 Uso',descarte:'🗑 Descarte',ajuste:'⚙️ Ajuste'};
@@ -750,6 +750,7 @@ function renderTblMovimentos(lista){
       <td><span class="badge ${tipoBadge[m.tipo]||'azul'}">${tipoLabel[m.tipo]||m.tipo}</span></td>
       <td style="font-weight:700">${m.quantidade} <span style="font-weight:400;font-size:11px;color:var(--ct)">${prod?.unidade||''}</span></td>
       <td style="font-size:12px">${m.lote||'—'}</td>
+      <td style="font-size:12px;color:var(--ct)">${m.fabricacao?fDt(m.fabricacao):'—'}</td>
       <td style="font-size:12px">${m.validade?('<span class="badge '+valdClass+'">'+fDt(m.validade)+(dv!==null?(dv<0?' (vencido)':dv===0?' (hoje)':' ('+dv+'d)'):'')+'</span>'):'—'}</td>
       <td style="font-size:12px;color:var(--ct)">${pac?pac.nome:'—'}</td>
       <td style="font-size:12px;color:var(--ct);max-width:150px;overflow:hidden;text-overflow:ellipsis">${m.obs||'—'}</td>
