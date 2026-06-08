@@ -108,11 +108,17 @@ textarea{resize:vertical}
   /* Orçamento — esconder campos de edição, mostrar versão impressa */
   #orc-produtos { display: none !important; }
   .orc-print-produtos { display: block !important; }
+  /* Esconder título "Produtos Utilizados" original na impressão */
+  #orc-produtos-titulo { display: none !important; }
   .sec-title .btn { display: none !important; }
   #orc-itens .orc-linha button { display: none !important; }
   .orc-linha { border: none !important; background: none !important; }
   /* Rodapé de assinatura */
   .orc-print-footer { display: block !important; }
+  /* Esconder toast na impressão */
+  .toast { display: none !important; }
+  /* Esconder banner de plano ativo */
+  #banner-plano-ativo { display: none !important; }
 }
 .orc-print-produtos { display: none; margin-top: 1rem; }
 .orc-print-footer { display: none; margin-top: 2rem; }
@@ -277,7 +283,7 @@ textarea{resize:vertical}
         <span style="font-size:18px;font-weight:600;color:var(--verde-e)" id="orc-total">R$ 0,00</span>
       </div>
       <!-- SEÇÃO PRODUTOS UTILIZADOS -->
-      <div class="sec-title" style="margin-top:1rem;display:flex;align-items:center;justify-content:space-between">
+      <div id="orc-produtos-titulo" class="sec-title" style="margin-top:1rem;display:flex;align-items:center;justify-content:space-between">
         <span>📦 Produtos Utilizados</span>
         <button class="btn sm" onclick="adicionarProdutoOrc()" style="font-size:12px">+ Adicionar produto</button>
       </div>
@@ -295,6 +301,10 @@ textarea{resize:vertical}
       </div>
       <!-- Rodapé de impressão -->
       <div class="orc-print-footer">
+        <div style="margin-top:1.5rem;padding:8px 12px;background:#f8f9fa;border-radius:6px;font-size:12px;display:flex;justify-content:space-between">
+          <span>📅 Emitido em: <strong>${new Date().toLocaleDateString('pt-BR')}</strong></span>
+          <span id="orc-print-validade-texto"></span>
+        </div>
         <div style="margin-top:2rem;padding-top:1rem;border-top:1px solid #ddd;display:grid;grid-template-columns:1fr 1fr;gap:2rem">
           <div style="text-align:center">
             <div style="border-top:1px solid #333;padding-top:8px;margin-top:3rem;font-size:12px">Assinatura do Paciente</div>
@@ -1956,6 +1966,14 @@ function imprimirOrcamento(){
       </div>`;
   } else {
     printDiv.innerHTML = '';
+  }
+  // Preencher validade no rodapé
+  const validade = document.getElementById('orc-validade')?.value;
+  const validadeTexto = document.getElementById('orc-print-validade-texto');
+  if(validadeTexto){
+    validadeTexto.innerHTML = validade 
+      ? `⏳ Válido até: <strong>${new Date(validade+'T12:00:00').toLocaleDateString('pt-BR')}</strong>`
+      : '';
   }
   window.print();
 }
