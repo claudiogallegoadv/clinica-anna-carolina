@@ -1307,6 +1307,8 @@ const DOCS_TIPOS=[
   {tipo:'planejamento',icon:'📐',label:'Planejamento'},
   {tipo:'odontograma',icon:'🦷',label:'Odontograma'},
   {tipo:'anamnese-odonto',icon:'📝',label:'Anamnese Odonto'},
+  {tipo:'receituario',icon:'💊',label:'Receituário Médico'},
+  {tipo:'receituario-estetico',icon:'✨',label:'Receituário Estético'},
 ];
 
 
@@ -1360,7 +1362,7 @@ function injetarBtnFicha(){
 
 
 // ── DOCUMENTOS NO MODAL DE ATENDIMENTO ──
-const DOCS_NOMES={anamnese:'📋 Anamnese','termo-botox':'💉 Termo Botox','termo-preenchimento':'💉 Preenchimento','termo-bioestimulador':'💉 Bioestimuladores','autorizacao-imagem':'📸 Autorização Imagem',orcamento:'💰 Orçamento',planejamento:'📐 Planejamento',odontograma:'🦷 Odontograma','anamnese-odonto':'📝 Anamnese Odonto'};
+const DOCS_NOMES={anamnese:'📋 Anamnese','termo-botox':'💉 Termo Botox','termo-preenchimento':'💉 Preenchimento','termo-bioestimulador':'💉 Bioestimuladores','autorizacao-imagem':'📸 Autorização Imagem',orcamento:'💰 Orçamento',planejamento:'📐 Planejamento',odontograma:'🦷 Odontograma','anamnese-odonto':'📝 Anamnese Odonto',receituario:'💊 Receituário Médico','receituario-estetico':'✨ Receituário Estético'};
 
 let _atendDocsPacId=null;
 let _atendDocsOpen=false;
@@ -1387,6 +1389,8 @@ async function carregarAtendDocs(pacId){
     {tipo:'planejamento',icon:'📐',label:'Planejamento'},
     {tipo:'odontograma',icon:'🦷',label:'Odontograma'},
     {tipo:'anamnese-odonto',icon:'📝',label:'An. Odonto'},
+    {tipo:'receituario',icon:'💊',label:'Receituário'},
+    {tipo:'receituario-estetico',icon:'✨',label:'Rec. Estético'},
   ];
   // Botões para criar documentos
   document.getElementById('atend-docs-btns').innerHTML=DOCS_TIPOS2.map(d=>

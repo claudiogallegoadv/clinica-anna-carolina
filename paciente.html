@@ -1011,7 +1011,7 @@ function limparComparacao(){
 async function renderDocumentos(){
   const el=document.getElementById('docs-lista');
   const{data}=await db.from('documentos').select('*').eq('paciente_id',pac.id).order('criado_em',{ascending:false});
-  const nomes={anamnese:'📋 Ficha de Anamnese','termo-botox':'💉 Termo — Toxina Botulínica','termo-preenchimento':'💉 Termo — Preenchimento Facial','termo-bioestimulador':'💉 Termo — Bioestimuladores','autorizacao-imagem':'📸 Autorização de Uso de Imagem',orcamento:'💰 Ficha de Orçamento',planejamento:'📐 Planejamento de Procedimentos',odontograma:'🦷 Ficha Clínica / Odontograma','anamnese-odonto':'📋 Anamnese Odontológica'};
+  const nomes={anamnese:'📋 Ficha de Anamnese','termo-botox':'💉 Termo — Toxina Botulínica','termo-preenchimento':'💉 Termo — Preenchimento Facial','termo-bioestimulador':'💉 Termo — Bioestimuladores','autorizacao-imagem':'📸 Autorização de Uso de Imagem',orcamento:'💰 Ficha de Orçamento',planejamento:'📐 Planejamento de Procedimentos',odontograma:'🦷 Ficha Clínica / Odontograma','anamnese-odonto':'📋 Anamnese Odontológica',receituario:'💊 Receituário Médico','receituario-estetico':'✨ Receituário Estético'};
   if(!data||!data.length){el.innerHTML='<div class="empty"><div class="empty-icon">📄</div><p>Nenhum documento salvo ainda.</p><a href="documentos.html?pac='+pac.id+'" class="btn pri" style="margin-top:1rem;display:inline-flex">+ Criar documento</a></div>';return;}
   el.innerHTML=data.map(d=>`
     <div class="doc-item">
