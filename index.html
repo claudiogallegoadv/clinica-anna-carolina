@@ -2339,6 +2339,141 @@ document.getElementById('modal-inf').addEventListener('click',function(e){if(e.t
     </div>
   </div>
 </div>
+
+<script>
+// ── SISTEMA DE NOTIFICAÇÕES ──
+const NOTIF_KEY = 'clinica_notif_ultima_verificacao';
+
+async function iniciarNotificacoes(){
+  if(!('serviceWorker' in navigator) || !('Notification' in window)) return;
+  const perm = await Notification.requestPermission();
+  if(perm !== 'granted') return;
+  verificarNotificacoes();
+  // Verificar a cada 1 hora
+  setInterval(verificarNotificacoes, 60 * 60 * 1000);
+}
+
+async function enviarNotif(title, body, tag, url){
+  if(Notification.permission !== 'granted') return;
+  const reg = await navigator.serviceWorker.ready;
+  reg.active?.postMessage({ type:'SHOW_NOTIFICATION', title, body, tag, url });
+}
+
+async function verificarNotificacoes(){
+  if(Notification.permission !== 'granted') return;
+  const agora = new Date();
+  const horaAtual = agora.getHours();
+  // Só enviar entre 7h e 21h
+  if(horaAtual < 7 || horaAtual > 21) return;
+  // Evitar spam — verificar no máximo 1x por hora
+  const ultima = localStorage.getItem(NOTIF_KEY);
+  if(ultima){
+    const diff = (agora - new Date(ultima)) / 1000 / 60;
+    if(diff < 55) return;
+  }
+  localStorage.setItem(NOTIF_KEY, agora.toISOString());
+
+  try {
+    const hoje = agora.toISOString().split('T')[0];
+    const amanha = new Date(agora); amanha.setDate(amanha.getDate()+1);
+    const amanhaStr = amanha.toISOString().split('T')[0];
+
+    // 1. CONSULTAS AMANHÃ
+    if(horaAtual >= 18){
+      const{data:agendamentos}=await db.from('agendamentos').select('*,pacientes(nome)').eq('data',amanhaStr).eq('status','agendado');
+      if(agendamentos&&agendamentos.length>0){
+        const nomes=agendamentos.map(a=>a.pacientes?.nome||'Paciente').join(', ');
+        await enviarNotif(
+          `📅 ${agendamentos.length} consulta${agendamentos.length>1?'s':''} amanhã`,
+          nomes,
+          'consultas-amanha',
+          'https://claudiogallegoadv.github.io/clinica-anna-carolina/index.html'
+        );
+      }
+    }
+
+    // 2. ESTOQUE CRÍTICO
+    const{data:produtos}=await db.from('produtos').select('nome,quantidade,estoque_minimo').gt('estoque_minimo',0);
+    if(produtos){
+      const criticos=produtos.filter(p=>p.quantidade<=p.estoque_minimo);
+      if(criticos.length>0){
+        await enviarNotif(
+          `🚨 Estoque crítico`,
+          criticos.map(p=>p.nome).join(', '),
+          'estoque-critico',
+          'https://claudiogallegoadv.github.io/clinica-anna-carolina/estoque.html'
+        );
+      }
+      // Produtos vencendo em 7 dias
+      const em7dias=new Date(); em7dias.setDate(em7dias.getDate()+7);
+      const vencendo=produtos.filter(p=>{
+        if(!p.validade_atual||p.quantidade<=0) return false;
+        const d=new Date(p.validade_atual+'T12:00:00');
+        return d>=agora&&d<=em7dias;
+      });
+      if(vencendo.length>0){
+        await enviarNotif(
+          `⏰ Produto vencendo em 7 dias`,
+          vencendo.map(p=>p.nome).join(', '),
+          'produto-vencendo',
+          'https://claudiogallegoadv.github.io/clinica-anna-carolina/estoque.html'
+        );
+      }
+    }
+
+    // 3. COBRANÇAS VENCIDAS
+    const{data:cobrancas}=await db.from('financeiro').select('*,pacientes(nome)').eq('status','pendente').lt('data_vencimento',hoje);
+    if(cobrancas&&cobrancas.length>0){
+      const total=cobrancas.reduce((s,c)=>s+(c.valor||0),0);
+      await enviarNotif(
+        `💰 ${cobrancas.length} cobrança${cobrancas.length>1?'s':''} vencida${cobrancas.length>1?'s':''}`,
+        `Total: R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}`,
+        'cobrancas-vencidas',
+        'https://claudiogallegoadv.github.io/clinica-anna-carolina/index.html?tab=financeiro'
+      );
+    }
+
+    // 4. LEMBRETES DE HOJE
+    const{data:pacientes}=await db.from('pacientes').select('id,nome,lembretes').not('lembretes','is',null);
+    if(pacientes){
+      const lembretes=[];
+      pacientes.forEach(pac=>{
+        if(!Array.isArray(pac.lembretes)) return;
+        pac.lembretes.forEach(l=>{
+          if(l.data===hoje&&!l.feito) lembretes.push({pac:pac.nome,texto:l.recado||l.texto||''});
+        });
+      });
+      if(lembretes.length>0){
+        await enviarNotif(
+          `📌 ${lembretes.length} lembrete${lembretes.length>1?'s':''} para hoje`,
+          lembretes.map(l=>`${l.pac}: ${l.texto}`).slice(0,3).join(' | '),
+          'lembretes-hoje',
+          'https://claudiogallegoadv.github.io/clinica-anna-carolina/index.html'
+        );
+      }
+    }
+
+    // 5. VERIFICAÇÕES PÓS-PROCEDIMENTO DE HOJE
+    const{data:atendimentos}=await db.from('atendimentos').select('*,pacientes(nome)').eq('data_verificacao',hoje);
+    if(atendimentos&&atendimentos.length>0){
+      await enviarNotif(
+        `🔬 ${atendimentos.length} verificação${atendimentos.length>1?'s':''} pós-procedimento hoje`,
+        atendimentos.map(a=>a.pacientes?.nome||'Paciente').join(', '),
+        'verificacoes-hoje',
+        'https://claudiogallegoadv.github.io/clinica-anna-carolina/index.html'
+      );
+    }
+
+  } catch(err){
+    console.error('Erro ao verificar notificações:', err);
+  }
+}
+
+// Iniciar após carregar os dados
+document.addEventListener('DOMContentLoaded', ()=>{
+  setTimeout(iniciarNotificacoes, 3000);
+});
+</script>
 <script>
 
 </body>
