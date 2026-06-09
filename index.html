@@ -564,13 +564,25 @@ textarea{resize:vertical;min-height:70px}
   <div class="mx" style="max-width:520px">
     <h3 id="ag-titulo">📅 Nova consulta</h3>
     <input type="hidden" id="ag-id"/>
+    <!-- Banner de paciente vinculado -->
+    <div id="ag-pac-vinculado" style="display:none;background:var(--verde-c);border-radius:8px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--verde-e)">✅ Paciente cadastrada vinculada:</div>
+        <div style="font-size:13px;font-weight:600;color:var(--txt)" id="ag-pac-vinculado-nome"></div>
+      </div>
+      <button onclick="desvincularPacAg()" style="background:none;border:none;cursor:pointer;color:var(--vermelho);font-size:18px" title="Desvincular">✕</button>
+    </div>
     <div class="fg">
       <div class="fgr full" style="position:relative">
         <label>Paciente *</label>
-        <input type="text" id="ag-nome" placeholder="Nome ou busque paciente cadastrada..." oninput="sugPac()" autocomplete="off"/>
-        <div id="ag-sug" style="position:relative"></div>
+        <input type="text" id="ag-nome" placeholder="Nome do paciente..." oninput="sugPacAg()" autocomplete="off"/>
+        <div id="ag-sug" style="position:absolute;top:100%;left:0;right:0;z-index:100"></div>
       </div>
-      <div class="fgr"><label>Telefone</label><input type="text" id="ag-tel"/></div>
+      <div class="fgr" style="position:relative">
+        <label>Telefone</label>
+        <input type="text" id="ag-tel" oninput="buscarPacPorTel()" placeholder="(17) 99101-6897"/>
+        <div id="ag-tel-sug" style="position:absolute;top:100%;left:0;right:0;z-index:100"></div>
+      </div>
       <div class="fgr"><label>Procedimento</label>
         <select id="ag-proc">
           <option value="">Selecione...</option>
@@ -910,7 +922,7 @@ function renderHoje(){
   const ch=consultas.filter(c=>c.data===HOJE_STR&&c.status!=='cancelado').sort((a,b)=>a.hora.localeCompare(b.hora));
   document.getElementById('l-cons-hoje').innerHTML=ch.length===0
     ?`<div class="empty" style="padding:1rem"><div class="empty-icon">📋</div><p>Nenhuma consulta hoje.</p></div>`
-    :ch.map(c=>{const tel=c.telefone?'55'+c.telefone.replace(/\D/g,''):'';return`<div class="ci"><div class="ch">${c.hora.slice(0,5)}</div><div style="flex:1"><div class="cn">${c.nome}</div><div class="cd">${c.procedimento||''}${c.telefone?' · '+c.telefone:''}</div></div><div class="ca">${tel?`<a href="https://wa.me/${tel}?text=${encodeURIComponent(msgConsulta(c))}" target="_blank" class="btn wpp">💬</a>`:''}<button class="btn" style="padding:6px 9px;font-size:12px" onclick='abrAtend(${JSON.stringify(pacs.find(p=>p.id===c.paciente_id)||{id:c.paciente_id,nome:c.nome,telefone:c.telefone||""})})'>🩺</button>${c.paciente_id?`<a href="paciente.html?id=${c.paciente_id}" class="btn" style="padding:6px 9px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">Ficha</a>`:''}</div></div>`;}).join('');
+    :ch.map(c=>{const tel=c.telefone?'55'+c.telefone.replace(/\D/g,''):'';return`<div class="ci"><div class="ch">${c.hora.slice(0,5)}</div><div style="flex:1"><div class="cn">${c.nome}</div><div class="cd">${c.procedimento||''}${c.telefone?' · '+c.telefone:''}</div></div><div class="ca">${tel?`<a href="https://wa.me/${tel}?text=${encodeURIComponent(msgConsulta(c))}" target="_blank" class="btn wpp">💬</a>`:''}</div></div>`;}).join('');
 
   // Consultas amanhã
   const ca=consultas.filter(c=>c.data===AMANHA_STR&&c.status!=='cancelado').sort((a,b)=>a.hora.localeCompare(b.hora));
@@ -2223,12 +2235,16 @@ function renderConsMes(){
 
 function abrAg(data){
   agEditando=null;agPacId=null;
-  document.getElementById('ag-titulo').textContent='📅 Nova consulta';document.getElementById('ag-id').value='';document.getElementById('ag-nome').value='';document.getElementById('ag-tel').value='';document.getElementById('ag-proc').value='';document.getElementById('ag-data').value=data||agDia;document.getElementById('ag-hora').value='09:00';document.getElementById('ag-obs').value='';document.getElementById('ag-sug').innerHTML='';document.getElementById('ag-canc-btn').style.display='none';document.getElementById('m-ag').classList.add('open');
+  desvincularPacAg();
+  document.getElementById('ag-titulo').textContent='📅 Nova consulta';document.getElementById('ag-id').value='';document.getElementById('ag-nome').value='';document.getElementById('ag-tel').value='';document.getElementById('ag-proc').value='';document.getElementById('ag-data').value=data||agDia;document.getElementById('ag-hora').value='09:00';document.getElementById('ag-obs').value='';document.getElementById('ag-sug').innerHTML='';document.getElementById('ag-tel-sug').innerHTML='';document.getElementById('ag-canc-btn').style.display='none';document.getElementById('m-ag').classList.add('open');
 }
 function fchAg(){document.getElementById('m-ag').classList.remove('open');document.getElementById('ag-sug').innerHTML='';}
 function editCons(c){
   agEditando=c;agPacId=null;
-  document.getElementById('ag-titulo').textContent='✏️ Editar consulta';document.getElementById('ag-id').value=c.id;document.getElementById('ag-nome').value=c.nome;document.getElementById('ag-tel').value=c.telefone||'';document.getElementById('ag-proc').value=c.procedimento||'';document.getElementById('ag-data').value=c.data;document.getElementById('ag-hora').value=c.hora.slice(0,5);document.getElementById('ag-obs').value=c.observacao||'';document.getElementById('ag-sug').innerHTML='';document.getElementById('ag-canc-btn').style.display=c.status!=='cancelado'?'inline-flex':'none';document.getElementById('m-ag').classList.add('open');
+  desvincularPacAg();
+  document.getElementById('ag-titulo').textContent='✏️ Editar consulta';document.getElementById('ag-id').value=c.id;document.getElementById('ag-nome').value=c.nome;document.getElementById('ag-tel').value=c.telefone||'';document.getElementById('ag-proc').value=c.procedimento||'';document.getElementById('ag-data').value=c.data;document.getElementById('ag-hora').value=c.hora.slice(0,5);document.getElementById('ag-obs').value=c.observacao||'';document.getElementById('ag-sug').innerHTML='';document.getElementById('ag-tel-sug').innerHTML='';document.getElementById('ag-canc-btn').style.display=c.status!=='cancelado'?'inline-flex':'none';document.getElementById('m-ag').classList.add('open');
+  // Se já tem paciente vinculado, mostrar banner
+  if(c.paciente_id){const p=pacs.find(x=>x.id===c.paciente_id);if(p){agPacId=p.id;mostrarVinculado(p);}}
 }
 async function cancConsulta(){if(!agEditando||!confirm('Cancelar esta consulta?'))return;const{error}=await db.from('agenda').update({status:'cancelado'}).eq('id',agEditando.id);if(error){toast('Erro','vermelho');return;}toast('Consulta cancelada');fchAg();carregarAgenda();}
 async function salvarConsulta(){
@@ -2243,16 +2259,53 @@ async function salvarConsulta(){
   if(!aid&&!agPacId&&tel){const telL=tel.replace(/\D/g,'');const jaExiste=pacs.find(p=>p.telefone.replace(/\D/g,'')===telL||p.nome.toLowerCase().trim()===nome.toLowerCase().trim());if(!jaExiste){await db.from('pacientes').insert({nome,telefone:tel,tratamento:document.getElementById('ag-proc').value||null,cadastro_pendente:true});await carregar();}}
   toast(`Consulta salva! ✓`,'verde');agDia=data;fchAg();carregarAgenda();
 }
-function sugPac(){
-  const q=document.getElementById('ag-nome').value.toLowerCase().trim();const box=document.getElementById('ag-sug');
-  if(q.length<2){box.innerHTML='';return;}
-  const r=pacs.filter(p=>p.nome.toLowerCase().includes(q)||(p.apelido&&p.apelido.toLowerCase().includes(q))).slice(0,5);
-  if(!r.length){box.innerHTML='';return;}
-  box.innerHTML=`<div class="sug">${r.map(p=>`<div class="sug-item" onclick='selPacAg(${J(p)})'><strong>${p.nome}</strong>${p.apelido?` (${p.apelido})`:''}<br><span style="font-size:12px;color:var(--ct)">${p.telefone}</span></div>`).join('')}</div>`;
+function mostrarVinculado(p){
+  agPacId=p.id;
+  const banner=document.getElementById('ag-pac-vinculado');
+  document.getElementById('ag-pac-vinculado-nome').textContent=p.nome+(p.apelido?` (${p.apelido})`:'');
+  banner.style.display='flex';
 }
-function selPacAg(p){document.getElementById('ag-nome').value=p.apelido||p.nome;document.getElementById('ag-tel').value=p.telefone||'';agPacId=p.id;document.getElementById('ag-sug').innerHTML='';}
+
+function desvincularPacAg(){
+  agPacId=null;
+  document.getElementById('ag-pac-vinculado').style.display='none';
+  document.getElementById('ag-pac-vinculado-nome').textContent='';
+}
+
+function sugPacAg(){
+  const q=document.getElementById('ag-nome').value.toLowerCase().trim();
+  const box=document.getElementById('ag-sug');
+  if(q.length<2){box.innerHTML='';return;}
+  const r=pacs.filter(p=>p.nome.toLowerCase().includes(q)||(p.apelido&&p.apelido.toLowerCase().includes(q))).slice(0,6);
+  if(!r.length){box.innerHTML='';return;}
+  box.innerHTML=`<div class="sug">${r.map(p=>`<div class="sug-item" onclick='selPacAg(${J(p)})'><strong>${p.nome}</strong>${p.apelido?` (${p.apelido})`:''}<br><span style="font-size:12px;color:var(--ct)">${p.telefone||''}</span></div>`).join('')}</div>`;
+}
+
+// Mantém compatibilidade com chamadas antigas
+function sugPac(){ sugPacAg(); }
+
+function buscarPacPorTel(){
+  const tel=document.getElementById('ag-tel').value.replace(/\D/g,'');
+  const box=document.getElementById('ag-tel-sug');
+  if(tel.length<8){box.innerHTML='';return;}
+  const r=pacs.filter(p=>(p.telefone||'').replace(/\D/g,'').includes(tel)).slice(0,4);
+  if(!r.length){box.innerHTML='';return;}
+  box.innerHTML=`<div class="sug">${r.map(p=>`<div class="sug-item" onclick='selPacAg(${J(p)})' style="background:var(--amarelo-c);border-left:3px solid var(--amarelo)">⚠️ <strong>Já cadastrada:</strong> ${p.nome}<br><span style="font-size:12px;color:var(--ct)">${p.telefone||''}</span></div>`).join('')}</div>`;
+}
+
+function selPacAg(p){
+  document.getElementById('ag-nome').value=p.nome;
+  document.getElementById('ag-tel').value=p.telefone||'';
+  document.getElementById('ag-sug').innerHTML='';
+  document.getElementById('ag-tel-sug').innerHTML='';
+  mostrarVinculado(p);
+}
+
 document.getElementById('m-ag').addEventListener('click',e=>{if(e.target===e.currentTarget)fchAg();});
-document.addEventListener('click',e=>{if(!e.target.closest('#ag-nome')&&!e.target.closest('#ag-sug'))document.getElementById('ag-sug').innerHTML='';});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#ag-nome')&&!e.target.closest('#ag-sug')) document.getElementById('ag-sug').innerHTML='';
+  if(!e.target.closest('#ag-tel')&&!e.target.closest('#ag-tel-sug')) document.getElementById('ag-tel-sug').innerHTML='';
+});
 
 // TABS
 function aba(id,btn){
