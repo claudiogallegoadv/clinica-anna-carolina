@@ -2787,8 +2787,8 @@ function renderCampanha(){
     const cor = atrasado ? 'var(--vermelho)' : a.diffDias<=15 ? '#8a6000' : 'var(--ct)';
     const txt = atrasado ? `${Math.abs(a.diffDias)}d atrasada` : a.diffDias===0 ? 'Hoje!' : `em ${a.diffDias}d`;
     const chk = _campSel.has(a.p.id) ? 'checked' : '';
-    return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--borda);cursor:pointer" onclick="toggleCampSel('${a.p.id}',this)">
-      <input type="checkbox" ${chk} style="width:17px;height:17px;cursor:pointer;accent-color:var(--verde)" onclick="event.stopPropagation()"/>
+    return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--borda);cursor:pointer">
+      <input type="checkbox" ${chk} data-id="${a.p.id}" style="width:17px;height:17px;cursor:pointer;accent-color:var(--verde)" onchange="toggleCampSel('${a.p.id}',this)"/>
       <div style="flex:1">
         <div style="font-size:13px;font-weight:600">${a.p.nome}</div>
         <div style="font-size:11px;color:var(--ct)">${a.t.nome} · ${a.p.telefone}</div>
@@ -2798,10 +2798,10 @@ function renderCampanha(){
   }).join('');
 }
 
-function toggleCampSel(id, label){
-  const cb = label.querySelector('input[type=checkbox]');
-  if(_campSel.has(id)){ _campSel.delete(id); if(cb) cb.checked=false; }
-  else { _campSel.add(id); if(cb) cb.checked=true; }
+function toggleCampSel(id, cb){
+  // Usa o estado real do checkbox — sem duplo-disparo
+  if(cb.checked){ _campSel.add(id); }
+  else { _campSel.delete(id); }
   atualizarContadorSel();
 }
 
@@ -2814,13 +2814,13 @@ function atualizarContadorSel(){
 
 function selecionarTodosCamp(){
   const todos = _campPacs.every(a=>_campSel.has(a.p.id));
-  if(todos){ _campSel.clear(); }
-  else { _campPacs.forEach(a=>_campSel.add(a.p.id)); }
-  renderCampanha();
-  // Marcar todos os checkboxes
-  document.getElementById('camp-lista').querySelectorAll('input[type=checkbox]').forEach((cb,i)=>{
-    cb.checked = _campSel.has(_campPacs[i]?.p.id);
-  });
+  if(todos){
+    _campSel.clear();
+    document.getElementById('camp-lista').querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
+  } else {
+    _campPacs.forEach(a=>_campSel.add(a.p.id));
+    document.getElementById('camp-lista').querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=true);
+  }
   atualizarContadorSel();
 }
 
