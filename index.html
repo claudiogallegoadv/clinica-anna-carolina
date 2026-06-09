@@ -266,17 +266,24 @@ textarea{resize:vertical;min-height:70px}
       <button class="btn" onclick="exportarFinanceiro()" title="Exportar Excel">📥 Excel</button>
     </div>
 
-    <!-- Tabs receitas/despesas/fluxo -->
-    <div style="display:flex;gap:4px;margin-bottom:1rem;border-bottom:2px solid var(--borda)">
-      <button class="fin-tab active" onclick="finTab('receitas',this)" style="padding:8px 16px;border:none;background:none;font-weight:600;color:var(--verde-e);border-bottom:2px solid var(--verde);margin-bottom:-2px;cursor:pointer">💚 Receitas</button>
-      <button class="fin-tab" onclick="finTab('despesas',this)" style="padding:8px 16px;border:none;background:none;font-weight:500;color:var(--ct);cursor:pointer">🔴 Despesas</button>
-      <button class="fin-tab" onclick="finTab('fluxo',this)" style="padding:8px 16px;border:none;background:none;font-weight:500;color:var(--ct);cursor:pointer">📊 Fluxo de Caixa</button>
+    <!-- Busca no extrato -->
+    <div style="margin-bottom:10px">
+      <input type="text" id="fin-busca" placeholder="🔍 Buscar por paciente ou procedimento..." oninput="renderFinAtual()" style="border-radius:8px;font-size:13px;width:100%"/>
+    </div>
+
+    <!-- Tabs receitas/despesas/fluxo/procedimentos -->
+    <div style="display:flex;gap:4px;margin-bottom:1rem;border-bottom:2px solid var(--borda);overflow-x:auto">
+      <button class="fin-tab active" onclick="finTab('receitas',this)" style="padding:8px 16px;border:none;background:none;font-weight:600;color:var(--verde-e);border-bottom:2px solid var(--verde);margin-bottom:-2px;cursor:pointer;white-space:nowrap">💚 Receitas</button>
+      <button class="fin-tab" onclick="finTab('despesas',this)" style="padding:8px 16px;border:none;background:none;font-weight:500;color:var(--ct);cursor:pointer;white-space:nowrap">🔴 Despesas</button>
+      <button class="fin-tab" onclick="finTab('fluxo',this)" style="padding:8px 16px;border:none;background:none;font-weight:500;color:var(--ct);cursor:pointer;white-space:nowrap">📊 Fluxo de Caixa</button>
+      <button class="fin-tab" onclick="finTab('procs',this)" style="padding:8px 16px;border:none;background:none;font-weight:500;color:var(--ct);cursor:pointer;white-space:nowrap">🏆 Procedimentos</button>
     </div>
 
     <!-- Conteúdo das tabs -->
     <div id="fin-receitas"></div>
     <div id="fin-despesas" style="display:none"></div>
     <div id="fin-fluxo" style="display:none"></div>
+    <div id="fin-procs" style="display:none"></div>
   </div>
 
   <!-- HOJE -->
@@ -982,7 +989,7 @@ async function renderAlertasFinHoje(){
         <div class="ad">${urgente?`${Math.abs(d)}d atrasado`:(d===0?'Vence hoje!':`Vence em ${d}d`)} · ${fmtBRL(l.valor)}</div>
       </div>
       <div class="aa">
-        <button class="btn" style="padding:6px 10px;font-size:12px;background:var(--amarelo);color:white;border-color:var(--amarelo)" onclick="marcarRecebidoFin('${l.id}')">⏳ Marcar recebido</button>
+        <button class="btn" style="padding:6px 10px;font-size:12px;background:var(--amarelo);color:white;border-color:var(--amarelo)" onclick="abrirMarcarRecebido('${l.id}')">⏳ Marcar recebido</button>
       </div>
     </div>`;
   }).join('');
@@ -1565,6 +1572,7 @@ function abrirConfMeta(){
 let _finTab = 'receitas';
 let _finLancs = [];
 let _finPendFuturos = [];
+let _finLancsPrev = [];
 
 
 // ── ALERTAS FINANCEIROS ──
@@ -1604,7 +1612,7 @@ async function carregarAlertasFin(){
         <div><div style="font-size:13px;font-weight:500">${l.descricao}</div><div style="font-size:11px;color:var(--ct)">${fDt(l.data)}</div></div>
         <div style="display:flex;gap:6px;align-items:center">
           <span style="font-weight:700;color:#8a6000">${fmtBRL(l.valor)}</span>
-          <button class="btn" style="padding:4px 8px;font-size:11px;background:var(--amarelo);color:white;border-color:var(--amarelo)" onclick="marcarRecebidoFin('${l.id}')">⏳ Marcar recebido</button>
+          <button class="btn" style="padding:4px 8px;font-size:11px;background:var(--amarelo);color:white;border-color:var(--amarelo)" onclick="abrirMarcarRecebido('${l.id}')">⏳ Marcar recebido</button>
         </div>
       </div>`).join('')}
     </div>`;
@@ -1612,12 +1620,43 @@ async function carregarAlertasFin(){
   el.innerHTML = html;
 }
 
-async function marcarRecebidoFin(id){
-  await db.from('financeiro').update({status:'recebido'}).eq('id',id);
-  toast('Marcado como recebido ✓','verde');
-  carregarFinanceiro();
-  carregarAlertasFin();
+// ── Marcar recebido com regime de CAIXA (atualiza data para data do pagamento) ──
+let _mrecId = null;
+
+function abrirMarcarRecebido(id){
+  _mrecId = id;
+  document.getElementById('mrec-data').value = HOJE_STR;
+  document.getElementById('modal-mrec').style.display = 'flex';
+  setTimeout(()=>document.getElementById('mrec-data').focus(),100);
 }
+
+function fecharMarcarRecebido(){
+  document.getElementById('modal-mrec').style.display = 'none';
+  _mrecId = null;
+}
+
+async function confirmarMarcarRecebido(){
+  if(!_mrecId) return;
+  const btn = document.getElementById('mrec-btn');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+  const dataRec = document.getElementById('mrec-data').value || HOJE_STR;
+  const{error} = await db.from('financeiro').update({
+    status: 'recebido',
+    data: dataRec   // REGIME DE CAIXA: registra na data do pagamento efetivo
+  }).eq('id', _mrecId);
+  btn.disabled = false; btn.textContent = '✅ Confirmar recebimento';
+  if(error){ toast('Erro ao atualizar: '+error.message,'vermelho'); return; }
+  toast('✅ Recebido!','verde');
+  fecharMarcarRecebido();
+  await carregarFinanceiro();
+  carregarAlertasFin();
+  // Atualizar carteira se estiver aberta
+  const modalCart = document.getElementById('modal-carteira');
+  if(modalCart && modalCart.style.display !== 'none') abrirCarteiraReceber();
+}
+
+// Manter compatibilidade (antigos chamadores)
+async function marcarRecebidoFin(id){ abrirMarcarRecebido(id); }
 
 
 // ── IMPORTAR HISTÓRICO DE ATENDIMENTOS ──
@@ -1689,6 +1728,7 @@ function finTab(tab, btn){
   document.getElementById('fin-receitas').style.display=tab==='receitas'?'':'none';
   document.getElementById('fin-despesas').style.display=tab==='despesas'?'':'none';
   document.getElementById('fin-fluxo').style.display=tab==='fluxo'?'':'none';
+  document.getElementById('fin-procs').style.display=tab==='procs'?'':'none';
   renderFinAtual();
 }
 
@@ -1706,8 +1746,16 @@ async function carregarFinanceiro(){
   const {data:pend} = await db.from('financeiro').select('*')
     .eq('tipo','receita').eq('status','pendente')
     .order('data',{ascending:true});
+  // Mês anterior para comparativo
+  const prevD = new Date(ano, mes-2, 1);
+  const prevAno = prevD.getFullYear(), prevMes = prevD.getMonth()+1;
+  const prevIni = `${prevAno}-${String(prevMes).padStart(2,'0')}-01`;
+  const prevFim = `${prevAno}-${String(prevMes).padStart(2,'0')}-${new Date(prevAno,prevMes,0).getDate()}`;
+  const {data:prevData} = await db.from('financeiro').select('valor,tipo,status')
+    .gte('data',prevIni).lte('data',prevFim);
   _finLancs = data||[];
   _finPendFuturos = pend||[];
+  _finLancsPrev = prevData||[];
   renderFinDashboard();
   renderFinAtual();
 }
@@ -1716,23 +1764,39 @@ async function carregarFinanceiro(){
 function renderFinDashboard(){
   const receitas = _finLancs.filter(l=>l.tipo==='receita');
   const despesas = _finLancs.filter(l=>l.tipo==='despesa');
+  const recebidas = receitas.filter(l=>l.status==='recebido');
   const totalRec = receitas.reduce((s,l)=>s+(l.valor||0),0);
+  const totalRecebido = recebidas.reduce((s,l)=>s+(l.valor||0),0);
   const totalDes = despesas.reduce((s,l)=>s+(l.valor||0),0);
-  const saldo = totalRec - totalDes;
-  // Pendentes = do mês + futuros
+  const saldo = totalRecebido - totalDes;
+  // Pendentes
   const pendMes = receitas.filter(l=>l.status==='pendente');
-  const pendFut = (_finPendFuturos||[]);
-  const todosPend = [...pendMes, ...pendFut];
-  const recPend = todosPend.reduce((s,l)=>s+(l.valor||0),0);
-  // Receitas do mês = recebidas + pendentes do mês
-  const totalRecComPend = totalRec;
-  const pct = META_MENSAL>0?Math.min(100,Math.round(totalRecComPend/META_MENSAL*100)):0;
+  const todosPend = [...pendMes,...(_finPendFuturos||[])];
+  // Remover duplicatas (pendentes do mês já estão em _finPendFuturos)
+  const pendIds = new Set();
+  const pendUnicos = todosPend.filter(l=>{ if(pendIds.has(l.id)) return false; pendIds.add(l.id); return true; });
+  const recPend = pendUnicos.reduce((s,l)=>s+(l.valor||0),0);
+  const pct = META_MENSAL>0?Math.min(100,Math.round(totalRecebido/META_MENSAL*100)):0;
+  // Comparativo mês anterior
+  const prevRec = (_finLancsPrev||[]).filter(l=>l.tipo==='receita'&&l.status==='recebido').reduce((s,l)=>s+(l.valor||0),0);
+  const diffPct = prevRec>0?Math.round((totalRecebido-prevRec)/prevRec*100):null;
+  const diffStr = diffPct!==null?`<span style="color:${diffPct>=0?'var(--verde-e)':'var(--vermelho)'};font-size:11px">${diffPct>=0?'↑':'↓'} ${Math.abs(diffPct)}% vs mês ant.</span>`:'';
+  // Ticket médio
+  const ticketMedio = recebidas.length>0?(totalRecebido/recebidas.length):0;
+  // Taxa de recebimento
+  const taxaRec = totalRec>0?Math.round(totalRecebido/totalRec*100):100;
+  // Vencidos
+  const hoje = new Date().toISOString().split('T')[0];
+  const vencidos = pendUnicos.filter(l=>l.data<hoje);
   
   document.getElementById('fin-cards').innerHTML = `
     <div style="background:var(--verde-c);border-radius:12px;padding:14px;border:1.5px solid var(--verde)">
       <div style="font-size:11px;color:var(--verde-e);font-weight:600;text-transform:uppercase;letter-spacing:.04em">💚 Receitas do Mês</div>
-      <div style="font-size:22px;font-weight:700;color:var(--verde-e);margin:4px 0">${fmtBRL(totalRec)}</div>
-      <div style="font-size:11px;color:var(--verde-e)">Meta: ${fmtBRL(META_MENSAL)} · ${pct}% <button onclick="abrirConfMeta()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--verde-e);text-decoration:underline">✏️ editar</button></div>
+      <div style="font-size:22px;font-weight:700;color:var(--verde-e);margin:4px 0">${fmtBRL(totalRecebido)}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">
+        <div style="font-size:11px;color:var(--verde-e)">Meta: ${fmtBRL(META_MENSAL)} · ${pct}% <button onclick="abrirConfMeta()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--verde-e);text-decoration:underline">✏️</button></div>
+        ${diffStr}
+      </div>
       <div style="background:rgba(0,0,0,.1);border-radius:99px;height:6px;margin-top:6px">
         <div style="background:var(--verde);height:6px;border-radius:99px;width:${pct}%;transition:.3s"></div>
       </div>
@@ -1745,15 +1809,19 @@ function renderFinDashboard(){
     <div style="background:${saldo>=0?'var(--verde-c)':'var(--vermelho-c,#fff0f0)'};border-radius:12px;padding:14px;border:1.5px solid ${saldo>=0?'var(--verde)':'var(--vermelho,#e24b4a)'}">
       <div style="font-size:11px;color:var(--ct);font-weight:600;text-transform:uppercase;letter-spacing:.04em">💰 Saldo do Mês</div>
       <div style="font-size:22px;font-weight:700;color:${saldo>=0?'var(--verde-e)':'var(--vermelho,#e24b4a)'};margin:4px 0">${fmtBRL(saldo)}</div>
-      <div style="font-size:11px;color:var(--ct)">Receitas − Despesas</div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ct)">
+        <span>Recebido − Despesas</span>
+        <span>Ticket médio: ${fmtBRL(ticketMedio)}</span>
+      </div>
     </div>
     <div style="background:var(--amarelo-c,#fffbea);border-radius:12px;padding:14px;border:1.5px solid var(--amarelo,#ef9f27);cursor:pointer" onclick="abrirCarteiraReceber()">
       <div style="font-size:11px;color:#8a6000;font-weight:600;text-transform:uppercase;letter-spacing:.04em">⏳ A Receber</div>
       <div style="font-size:22px;font-weight:700;color:#8a6000;margin:4px 0">${fmtBRL(recPend)}</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px">
-        <span style="font-size:11px;color:var(--ct)">${todosPend.length} pagamento${todosPend.length!==1?'s':''} a receber</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;margin-top:2px">
+        <span style="font-size:11px;color:var(--ct)">${pendUnicos.length} pgto${pendUnicos.length!==1?'s':''}${vencidos.length?` · <span style="color:var(--vermelho);font-weight:600">${vencidos.length} vencido${vencidos.length!==1?'s':''}</span>`:''}</span>
         <span style="font-size:11px;color:#8a6000;font-weight:600">Ver detalhes →</span>
       </div>
+      ${taxaRec<100&&totalRec>0?`<div style="font-size:10px;color:#8a6000;margin-top:4px">Taxa recebimento: ${taxaRec}%</div>`:''}
     </div>`;
 }
 
@@ -1761,12 +1829,15 @@ function renderFinDashboard(){
 function renderFinAtual(){
   if(_finTab==='receitas') renderFinLista('receita','fin-receitas');
   else if(_finTab==='despesas') renderFinLista('despesa','fin-despesas');
+  else if(_finTab==='procs') renderTopProcedimentos();
   else renderFluxo();
 }
 
 function renderFinLista(tipo, elId){
   const el = document.getElementById(elId);
-  const lista = _finLancs.filter(l=>l.tipo===tipo);
+  const busca = (document.getElementById('fin-busca')?.value||'').toLowerCase().trim();
+  const lista = _finLancs.filter(l=>l.tipo===tipo&&
+    (!busca||(l.descricao||'').toLowerCase().includes(busca)||(l.obs||'').toLowerCase().includes(busca)||(l.categoria||'').toLowerCase().includes(busca)));
   if(!lista.length){
     el.innerHTML=`<div class="empty"><div class="empty-icon">${tipo==='receita'?'💚':'🔴'}</div><p>Nenhum${tipo==='receita'?'a':''} ${tipo==='receita'?'receita':'despesa'} lançad${tipo==='receita'?'a':'a'} neste mês.</p></div>`;
     return;
@@ -1798,7 +1869,7 @@ function renderFinLista(tipo, elId){
               </div>
             </div>
             <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-              ${l.status==='pendente'?`<button class="btn" style="padding:4px 8px;font-size:11px;background:var(--amarelo);color:white;border-color:var(--amarelo)" onclick="marcarRecebido('${l.id}')">⏳ Marcar recebido</button>`:''}
+              ${l.status==='pendente'?`<button class="btn" style="padding:4px 8px;font-size:11px;background:var(--amarelo);color:white;border-color:var(--amarelo)" onclick="abrirMarcarRecebido('${l.id}')">⏳ Marcar recebido</button>`:''}
               <button class="btn" style="padding:4px 8px;font-size:11px" onclick="editarLancamento('${l.id}')">✏️</button>
               <button class="btn dan" style="padding:4px 8px;font-size:11px" onclick="excluirLancamento('${l.id}')">🗑</button>
             </div>
@@ -1825,6 +1896,7 @@ function renderFluxo(){
   const porDia = {};
   for(let d=1;d<=diasMes;d++) porDia[d]={rec:0,des:0};
   _finLancs.forEach(l=>{
+    if(l.status==='pendente') return; // Fluxo de caixa só considera lançamentos efetivados
     const dia = parseInt(l.data.split('-')[2]);
     if(l.tipo==='receita') porDia[dia].rec+=l.valor||0;
     else porDia[dia].des+=l.valor||0;
@@ -1877,6 +1949,77 @@ function renderFluxo(){
         </tfoot>
       </table>
     </div>`;
+}
+
+// ── Top Procedimentos + KPIs ──
+function renderTopProcedimentos(){
+  const el = document.getElementById('fin-procs');
+  const mes = parseInt(document.getElementById('fin-mes')?.value||new Date().getMonth()+1);
+  const recebidas = _finLancs.filter(l=>l.tipo==='receita'&&l.status==='recebido');
+  const todasRec = _finLancs.filter(l=>l.tipo==='receita');
+  
+  // Agrupar por procedimento (extrai da descrição: "Procedimento — Paciente")
+  const byProc = {};
+  recebidas.forEach(l=>{
+    const proc = (l.descricao||'').split('—')[0].trim() || l.categoria || 'Outros';
+    if(!byProc[proc]) byProc[proc]={total:0,count:0};
+    byProc[proc].total += l.valor||0;
+    byProc[proc].count++;
+  });
+  
+  const sorted = Object.entries(byProc).sort((a,b)=>b[1].total-a[1].total).slice(0,10);
+  const max = sorted[0]?.[1].total || 1;
+  const totalGeral = recebidas.reduce((s,l)=>s+(l.valor||0),0);
+  const ticketMedio = recebidas.length>0?(totalGeral/recebidas.length):0;
+  const totalFaturado = todasRec.reduce((s,l)=>s+(l.valor||0),0);
+  const taxaRec = totalFaturado>0?Math.round(totalGeral/totalFaturado*100):100;
+  
+  // Agrupar por paciente para ticket médio por paciente
+  const byPac = {};
+  recebidas.forEach(l=>{
+    const pac = (l.descricao||'').split('—')[1]?.trim() || 'Outro';
+    if(!byPac[pac]) byPac[pac]=0;
+    byPac[pac] += l.valor||0;
+  });
+  const ticketPorPac = Object.keys(byPac).length>0?(totalGeral/Object.keys(byPac).length):0;
+  
+  if(!sorted.length){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">🏆</div><p>Nenhuma receita recebida neste mês.</p></div>`;
+    return;
+  }
+  
+  el.innerHTML = `
+    <!-- KPIs -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.2rem">
+      <div style="background:var(--verde-c);border-radius:10px;padding:10px;text-align:center;border:1px solid var(--verde)">
+        <div style="font-size:10px;color:var(--verde-e);font-weight:700;text-transform:uppercase">Ticket / Lançamento</div>
+        <div style="font-size:16px;font-weight:700;color:var(--verde-e);margin-top:2px">${fmtBRL(ticketMedio)}</div>
+      </div>
+      <div style="background:var(--verde-c);border-radius:10px;padding:10px;text-align:center;border:1px solid var(--verde)">
+        <div style="font-size:10px;color:var(--verde-e);font-weight:700;text-transform:uppercase">Ticket / Paciente</div>
+        <div style="font-size:16px;font-weight:700;color:var(--verde-e);margin-top:2px">${fmtBRL(ticketPorPac)}</div>
+      </div>
+      <div style="background:${taxaRec>=80?'var(--verde-c)':'var(--amarelo-c)'};border-radius:10px;padding:10px;text-align:center;border:1px solid ${taxaRec>=80?'var(--verde)':'var(--amarelo)'}">
+        <div style="font-size:10px;color:${taxaRec>=80?'var(--verde-e)':'#8a6000'};font-weight:700;text-transform:uppercase">Taxa recebimento</div>
+        <div style="font-size:16px;font-weight:700;color:${taxaRec>=80?'var(--verde-e)':'#8a6000'};margin-top:2px">${taxaRec}%</div>
+      </div>
+    </div>
+    
+    <!-- Ranking de procedimentos -->
+    <div style="font-size:12px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">
+      🏆 Top procedimentos por receita — ${MESES[mes-1]}
+    </div>
+    ${sorted.map(([proc,data],i)=>`
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:4px">
+          <span style="font-weight:${i===0?'700':'500'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1+'.'} ${proc}</span>
+          <span style="flex-shrink:0;margin-left:8px;font-weight:600;color:var(--verde-e)">${fmtBRL(data.total)} <span style="font-weight:400;color:var(--ct);font-size:11px">(${data.count}x)</span></span>
+        </div>
+        <div style="background:var(--borda);border-radius:99px;height:8px">
+          <div style="background:${i===0?'var(--verde)':i===1?'#4CAF50':i===2?'#81C784':'var(--verde-c)'};height:8px;border-radius:99px;width:${Math.round(data.total/max*100)}%;transition:.3s"></div>
+        </div>
+        <div style="font-size:11px;color:var(--ct);margin-top:2px">${Math.round(data.total/totalGeral*100)}% do total recebido</div>
+      </div>`).join('')}`;
 }
 
 // ── Modal lançamento ──
@@ -1961,11 +2104,8 @@ async function salvarLancamento(){
   carregarFinanceiro();
 }
 
-async function marcarRecebido(id){
-  await db.from('financeiro').update({status:'recebido'}).eq('id',id);
-  toast('Marcado como recebido ✓','verde');
-  carregarFinanceiro();
-}
+// marcarRecebido agora usa abrirMarcarRecebido (regime de caixa)
+async function marcarRecebido(id){ abrirMarcarRecebido(id); }
 
 async function editarLancamento(id){
   const lanc = _finLancs.find(l=>l.id===id);
@@ -2368,7 +2508,7 @@ function abrirCarteiraReceber(){
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
             <span style="font-size:15px;font-weight:700;color:#8a6000">${fmtBRL(l.valor)}</span>
-            <button class="btn sm" style="font-size:11px;padding:4px 8px;background:var(--amarelo);color:white;border-color:var(--amarelo)" onclick="marcarRecebidoCarteira('${l.id}')">⏳ Marcar recebido</button>
+            <button class="btn sm" style="font-size:11px;padding:4px 8px;background:var(--amarelo);color:white;border-color:var(--amarelo)" onclick="abrirMarcarRecebido('${l.id}')">⏳ Marcar recebido</button>
           </div>
         </div>`;
       }).join('')}
@@ -2420,17 +2560,8 @@ function abrirCarteiraReceber(){
   modal.style.display = 'flex';
 }
 
-async function marcarRecebidoCarteira(id){
-  const {error} = await db.from('financeiro').update({status:'recebido'}).eq('id',id);
-  if(error){ toast('Erro ao atualizar','vermelho'); return; }
-  toast('Recebido ✅','verde');
-  // Recarregar pendentes e fechar modal
-  const {data:pend} = await db.from('financeiro').select('*')
-    .eq('tipo','receita').eq('status','pendente').order('data',{ascending:true});
-  _finPendFuturos = pend||[];
-  renderFinDashboard();
-  abrirCarteiraReceber();
-}
+// marcarRecebidoCarteira unificado com regime de caixa
+async function marcarRecebidoCarteira(id){ abrirMarcarRecebido(id); }
 
 // PWA
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'));
@@ -2661,6 +2792,25 @@ document.addEventListener('DOMContentLoaded', ()=>{
   setTimeout(iniciarNotificacoes, 3000);
 });
 </script>
+<!-- MODAL CONFIRMAR RECEBIMENTO (Regime de Caixa) -->
+<div id="modal-mrec" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:3500;align-items:center;justify-content:center;padding:1rem">
+  <div style="background:var(--card);border-radius:16px;width:100%;max-width:380px;padding:1.5rem;box-shadow:var(--sm)">
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px">✅ Confirmar recebimento</div>
+    <p style="font-size:13px;color:var(--ct);margin-bottom:1.2rem">O pagamento será registrado na data selecionada (regime de caixa).</p>
+    <div style="margin-bottom:1.2rem">
+      <label style="font-size:12px;font-weight:600;color:var(--ct);display:block;margin-bottom:6px">DATA DO RECEBIMENTO</label>
+      <input type="date" id="mrec-data" style="width:100%;padding:10px;font-size:14px;border-radius:8px;border:1.5px solid var(--borda)"/>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="fecharMarcarRecebido()">Cancelar</button>
+      <button class="btn pri" id="mrec-btn" onclick="confirmarMarcarRecebido()">✅ Confirmar recebimento</button>
+    </div>
+  </div>
+</div>
+<script>
+document.getElementById('modal-mrec').addEventListener('click',function(e){if(e.target===this)fecharMarcarRecebido();});
+</script>
+
 <!-- MODAL VINCULAR PACIENTE -->
 <div class="mb" id="m-vincular">
   <div class="mx" style="max-width:460px">
