@@ -253,6 +253,7 @@ textarea{resize:vertical;min-height:70px}
 
     <!-- ═══════════════════════════════════ RESUMO ═══ -->
     <div id="p-resumo" class="panel active">
+      <div id="res-anamnese-badge" style="margin-bottom:10px"></div>
 
       <div class="resumo-grid" id="res-stats"></div>
 
@@ -692,6 +693,7 @@ async function iniciar(){
 
   renderHero();
   renderResumo();
+  carregarStatusAnamnese();
 
   document.getElementById('loading-main').style.display='none';
   document.getElementById('conteudo').style.display='block';
@@ -786,6 +788,52 @@ function renderResumo(){
   if(p.observacoes){
     document.getElementById('res-obs-card').style.display='block';
     document.getElementById('res-obs').textContent=p.observacoes;
+  }
+}
+
+// ── Badge status de anamnese ──
+async function carregarStatusAnamnese(){
+  const el=document.getElementById('res-anamnese-badge');
+  if(!el||!pac?.id) return;
+  const{data}=await db.from('anamnese_links').select('status,criado_em,preenchido_em').eq('paciente_id',pac.id).order('criado_em',{ascending:false}).limit(1);
+  const link=data?.[0];
+  if(!link){
+    // Sem anamnese — mostrar hint sutil
+    el.innerHTML=`
+      <div style="background:var(--bg);border:1.5px dashed var(--borda);border-radius:10px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">📋</span>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--ct)">Anamnese não enviada</div>
+            <div style="font-size:11px;color:var(--ct)">Gere um link para a paciente preencher antes da consulta</div>
+          </div>
+        </div>
+        <button class="btn" style="font-size:11px;padding:5px 12px;white-space:nowrap;background:#7c3aed;color:white;border-color:#7c3aed" onclick="gerarLinkAnamnese()">📋 Gerar link</button>
+      </div>`;
+    return;
+  }
+  if(link.status==='preenchido'){
+    const dt=link.preenchido_em?fDt(link.preenchido_em.split('T')[0]):'';
+    el.innerHTML=`
+      <div style="background:var(--verde-c);border:1.5px solid var(--verde);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">✅</span>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--verde-e)">Anamnese preenchida pela paciente</div>
+          <div style="font-size:11px;color:var(--verde-e)">${dt?'Preenchida em '+dt:''}</div>
+        </div>
+      </div>`;
+  } else {
+    el.innerHTML=`
+      <div style="background:var(--amarelo-c);border:1.5px solid var(--amarelo);border-radius:10px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:20px">⏳</span>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#8a6000">Aguardando paciente preencher</div>
+            <div style="font-size:11px;color:#8a6000">Link enviado — paciente ainda não preencheu</div>
+          </div>
+        </div>
+        <button class="btn" style="font-size:11px;padding:5px 12px;white-space:nowrap" onclick="gerarLinkAnamnese()">🔁 Reenviar</button>
+      </div>`;
   }
 }
 

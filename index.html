@@ -170,6 +170,8 @@ textarea{resize:vertical;min-height:70px}
 .ci{display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:10px;margin-bottom:7px;border-left:4px solid var(--verde);background:var(--verde-c);flex-wrap:wrap}
 .ci.pen{border-color:var(--amarelo);background:var(--amarelo-c)}
 .ci.can{border-color:var(--vermelho);background:var(--vermelho-c);opacity:.7}
+.ci.real{border-color:var(--verde);background:var(--verde-c)}
+.ci.faltou{opacity:.5;border-color:var(--ct);filter:grayscale(.5)}
 .ch{font-size:15px;font-weight:700;color:var(--verde-e);min-width:40px}
 .pen .ch{color:#633806}
 .cn{font-weight:600;font-size:14px;color:var(--txt)}
@@ -1050,15 +1052,43 @@ function stats(){
 function renderHoje(){
   // Consultas hoje
   const ch=consultas.filter(c=>c.data===HOJE_STR&&c.status!=='cancelado').sort((a,b)=>a.hora.localeCompare(b.hora));
-  document.getElementById('l-cons-hoje').innerHTML=ch.length===0
+  const real=ch.filter(c=>c.status==='realizado').length;
+  const falt=ch.filter(c=>c.status==='faltou').length;
+  const pend=ch.filter(c=>c.status!=='realizado'&&c.status!=='faltou').length;
+  document.getElementById('l-cons-hoje').innerHTML=(ch.length===0
     ?`<div class="empty" style="padding:1rem"><div class="empty-icon">📋</div><p>Nenhuma consulta hoje.</p></div>`
-    :ch.map(c=>{const tel=c.telefone?'55'+c.telefone.replace(/\D/g,''):'';return`<div class="ci" data-cid="${c.id}"><div class="ch">${c.hora.slice(0,5)}</div><div style="flex:1"><div class="cn">${c.nome}</div><div class="cd">${c.procedimento||''}${c.telefone?' · '+c.telefone:''}</div></div><div class="ca">${tel?`<a href="https://wa.me/${tel}?text=${encodeURIComponent(msgConsulta(c))}" target="_blank" class="btn wpp">💬</a>`:''}<button class="btn btn-vincular" style="padding:5px 8px;font-size:13px;background:var(--amarelo-c);color:#7a5800;border-color:var(--amarelo)" onclick='abrirVincular(${J(c)})' title="${c.paciente_id?'Substituir vínculo':'Vincular ao cadastro'}">🔗</button></div></div>`;}).join('');
+    :ch.map(c=>{
+      const tel=c.telefone?'55'+c.telefone.replace(/\D/g,''):'';
+      const isReal=c.status==='realizado', isFalt=c.status==='faltou';
+      const cls=isReal?'real':isFalt?'faltou':'';
+      return`<div class="ci ${cls}" data-cid="${c.id}">
+        <div class="ch">${c.hora.slice(0,5)}</div>
+        <div style="flex:1">
+          <div class="cn">${c.nome}${isReal?' <span style="font-size:10px;color:var(--verde-e);font-weight:700">✅ REALIZADO</span>':isFalt?' <span style="font-size:10px;color:var(--ct);font-weight:700">❌ FALTOU</span>':''}</div>
+          <div class="cd">${c.procedimento||''}${c.telefone?' · '+c.telefone:''}</div>
+        </div>
+        <div class="ca">
+          ${tel&&!isReal&&!isFalt?`<a href="https://wa.me/${tel}?text=${encodeURIComponent(msgConsulta(c))}" target="_blank" class="btn wpp">💬</a>`:''}
+          ${c.paciente_id?`<a href="paciente.html?id=${c.paciente_id}" class="btn" style="padding:5px 8px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde)">👤</a>`:''}
+          ${!isReal&&!isFalt
+            ?`<button class="btn" style="padding:5px 9px;font-size:12px;background:var(--verde);color:white;border-color:var(--verde)" onclick="marcarStatus('${c.id}','realizado')" title="Marcar como realizado">✅</button><button class="btn" style="padding:5px 9px;font-size:12px" onclick="marcarStatus('${c.id}','faltou')" title="Paciente faltou">❌</button>`
+            :`<button class="btn" style="padding:5px 9px;font-size:11px;color:var(--ct)" onclick="marcarStatus('${c.id}','pendente')" title="Desfazer">↩</button>`}
+          <button class="btn btn-vincular" style="padding:5px 8px;font-size:12px;background:var(--amarelo-c);color:#7a5800;border-color:var(--amarelo)" onclick='abrirVincular(${J(c)})'>🔗</button>
+        </div>
+      </div>`;
+    }).join('')
+  )+(ch.length>0?`<div style="display:flex;gap:8px;align-items:center;padding:8px 4px;font-size:12px;flex-wrap:wrap">
+      <span style="color:var(--verde-e);font-weight:600">✅ ${real} realizada${real!==1?'s':''}</span>
+      <span style="color:var(--ct)">❌ ${falt} faltou${falt!==1?'s':''}</span>
+      <span style="color:var(--ct)">⏳ ${pend} pendente${pend!==1?'s':''}</span>
+      ${pend>0?`<button class="btn" style="margin-left:auto;font-size:11px;padding:4px 10px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde)" onclick="fecharDia()" title="Marcar todas as pendentes como faltou">🔒 Fechar dia</button>`:'<span style="margin-left:auto;font-size:11px;color:var(--verde-e);font-weight:600">✅ Dia encerrado</span>'}
+    </div>`:'');
 
   // Consultas amanhã
   const ca=consultas.filter(c=>c.data===AMANHA_STR&&c.status!=='cancelado').sort((a,b)=>a.hora.localeCompare(b.hora));
   document.getElementById('l-cons-amanha').innerHTML=ca.length===0
     ?`<div class="empty" style="padding:1rem"><div class="empty-icon">📋</div><p>Nenhuma consulta amanhã.</p></div>`
-    :ca.map(c=>{const tel=c.telefone?'55'+c.telefone.replace(/\D/g,''):'';return`<div class="ci" data-cid="${c.id}"><div class="ch">${c.hora.slice(0,5)}</div><div style="flex:1"><div class="cn">${c.nome}</div><div class="cd">${c.procedimento||''}${c.telefone?' · '+c.telefone:''}</div></div><div class="ca">${tel?`<a href="https://wa.me/${tel}?text=${encodeURIComponent(msgConsulta(c))}" target="_blank" class="btn wpp">💬 Confirmar</a>`:''} ${c.paciente_id?`<a href="paciente.html?id=${c.paciente_id}" class="btn" style="padding:6px 9px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">Ficha</a>`:''}<button class="btn btn-vincular" style="padding:6px 9px;font-size:12px;background:var(--amarelo-c);color:#7a5800;border-color:var(--amarelo)" onclick='abrirVincular(${J(c)})' title="${c.paciente_id?'Substituir vínculo':'Vincular ao cadastro'}">🔗 ${c.paciente_id?'Substituir':'Vincular'}</button></div></div>`;}).join('');
+    :ca.map(c=>{const tel=c.telefone?'55'+c.telefone.replace(/\D/g,''):'';const conf=c.status==='confirmado';return`<div class="ci" data-cid="${c.id}"><div class="ch">${c.hora.slice(0,5)}</div><div style="flex:1"><div class="cn">${c.nome}</div><div class="cd">${c.procedimento||''}${c.telefone?' · '+c.telefone:''}</div></div><div class="ca">${tel?`<a href="https://wa.me/${tel}?text=${encodeURIComponent(msgConsulta(c))}" target="_blank" class="btn wpp">💬 Confirmar</a>`:''}<button class="btn" style="padding:6px 9px;font-size:12px;background:${conf?'var(--verde)':'var(--bg)'};color:${conf?'white':'var(--ct)'};border-color:${conf?'var(--verde)':'var(--borda)'}" onclick="confirmarConsulta('${c.id}')" title="${conf?'Confirmada — clique para desfazer':'Marcar como confirmada'}">${conf?'✅':'⬜'}</button> ${c.paciente_id?`<a href="paciente.html?id=${c.paciente_id}" class="btn" style="padding:6px 9px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">Ficha</a>`:''}<button class="btn btn-vincular" style="padding:6px 9px;font-size:12px;background:var(--amarelo-c);color:#7a5800;border-color:var(--amarelo)" onclick='abrirVincular(${J(c)})' title="${c.paciente_id?'Substituir vínculo':'Vincular ao cadastro'}">🔗</button></div></div>`;}).join('');
 
   // Verificações
   const vers=[];
@@ -3364,6 +3394,35 @@ function enviarProximoLembrete(){
   window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msgLembrete(c))}`,'_blank');
   _lembIdx++;
   renderLembretesModal();
+}
+
+// ── Confirmação e status de consultas ──
+async function confirmarConsulta(id){
+  const cons=consultas.find(x=>x.id===id);
+  const novo=cons?.status==='confirmado'?'pendente':'confirmado';
+  const{error}=await db.from('agenda').update({status:novo}).eq('id',id);
+  if(error){toast('Erro ao atualizar','vermelho');return;}
+  toast(novo==='confirmado'?'✅ Consulta confirmada!':'↩ Confirmação desfeita','verde');
+  await carregarAgenda();
+}
+
+async function marcarStatus(id, status){
+  const{error}=await db.from('agenda').update({status}).eq('id',id);
+  if(error){toast('Erro ao atualizar','vermelho');return;}
+  const msgs={realizado:'✅ Marcado como realizado!',faltou:'❌ Marcado como faltou',pendente:'↩ Status revertido'};
+  toast(msgs[status]||'Atualizado','verde');
+  await carregarAgenda();
+}
+
+async function fecharDia(){
+  const pend=consultas.filter(c=>c.data===HOJE_STR&&c.status!=='cancelado'&&c.status!=='realizado'&&c.status!=='faltou');
+  if(!pend.length){toast('Nenhuma consulta pendente — dia já encerrado!','verde');return;}
+  if(!confirm(`Marcar ${pend.length} consulta${pend.length!==1?'s':''} pendente${pend.length!==1?'s':''} como "faltou"?`)) return;
+  for(const c of pend){
+    await db.from('agenda').update({status:'faltou'}).eq('id',c.id);
+  }
+  toast(`${pend.length} consulta${pend.length!==1?'s':''} marcada${pend.length!==1?'s':''} como faltou`,'verde');
+  await carregarAgenda();
 }
 
 // PWA
