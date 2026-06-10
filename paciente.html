@@ -184,6 +184,18 @@ textarea{resize:vertical;min-height:70px}
 .progress-bar{height:4px;background:var(--borda);border-radius:2px;overflow:hidden;margin-top:6px}
 .progress-fill{height:100%;background:var(--verde);border-radius:2px;transition:width .3s;width:0%}
 
+/* SLIDER ANTES/DEPOIS */
+.slider-wrap{position:relative;overflow:hidden;border-radius:14px;aspect-ratio:3/4;max-width:420px;margin:0 auto;cursor:ew-resize;background:var(--bg);border:1px solid var(--borda);touch-action:none}
+.slider-after{position:absolute;inset:0}
+.slider-after img{width:100%;height:100%;object-fit:cover;display:block}
+.slider-before{position:absolute;inset:0;overflow:hidden}
+.slider-before img{height:100%;object-fit:cover;display:block;max-width:none}
+.slider-handle{position:absolute;top:0;bottom:0;width:3px;background:white;cursor:ew-resize;z-index:10;transform:translateX(-50%)}
+.slider-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 12px rgba(0,0,0,.3);user-select:none}
+.slider-lbl{position:absolute;top:10px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;z-index:5;pointer-events:none}
+.slider-lbl.antes{left:10px;background:#E24B4A;color:white}
+.slider-lbl.depois{right:10px;background:var(--verde);color:white}
+.slider-pct{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.5);color:white;font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;z-index:11;pointer-events:none}
 /* FOTO TABS */
 .foto-sub-tabs{display:flex;gap:4px;margin-bottom:1rem}
 .foto-stb{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid var(--borda);background:var(--card);color:var(--ct);transition:all .15s;font-family:'DM Sans',sans-serif}
@@ -317,26 +329,65 @@ textarea{resize:vertical;min-height:70px}
 
       <!-- ANTES/DEPOIS -->
       <div id="ft-comparar" style="display:none">
-        <div style="font-size:13px;color:var(--ct);margin-bottom:1rem">Compare fotos antes e depois selecionando da galeria.</div>
-        <div class="compare-wrap">
-          <div class="compare-slot" id="cp-antes">
-            <div class="compare-label antes">ANTES</div>
-            <div class="compare-empty">
-              <span style="font-size:22px">📷</span>
-              <span>Selecionar foto</span>
-              <button class="btn sm" onclick="selecionarParaComparar('antes')">Escolher</button>
+
+        <!-- Toggle lado a lado / slider -->
+        <div style="display:flex;gap:6px;margin-bottom:12px;align-items:center">
+          <span style="font-size:12px;color:var(--ct);flex:1">Selecione as fotos e compare</span>
+          <button id="cp-view-side" class="foto-stb active" onclick="setCpView('side',this)" style="padding:4px 12px;font-size:11px">⟺ Lado a lado</button>
+          <button id="cp-view-slider" class="foto-stb" onclick="setCpView('slider',this)" style="padding:4px 12px;font-size:11px">🎯 Slider</button>
+        </div>
+
+        <!-- Lado a lado -->
+        <div id="cp-side-view">
+          <div class="compare-wrap">
+            <div class="compare-slot" id="cp-antes">
+              <div class="compare-label antes">ANTES</div>
+              <div class="compare-empty">
+                <span style="font-size:22px">📷</span>
+                <span>Selecionar foto</span>
+                <button class="btn sm" onclick="selecionarParaComparar('antes')">Escolher</button>
+              </div>
             </div>
-          </div>
-          <div class="compare-slot" id="cp-depois">
-            <div class="compare-label depois">DEPOIS</div>
-            <div class="compare-empty">
-              <span style="font-size:22px">📷</span>
-              <span>Selecionar foto</span>
-              <button class="btn sm" onclick="selecionarParaComparar('depois')">Escolher</button>
+            <div class="compare-slot" id="cp-depois">
+              <div class="compare-label depois">DEPOIS</div>
+              <div class="compare-empty">
+                <span style="font-size:22px">📷</span>
+                <span>Selecionar foto</span>
+                <button class="btn sm" onclick="selecionarParaComparar('depois')">Escolher</button>
+              </div>
             </div>
           </div>
         </div>
-        <div style="display:flex;gap:8px;justify-content:center">
+
+        <!-- Slider -->
+        <div id="cp-slider-view" style="display:none">
+          <div class="slider-wrap" id="slider-container">
+            <!-- DEPOIS (fundo) -->
+            <div class="slider-after">
+              <img id="sl-img-depois" src="" alt="depois"/>
+              <div class="slider-lbl depois">DEPOIS</div>
+            </div>
+            <!-- ANTES (cima, clipado) -->
+            <div class="slider-before" id="sl-before">
+              <img id="sl-img-antes" src="" alt="antes"/>
+              <div class="slider-lbl antes">ANTES</div>
+            </div>
+            <!-- Handle -->
+            <div class="slider-handle" id="sl-handle">
+              <div class="slider-btn">⟺</div>
+            </div>
+            <div class="slider-pct" id="sl-pct">50%</div>
+          </div>
+          <div style="display:flex;gap:6px;justify-content:center;margin-top:10px">
+            <button class="btn sm" onclick="selecionarParaComparar('antes')" style="font-size:12px">📷 Trocar Antes</button>
+            <button class="btn sm" onclick="selecionarParaComparar('depois')" style="font-size:12px">📷 Trocar Depois</button>
+          </div>
+          <div id="sl-empty" style="text-align:center;padding:2rem;color:var(--ct);font-size:13px">
+            Selecione as fotos na aba "Lado a lado" primeiro, depois ative o Slider.
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
           <button class="btn" onclick="limparComparacao()">Limpar</button>
         </div>
       </div>
@@ -1000,9 +1051,14 @@ function confirmarComparacao(url){
     <img src="${url}" style="width:100%;height:100%;object-fit:cover"/>
     <button style="position:absolute;bottom:8px;right:8px;padding:5px 10px;border-radius:6px;background:rgba(0,0,0,.5);color:white;border:none;cursor:pointer;font-size:12px" onclick="selecionarParaComparar('${label}')">Trocar</button>
   `;
+  // Guardar URL para o slider
+  _slUrls[comparacaoSlot] = url;
+  // Atualizar slider se estiver ativo
+  if(_cpView==='slider') iniciarSlider();
 }
 
 function limparComparacao(){
+  _slUrls = {antes:null, depois:null};
   ['antes','depois'].forEach(s=>{
     const slot=document.getElementById('cp-'+s);
     const label=s==='antes'?'antes':'depois';
@@ -1011,6 +1067,85 @@ function limparComparacao(){
       <div class="compare-empty"><span style="font-size:22px">📷</span><span>Selecionar foto</span><button class="btn sm" onclick="selecionarParaComparar('${s}')">Escolher</button></div>
     `;
   });
+  // Resetar slider
+  document.getElementById('sl-img-antes').src='';
+  document.getElementById('sl-img-depois').src='';
+  document.getElementById('sl-empty').style.display='block';
+  setPct(50);
+}
+
+// ── SLIDER ANTES/DEPOIS ──
+let _cpView = 'side'; // 'side' | 'slider'
+let _slDragging = false;
+let _slUrls = {antes: null, depois: null};
+
+function setCpView(view, btn){
+  _cpView = view;
+  document.querySelectorAll('#cp-view-side,#cp-view-slider').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('cp-side-view').style.display  = view==='side'   ? 'block':'none';
+  document.getElementById('cp-slider-view').style.display = view==='slider' ? 'block':'none';
+  if(view==='slider') iniciarSlider();
+}
+
+function iniciarSlider(){
+  const urlAntes  = _slUrls.antes;
+  const urlDepois = _slUrls.depois;
+  const empty = document.getElementById('sl-empty');
+  const cont  = document.getElementById('slider-container');
+  if(!urlAntes || !urlDepois){
+    empty.style.display='block';
+    cont.querySelector('.slider-after').style.opacity='0.3';
+    cont.querySelector('#sl-before').style.opacity='0.3';
+    return;
+  }
+  empty.style.display='none';
+  cont.querySelector('.slider-after').style.opacity='1';
+  cont.querySelector('#sl-before').style.opacity='1';
+  document.getElementById('sl-img-antes').src  = urlAntes;
+  document.getElementById('sl-img-depois').src = urlDepois;
+  // Resetar posição ao centro
+  setPct(50);
+  // Garantir largura da imagem antes = largura do container
+  const w = cont.offsetWidth;
+  document.getElementById('sl-img-antes').style.width = w+'px';
+  attachSliderEvents();
+}
+
+function setPct(pct){
+  pct = Math.max(2, Math.min(98, pct));
+  document.getElementById('sl-before').style.width = pct+'%';
+  document.getElementById('sl-handle').style.left  = pct+'%';
+  document.getElementById('sl-pct').textContent    = Math.round(pct)+'%';
+}
+
+function attachSliderEvents(){
+  const cont = document.getElementById('slider-container');
+  const handle = document.getElementById('sl-handle');
+  if(cont._sliderBound) return;
+  cont._sliderBound = true;
+
+  function getPct(clientX){
+    const r = cont.getBoundingClientRect();
+    return ((clientX - r.left) / r.width) * 100;
+  }
+
+  // Mouse
+  handle.addEventListener('mousedown', e=>{_slDragging=true; e.preventDefault();});
+  cont.addEventListener('mousedown', e=>{_slDragging=true; setPct(getPct(e.clientX));});
+  window.addEventListener('mousemove', e=>{if(_slDragging) setPct(getPct(e.clientX));});
+  window.addEventListener('mouseup', ()=>_slDragging=false);
+
+  // Touch
+  handle.addEventListener('touchstart', e=>{_slDragging=true; e.preventDefault();},{passive:false});
+  cont.addEventListener('touchstart', e=>{_slDragging=true; setPct(getPct(e.touches[0].clientX));},{passive:false});
+  window.addEventListener('touchmove', e=>{if(_slDragging){e.preventDefault();setPct(getPct(e.touches[0].clientX));}},{passive:false});
+  window.addEventListener('touchend', ()=>_slDragging=false);
+
+  // Atualizar largura da img-antes ao redimensionar
+  new ResizeObserver(()=>{
+    document.getElementById('sl-img-antes').style.width = cont.offsetWidth+'px';
+  }).observe(cont);
 }
 
 // ─── DOCUMENTOS ───

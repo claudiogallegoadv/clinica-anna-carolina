@@ -476,7 +476,10 @@ textarea{resize:vertical;min-height:70px}
         <option value="12">Último ano</option>
         <option value="99">Todos</option>
       </select>
+      <button id="btn-executivo" onclick="toggleRelExec(this)" class="btn" style="margin-left:auto;font-size:12px;padding:6px 14px">📋 Relatório Executivo</button>
     </div>
+    <!-- Relatório Executivo (oculto por padrão) -->
+    <div id="rel-executivo" style="display:none;margin-bottom:1.5rem"></div>
     <div class="rel-grid" id="rel-stats"></div>
     <div class="card">
       <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--txt)">🏆 Procedimentos mais realizados</div>
@@ -1394,6 +1397,174 @@ async function renderRel(){
           </div>`).join('')}`;
     }
   }
+}
+
+// ══════════════════════════════════════════
+// RELATÓRIO EXECUTIVO MENSAL
+// ══════════════════════════════════════════
+let _relExecAtivo = false;
+
+function toggleRelExec(btn){
+  _relExecAtivo = !_relExecAtivo;
+  const el = document.getElementById('rel-executivo');
+  el.style.display = _relExecAtivo ? 'block' : 'none';
+  btn.style.background = _relExecAtivo ? 'var(--verde)' : '';
+  btn.style.color = _relExecAtivo ? 'white' : '';
+  btn.style.borderColor = _relExecAtivo ? 'var(--verde)' : '';
+  if(_relExecAtivo) renderRelExec();
+}
+
+async function renderRelExec(){
+  const el = document.getElementById('rel-executivo');
+  el.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--ct);font-size:13px">Carregando...</div>';
+
+  const mesesAtras = parseInt(document.getElementById('rel-mes').value);
+  const hoje2 = new Date();
+  const cutoff = mesesAtras===99 ? null : new Date(hoje2.getFullYear(), hoje2.getMonth()-mesesAtras, 1);
+  const cutoffStr = cutoff ? cutoff.toISOString().split('T')[0] : '2000-01-01';
+
+  // Mês atual para label
+  const mesLabel = mesesAtras===0 ? `${MESES_N[hoje2.getMonth()]} ${hoje2.getFullYear()}`
+                 : mesesAtras===1 ? `Mês passado`
+                 : mesesAtras===99 ? 'Histórico completo'
+                 : `Últimos ${mesesAtras} meses`;
+
+  // ── Atendimentos ──
+  const todosAtends = [];
+  pacs.forEach(p=>{
+    (p.atendimentos||[]).forEach(a=>{
+      const dt = new Date(a.data+'T12:00:00');
+      if(!cutoff||dt>=cutoff) todosAtends.push({...a,pac:p});
+    });
+    const datasUnicas = [...new Set((p.tratamentos_adicionais||[]).map(t=>t.dataAtendimento).filter(Boolean))];
+    datasUnicas.forEach(data=>{
+      const dt = new Date(data+'T12:00:00');
+      if(!cutoff||dt>=cutoff){
+        if(!todosAtends.find(a=>a.pac.id===p.id&&a.data===data))
+          todosAtends.push({data,pac:p,trats:(p.tratamentos_adicionais||[]).filter(t=>t.dataAtendimento===data)});
+      }
+    });
+  });
+
+  const pacAtivos = new Set(todosAtends.map(a=>a.pac.id)).size;
+
+  // ── Novos vs Retorno ──
+  const pacIdsNoPeriodo = new Set(todosAtends.map(a=>a.pac.id));
+  let novos = 0, retorno = 0;
+  pacIdsNoPeriodo.forEach(id=>{
+    const p = pacs.find(x=>x.id===id);
+    if(!p) return;
+    // Verificar se antes do período já tinha atendimentos
+    const atendAntes = (p.atendimentos||[]).some(a=>cutoff&&new Date(a.data+'T12:00:00')<cutoff);
+    const tratAntes  = (p.tratamentos_adicionais||[]).some(t=>t.dataAtendimento&&cutoff&&new Date(t.dataAtendimento+'T12:00:00')<cutoff);
+    if(atendAntes||tratAntes) retorno++; else novos++;
+  });
+  const pctRetorno = pacAtivos>0 ? Math.round(retorno/pacAtivos*100) : 0;
+
+  // ── Financeiro ──
+  let fatReal=0, fatMeta=META_MENSAL*Math.max(1,mesesAtras===0?1:mesesAtras===99?12:mesesAtras);
+  let fatPend=0;
+  try{
+    const{data:finData}=await db.from('financeiro').select('valor,status,tipo').eq('tipo','receita').gte('data',cutoffStr);
+    if(finData){
+      fatReal = finData.filter(l=>l.status==='recebido').reduce((s,l)=>s+(l.valor||0),0);
+      fatPend = finData.filter(l=>l.status==='pendente').reduce((s,l)=>s+(l.valor||0),0);
+    }
+  }catch(e){}
+  const pctMeta = fatMeta>0 ? Math.round(fatReal/fatMeta*100) : 0;
+
+  // ── Agenda ──
+  const mesStr = String(hoje2.getMonth()+1).padStart(2,'0');
+  const csMes = consultas.filter(c=>mesesAtras===0 ? c.data.startsWith(`${hoje2.getFullYear()}-${mesStr}`) : true);
+  const csAtivas = csMes.filter(c=>c.status!=='cancelado');
+  const csCanceladas = csMes.filter(c=>c.status==='cancelado');
+  const taxaCancel = csMes.length>0 ? Math.round(csCanceladas.length/csMes.length*100) : 0;
+  const diasMes = new Date(hoje2.getFullYear(),hoje2.getMonth()+1,0).getDate();
+  let diasDisp=0;
+  for(let d=1;d<=diasMes;d++){if(new Date(hoje2.getFullYear(),hoje2.getMonth(),d).getDay()!==0)diasDisp++;}
+  const diasOcup = new Set(csAtivas.map(c=>c.data)).size;
+  const taxaOcup = diasDisp>0 ? Math.round(diasOcup/diasDisp*100) : 0;
+
+  // ── Top procedimento ──
+  const procs={};
+  todosAtends.forEach(a=>(a.trats||[]).forEach(t=>{if(t.nome)procs[t.nome]=(procs[t.nome]||0)+1;}));
+  const topProc = Object.entries(procs).sort((a,b)=>b[1]-a[1])[0];
+
+  // ── Ticket médio ──
+  const ticket = todosAtends.length>0&&fatReal>0 ? fatReal/todosAtends.length : 0;
+
+  el.innerHTML = `
+  <div style="background:var(--card);border-radius:14px;padding:1.25rem;border:1.5px solid var(--verde);box-shadow:0 2px 12px rgba(0,0,0,.07)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+      <div>
+        <div style="font-size:16px;font-weight:700">📋 Relatório Executivo</div>
+        <div style="font-size:12px;color:var(--ct)">${mesLabel} · Dra. Anna Carolina Dias</div>
+      </div>
+      <div style="font-size:11px;color:var(--ct)">Gerado em ${fDt(HOJE_STR)}</div>
+    </div>
+
+    <!-- Grid principal -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1rem">
+
+      <!-- Faturamento -->
+      <div style="background:var(--verde-c);border-radius:10px;padding:12px;border:1px solid var(--verde)">
+        <div style="font-size:10px;font-weight:700;color:var(--verde-e);text-transform:uppercase;margin-bottom:4px">💰 Faturamento</div>
+        <div style="font-size:20px;font-weight:700;color:var(--verde-e)">${fmtBRL(fatReal)}</div>
+        <div style="font-size:11px;color:var(--verde-e);margin-top:2px">${pctMeta}% da meta</div>
+        <div style="background:rgba(0,0,0,.1);border-radius:99px;height:4px;margin-top:6px">
+          <div style="background:var(--verde);height:4px;border-radius:99px;width:${Math.min(100,pctMeta)}%;transition:.3s"></div>
+        </div>
+        ${fatPend>0?`<div style="font-size:10px;color:var(--verde-e);margin-top:4px">+ ${fmtBRL(fatPend)} a receber</div>`:''}
+      </div>
+
+      <!-- Pacientes -->
+      <div style="background:var(--bg);border-radius:10px;padding:12px;border:1px solid var(--borda)">
+        <div style="font-size:10px;font-weight:700;color:var(--ct);text-transform:uppercase;margin-bottom:4px">👥 Pacientes</div>
+        <div style="font-size:20px;font-weight:700;color:var(--txt)">${pacAtivos}</div>
+        <div style="font-size:11px;color:var(--ct);margin-top:2px">
+          <span style="color:var(--verde-e);font-weight:600">${novos} novos</span> · ${retorno} retorno
+        </div>
+        <div style="font-size:10px;color:var(--ct);margin-top:4px">${pctRetorno}% taxa de retorno</div>
+      </div>
+
+      <!-- Agenda -->
+      <div style="background:var(--bg);border-radius:10px;padding:12px;border:1px solid ${taxaCancel>=20?'var(--vermelho)':'var(--borda)'}">
+        <div style="font-size:10px;font-weight:700;color:var(--ct);text-transform:uppercase;margin-bottom:4px">📅 Agenda</div>
+        <div style="font-size:20px;font-weight:700;color:var(--txt)">${taxaOcup}%</div>
+        <div style="font-size:11px;color:var(--ct);margin-top:2px">ocupação${mesesAtras===0?` (${diasOcup}/${diasDisp} dias)`:''}</div>
+        <div style="font-size:10px;color:${taxaCancel>=20?'var(--vermelho)':'var(--ct)'};margin-top:4px">${taxaCancel}% cancelamentos${taxaCancel>=20?' ⚠️':''}</div>
+      </div>
+
+    </div>
+
+    <!-- Indicadores secundários -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem">
+      <div style="text-align:center;padding:8px;background:var(--bg);border-radius:8px;border:1px solid var(--borda)">
+        <div style="font-size:10px;color:var(--ct);font-weight:600;text-transform:uppercase">Ticket Médio</div>
+        <div style="font-size:15px;font-weight:700;color:var(--txt);margin-top:2px">${ticket>0?fmtBRL(ticket):'—'}</div>
+      </div>
+      <div style="text-align:center;padding:8px;background:var(--bg);border-radius:8px;border:1px solid var(--borda)">
+        <div style="font-size:10px;color:var(--ct);font-weight:600;text-transform:uppercase">Top Procedimento</div>
+        <div style="font-size:13px;font-weight:700;color:var(--txt);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${topProc?topProc[0]:'—'}</div>
+        <div style="font-size:10px;color:var(--ct)">${topProc?topProc[1]+'x':''}</div>
+      </div>
+      <div style="text-align:center;padding:8px;background:var(--bg);border-radius:8px;border:1px solid var(--borda)">
+        <div style="font-size:10px;color:var(--ct);font-weight:600;text-transform:uppercase">Atendimentos</div>
+        <div style="font-size:15px;font-weight:700;color:var(--txt);margin-top:2px">${todosAtends.length}</div>
+      </div>
+    </div>
+
+    <!-- Saúde do negócio -->
+    <div style="background:var(--bg);border-radius:10px;padding:10px 14px;border:1px solid var(--borda)">
+      <div style="font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;margin-bottom:8px">🏥 Saúde do negócio</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${pctMeta>=80?'<div style="font-size:12px">✅ Faturamento dentro da meta</div>':pctMeta>=50?'<div style="font-size:12px;color:#8a6000">⚠️ Faturamento abaixo da meta ('+pctMeta+'%)</div>':'<div style="font-size:12px;color:var(--vermelho)">🔴 Faturamento muito abaixo da meta ('+pctMeta+'%)</div>'}
+        ${taxaCancel<15?'<div style="font-size:12px">✅ Taxa de cancelamento saudável ('+taxaCancel+'%)</div>':'<div style="font-size:12px;color:var(--vermelho)">🔴 Alta taxa de cancelamento ('+taxaCancel+'%) — considere ativar lembretes automáticos</div>'}
+        ${pctRetorno>=40?'<div style="font-size:12px">✅ Boa taxa de retorno de pacientes ('+pctRetorno+'%)</div>':novos>0?'<div style="font-size:12px;color:#8a6000">⚠️ Taxa de retorno baixa ('+pctRetorno+'%) — use campanhas de retorno</div>':''}
+        ${fatPend>0?'<div style="font-size:12px;color:#8a6000">⏳ '+fmtBRL(fatPend)+' ainda a receber neste período</div>':''}
+      </div>
+    </div>
+  </div>`;
 }
 
 // WHATSAPP
