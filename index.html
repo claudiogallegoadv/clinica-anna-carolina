@@ -595,7 +595,11 @@ textarea{resize:vertical;min-height:70px}
       <div class="fgr"><label>CPF</label><input type="text" id="e-cpf" placeholder="000.000.000-00"/></div>
       <div class="fgr"><label>RG</label><input type="text" id="e-rg" placeholder="00.000.000-0"/></div>
       <div class="fgr"><label>Sexo</label><select id="e-sexo"><option value="">Selecione</option><option>Feminino</option><option>Masculino</option></select></div>
-      <div class="fgr full"><label>Endereço completo</label><input type="text" id="e-end" placeholder="Rua, número, bairro, cidade"/></div>
+      <div class="fgr"><label>CEP</label><input type="text" id="e-cep" placeholder="00000-000" oninput="buscarCepEdit(this)" onchange="buscarCepEdit(this)"/></div>
+      <div class="fgr"><label>Número</label><input type="text" id="e-numero" placeholder="123"/></div>
+      <div class="fgr full"><label>Rua / Logradouro</label><input type="text" id="e-rua" placeholder="Preenchido pelo CEP"/></div>
+      <div class="fgr"><label>Bairro</label><input type="text" id="e-bairro"/></div>
+      <div class="fgr"><label>Cidade</label><input type="text" id="e-cidade"/></div>
       <div class="fgr"><label>Data do atendimento</label><input type="date" id="e-data"/></div>
       <div class="fgr"><label>📁 Link Google Drive</label><input type="url" id="e-drive"/></div>
       <div class="fgr"><label>Indicação</label><input type="text" id="e-indic"/></div>
@@ -1642,7 +1646,7 @@ document.getElementById('m-wpp').addEventListener('click',e=>{if(e.target===e.cu
 
 // EDITAR
 function abrEdit(p){
-  document.getElementById('e-id').value=p.id;document.getElementById('e-nome').value=p.nome;document.getElementById('e-apelido').value=p.apelido||'';document.getElementById('e-tel').value=p.telefone;document.getElementById('e-nasc').value=p.data_nascimento||'';document.getElementById('e-cpf').value=p.cpf||'';document.getElementById('e-rg').value=p.rg||'';document.getElementById('e-sexo').value=p.sexo||'';document.getElementById('e-end').value=p.endereco||'';document.getElementById('e-data').value=p.data_atendimento||'';document.getElementById('e-obs').value=p.observacoes||'';document.getElementById('e-drive').value=p.link_drive||'';document.getElementById('e-indic').value=p.indicacao||'';if(document.getElementById('e-instagram'))document.getElementById('e-instagram').value=p.instagram||'';if(document.getElementById('e-facebook'))document.getElementById('e-facebook').value=p.facebook||'';
+  document.getElementById('e-id').value=p.id;document.getElementById('e-nome').value=p.nome;document.getElementById('e-apelido').value=p.apelido||'';document.getElementById('e-tel').value=p.telefone;document.getElementById('e-nasc').value=p.data_nascimento||'';document.getElementById('e-cpf').value=p.cpf||'';document.getElementById('e-rg').value=p.rg||'';document.getElementById('e-sexo').value=p.sexo||'';document.getElementById('e-cep').value=p.cep||'';document.getElementById('e-rua').value=p.rua||p.endereco||'';document.getElementById('e-numero').value=p.numero||'';document.getElementById('e-bairro').value=p.bairro||'';document.getElementById('e-cidade').value=p.cidade||'';document.getElementById('e-data').value=p.data_atendimento||'';document.getElementById('e-obs').value=p.observacoes||'';document.getElementById('e-drive').value=p.link_drive||'';document.getElementById('e-indic').value=p.indicacao||'';if(document.getElementById('e-instagram'))document.getElementById('e-instagram').value=p.instagram||'';if(document.getElementById('e-facebook'))document.getElementById('e-facebook').value=p.facebook||'';
   document.getElementById('m-edit-titulo').textContent='✏️ Editar dados pessoais';
   document.getElementById('m-edit').classList.add('open');
 }
@@ -1651,7 +1655,7 @@ async function salvarEdit(){
   const id=document.getElementById('e-id').value;const nome=document.getElementById('e-nome').value.trim();const tel=document.getElementById('e-tel').value.trim();
   if(!nome||!tel){toast('Preencha nome e telefone!','vermelho');return;}
   const btn=document.getElementById('btn-edit-salvar');btn.disabled=true;btn.textContent='Salvando...';
-  const{error}=await db.from('pacientes').update({nome,telefone:tel,apelido:document.getElementById('e-apelido').value.trim()||null,data_nascimento:document.getElementById('e-nasc').value||null,cpf:document.getElementById('e-cpf').value.trim()||null,rg:document.getElementById('e-rg').value.trim()||null,sexo:document.getElementById('e-sexo').value||null,endereco:document.getElementById('e-end').value.trim()||null,data_atendimento:document.getElementById('e-data').value||null,observacoes:document.getElementById('e-obs').value.trim()||null,link_drive:document.getElementById('e-drive').value.trim()||null,indicacao:document.getElementById('e-indic').value.trim()||null,instagram:(document.getElementById('e-instagram')?.value.trim()||null),facebook:(document.getElementById('e-facebook')?.value.trim()||null),cadastro_pendente:false}).eq('id',id);
+  const{error}=await db.from('pacientes').update({nome,telefone:tel,apelido:document.getElementById('e-apelido').value.trim()||null,data_nascimento:document.getElementById('e-nasc').value||null,cpf:document.getElementById('e-cpf').value.trim()||null,rg:document.getElementById('e-rg').value.trim()||null,sexo:document.getElementById('e-sexo').value||null,endereco:[ (document.getElementById('e-rua').value.trim()+(document.getElementById('e-numero').value.trim()?' '+document.getElementById('e-numero').value.trim():'')).trim(), document.getElementById('e-bairro').value.trim(), document.getElementById('e-cidade').value.trim() ].filter(Boolean).join(', ')||null,rua:(document.getElementById('e-rua').value.trim()+(document.getElementById('e-numero').value.trim()?' '+document.getElementById('e-numero').value.trim():'')).trim()||null,bairro:document.getElementById('e-bairro').value.trim()||null,cidade:document.getElementById('e-cidade').value.trim()||null,cep:document.getElementById('e-cep').value.trim()||null,data_atendimento:document.getElementById('e-data').value||null,observacoes:document.getElementById('e-obs').value.trim()||null,link_drive:document.getElementById('e-drive').value.trim()||null,indicacao:document.getElementById('e-indic').value.trim()||null,instagram:(document.getElementById('e-instagram')?.value.trim()||null),facebook:(document.getElementById('e-facebook')?.value.trim()||null),cadastro_pendente:false}).eq('id',id);
   btn.disabled=false;btn.innerHTML='✓ Salvar dados';
   if(error){toast('Erro: '+error.message,'vermelho');return;}
   toast(`${nome} atualizado!`,'verde');fchEdit();carregar();
@@ -2655,6 +2659,25 @@ function limpar(){
 }
 
 // ── BUSCA CEP ──
+async function buscarCepEdit(input){
+  const cep=input.value.replace(/\D/g,'');
+  if(cep.length===8) input.value=cep.slice(0,5)+'-'+cep.slice(5);
+  if(cep.length!==8) return;
+  try{
+    const r=await fetch('https://viacep.com.br/ws/'+cep+'/json/');
+    const d=await r.json();
+    if(d.erro){toast('CEP não encontrado','vermelho');return;}
+    const rua=document.getElementById('e-rua');
+    const bairro=document.getElementById('e-bairro');
+    const cidade=document.getElementById('e-cidade');
+    if(rua) rua.value=d.logradouro||rua.value;
+    if(bairro) bairro.value=d.bairro||bairro.value;
+    if(cidade) cidade.value=d.localidade||cidade.value;
+    document.getElementById('e-numero')?.focus();
+    toast('Endereço preenchido ✓','verde');
+  }catch(e){}
+}
+
 async function buscarCep(input){
   const cep=input.value.replace(/\D/g,'');
   // Formatar CEP automaticamente
@@ -2667,10 +2690,11 @@ async function buscarCep(input){
     const rua=document.getElementById('f-rua');
     const bairro=document.getElementById('f-bairro');
     const cidade=document.getElementById('f-cidade');
-    if(rua&&!rua.value) rua.value=d.logradouro||'';
-    const num=document.getElementById('f-numero'); // número fica em branco para preenchimento manual
-    if(bairro&&!bairro.value) bairro.value=d.bairro||'';
-    if(cidade&&!cidade.value) cidade.value=d.localidade||'';
+    if(rua) rua.value=d.logradouro||rua.value;
+    if(bairro) bairro.value=d.bairro||bairro.value;
+    if(cidade) cidade.value=d.localidade||cidade.value;
+    document.getElementById('f-numero')?.focus(); // cursor vai direto para o número
+    toast('Endereço preenchido ✓','verde');
   }catch(e){}
 }
 
