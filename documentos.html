@@ -781,9 +781,73 @@ async function carregarDocsSalvos(){
 }
 
 async function excluirDoc(id){
-  if(!confirm('Excluir este documento?'))return;
+  // Buscar o documento para verificar o tipo
+  const{data:doc}=await db.from('documentos').select('*').eq('id',id).single();
+  if(!doc){toast('Documento não encontrado','vermelho');return;}
+
+  // Documentos comuns — exclusão simples
+  if(doc.tipo!=='orcamento'){
+    if(!confirm('Excluir este documento?'))return;
+    await db.from('documentos').delete().eq('id',id);
+    toast('Documento excluído');carregarDocsSalvos();
+    return;
+  }
+
+  // ── ORÇAMENTO: exclusão em CASCATA ──
+  if(!confirm('⚠️ EXCLUIR ORÇAMENTO\n\nSerão excluídos também:\n• Lançamentos financeiros vinculados\n• Estorno dos produtos baixados no estoque\n• O plano de tratamento e seus itens\n\nEsta ação não pode ser desfeita. Continuar?'))return;
+
+  let planoId = doc.dados?.plano_id || null;
+
+  // Fallback para docs antigos sem plano_id: buscar plano do paciente criado no mesmo dia
+  if(!planoId && doc.paciente_id){
+    const docData=(doc.criado_em||doc.data_assinatura||'').split('T')[0];
+    if(docData){
+      const{data:planos}=await db.from('planos_tratamento').select('id,criado_em')
+        .eq('paciente_id',doc.paciente_id).gte('criado_em',docData+'T00:00:00').lte('criado_em',docData+'T23:59:59');
+      if(planos&&planos.length===1) planoId=planos[0].id;
+    }
+  }
+
+  let resumo=[];
+
+  if(planoId){
+    // 1. Excluir lançamentos financeiros vinculados
+    const{data:lancs}=await db.from('financeiro').select('id,valor').eq('orcamento_id',planoId);
+    if(lancs&&lancs.length){
+      await db.from('financeiro').delete().eq('orcamento_id',planoId);
+      const totalFin=lancs.reduce((s,l)=>s+(l.valor||0),0);
+      resumo.push(`${lancs.length} lançamento(s) financeiro(s) (${totalFin.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})})`);
+    }
+
+    // 2. Estornar estoque — devolver quantidades e remover movimentos de uso
+    const{data:movs}=await db.from('estoque_movimentos').select('*').eq('plano_id',planoId).eq('tipo','uso');
+    if(movs&&movs.length){
+      for(const mov of movs){
+        const{data:prod}=await db.from('produtos').select('quantidade').eq('id',mov.produto_id).single();
+        if(prod){
+          await db.from('produtos').update({quantidade:(prod.quantidade||0)+(mov.quantidade||0)}).eq('id',mov.produto_id);
+        }
+      }
+      await db.from('estoque_movimentos').delete().eq('plano_id',planoId).eq('tipo','uso');
+      resumo.push(`${movs.length} produto(s) estornado(s) ao estoque`);
+    }
+
+    // 3. Excluir itens e plano de tratamento
+    await db.from('plano_itens').delete().eq('plano_id',planoId);
+    await db.from('planos_tratamento').delete().eq('id',planoId);
+    resumo.push('Plano de tratamento excluído');
+
+    // Limpar estado em memória se for o plano ativo
+    if(window._planoAtual?.id===planoId) window._planoAtual=null;
+  } else {
+    resumo.push('⚠️ Plano não localizado — apenas o documento foi excluído');
+  }
+
+  // 4. Excluir o documento
   await db.from('documentos').delete().eq('id',id);
-  toast('Documento excluído');carregarDocsSalvos();
+
+  toast('Orçamento excluído ✓ '+(resumo.length?resumo.join(' · '):''),'verde');
+  carregarDocsSalvos();
 }
 
 // ABRIR DOCUMENTO
@@ -2770,8 +2834,9 @@ window.confirmarRealizado = async function() {
 
     }
 
-    // 4. Lançar no financeiro — valor a receber (parcial)
-    if (valorPendente > 0) {
+    // 4. Lançar no financeiro — valor a receber (APENAS pagamento parcial;
+    //    quando status='pendente' sem parcial, o bloco 3 já lançou o valor total)
+    if (isParcial && valorPendente > 0) {
       const {error: eFin3} = await db.from('financeiro').insert({
         paciente_id: pacSelecionada.id,
         orcamento_id: planoId,
@@ -2939,11 +3004,11 @@ window.salvarDoc = async function(tipo) {
     toast('Plano de tratamento salvo ✓', 'verde');
   }
 
-  // Também salvar na tabela documentos para histórico
+  // Também salvar na tabela documentos para histórico (com plano_id para exclusão em cascata)
   await db.from('documentos').insert({
     paciente_id: pacSelecionada.id,
     tipo: 'orcamento',
-    dados: { itens: itens.map(i => ({ trat: i.trat, val: i.val })), pagamento: condicoes, obs, validade, produtos: getProdutosOrcamento() },
+    dados: { plano_id: window._planoAtual?.id || null, itens: itens.map(i => ({ trat: i.trat, val: i.val })), pagamento: condicoes, obs, validade, produtos: getProdutosOrcamento() },
     data_assinatura: HOJE
   });
 
