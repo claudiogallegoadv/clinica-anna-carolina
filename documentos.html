@@ -3004,19 +3004,32 @@ window.salvarDoc = async function(tipo) {
     // Atualizar plano existente
     const descProcsUpd = itens.map(i => i.trat).join(' + ');
     await db.from('planos_tratamento').update({ validade, condicoes_pagamento: condicoes, obs: descProcsUpd || obs, atualizado_em: new Date().toISOString() }).eq('id', window._planoAtual.id);
-    
-    // Adicionar novos itens (que não têm itemId)
+
+    // Buscar itens existentes do plano para evitar duplicação
+    const { data: itensExist } = await db.from('plano_itens').select('id,procedimento,valor,status').eq('plano_id', window._planoAtual.id);
+    const usados = new Set(); // ids já vinculados nesta passagem
+
     for (const item of itens) {
-      if (!item.itemId) {
-        await db.from('plano_itens').insert({
-          plano_id: window._planoAtual.id,
-          paciente_id: pacSelecionada.id,
-          procedimento: item.trat,
-          valor: item.val,
-          status: 'orcado'
-        });
-      }
+      if (item.itemId) { usados.add(item.itemId); continue; }
+      // Antes de inserir, verificar se já existe item igual não vinculado (mesmo procedimento + valor)
+      const match = (itensExist||[]).find(ie =>
+        !usados.has(ie.id) &&
+        ie.procedimento === item.trat &&
+        Math.abs(parseFloat(ie.valor||0) - parseFloat(item.val||0)) < 0.01
+      );
+      if (match) { usados.add(match.id); continue; } // já existe — não duplica
+      const { data: novoItem } = await db.from('plano_itens').insert({
+        plano_id: window._planoAtual.id,
+        paciente_id: pacSelecionada.id,
+        procedimento: item.trat,
+        valor: item.val,
+        status: 'orcado'
+      }).select().single();
+      if (novoItem) usados.add(novoItem.id);
     }
+    // Recarregar itens no estado
+    const { data: itensAtual } = await db.from('plano_itens').select('*').eq('plano_id', window._planoAtual.id);
+    window._planoAtual.itens = itensAtual || [];
     toast('Plano de tratamento atualizado ✓', 'verde');
   } else {
     // Criar novo plano + itens
@@ -3032,6 +3045,20 @@ window.salvarDoc = async function(tipo) {
     await db.from('plano_itens').insert(
       itens.map(i => ({ plano_id: novoPlano.id, paciente_id: pacSelecionada.id, procedimento: i.trat, valor: i.val, status: 'orcado' }))
     );
+
+    // CRÍTICO: registrar o plano criado no estado global
+    // (sem isso, "Procedimento realizado" criava um SEGUNDO plano — duplicação!)
+    const { data: itensCriados } = await db.from('plano_itens').select('*').eq('plano_id', novoPlano.id);
+    window._planoAtual = { id: novoPlano.id, itens: itensCriados || [] };
+    // Vincular itemIds nas linhas da tela
+    document.querySelectorAll('#orc-itens .orc-linha').forEach(linha => {
+      const trat = linha.querySelector('.orc-trat')?.value || '';
+      const val = parseFloat(linha.querySelector('.orc-val')?.value) || 0;
+      if (!linha.dataset.itemId) {
+        const it = (itensCriados||[]).find(i => i.procedimento === trat && Math.abs(parseFloat(i.valor||0) - val) < 0.01 && !i._linked);
+        if (it) { linha.dataset.itemId = it.id; it._linked = true; }
+      }
+    });
     toast('Plano de tratamento salvo ✓', 'verde');
   }
 
