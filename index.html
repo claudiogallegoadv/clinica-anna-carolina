@@ -242,6 +242,7 @@ textarea{resize:vertical;min-height:70px}
     <div class="hdr-date" id="dt-hoje"></div>
     <a href="documentos.html" class="btn-dark" title="Documentos" style="font-size:15px;text-decoration:none">📄</a>
     <button class="btn-dark" onclick="toggleDark()" id="btn-dark-icon" title="Modo escuro">🌙</button>
+    <button class="btn-dark" onclick="fazerLogout()" title="Sair" style="font-size:14px">🔒 Sair</button>
   </div>
 </header>
 <main class="main">
@@ -798,6 +799,12 @@ document.getElementById('dt-hoje').textContent=HOJE.toLocaleDateString('pt-BR',{
 document.getElementById('f-data').value=HOJE_STR;
 
 // Modo escuro
+function fazerLogout(){
+  if(!confirm('Deseja sair do sistema?')) return;
+  localStorage.removeItem('clinica_auth');
+  sessionStorage.removeItem('clinica_auth');
+  window.location.replace('login.html');
+}
 function toggleDark(){
   const html=document.documentElement;
   const isDark=html.getAttribute('data-theme')==='dark';
