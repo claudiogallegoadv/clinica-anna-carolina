@@ -1145,7 +1145,7 @@ function renderHoje(){
   pacs.forEach(p=>(p.atendimentos||[]).forEach(a=>{if(a.verificacaoData){const d=dias(a.verificacaoData);if(d!==null&&d<=3&&d>=-2)vers.push({p,a,d});}}) );
   document.getElementById('l-verificacoes').innerHTML=vers.length===0
     ?`<div class="empty" style="padding:1rem"><div class="empty-icon">🔬</div><p>Nenhuma verificação nos próximos dias.</p></div>`
-    :vers.map(({p,a,d})=>{const tel='55'+p.telefone.replace(/\D/g,'');const txt=d<0?`${Math.abs(d)}d atrasada`:d===0?'Hoje!':` em ${d}d`;return`<div class="ai ver"><div><div class="an">🔬 ${p.nome}</div><div class="ad">${a.trats?.map(t=>t.nome).join(', ')||''} · ${p.telefone}</div></div><div class="aa"><span class="ab">${txt}</span><a href="https://wa.me/${tel}?text=${encodeURIComponent(msgVerificacao(p,a.trats?.map(t=>t.nome).join(', ')||'procedimento'))}" target="_blank" class="btn wpp">💬 WhatsApp</a></div></div>`;}).join('');
+    :vers.map(({p,a,d})=>{const tel='55'+p.telefone.replace(/\D/g,'');const txt=d<0?`${Math.abs(d)}d atrasada`:d===0?'Hoje!':` em ${d}d`;return`<div class="ai ver"><div><div class="an">🔬 ${p.nome}</div><div class="ad">${a.trats?.map(t=>t.nome).join(', ')||''} · ${p.telefone}</div></div><div class="aa"><span class="ab">${txt}</span><a href="https://wa.me/${tel}?text=${encodeURIComponent(msgVerificacao(p,a.trats?.map(t=>t.nome).join(', ')||'procedimento'))}" target="_blank" class="btn wpp">💬 WhatsApp</a><a href="paciente.html?id=${p.id}" class="btn" style="font-size:12px;padding:7px 10px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">👤 Ficha</a></div></div>`;}).join('');
 
   // Aniversários
   const anivs=pacs.filter(p=>anivHoje(p.data_nascimento));
@@ -1193,6 +1193,7 @@ async function renderAlertasFinHoje(){
       </div>
       <div class="aa">
         <button class="btn" style="padding:6px 10px;font-size:12px;background:var(--amarelo);color:white;border-color:var(--amarelo)" onclick="abrirMarcarRecebido('${l.id}')">⏳ Marcar recebido</button>
+        ${l.paciente_id?`<a href="paciente.html?id=${l.paciente_id}" class="btn" style="padding:6px 10px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">👤 Ficha</a>`:''}
       </div>
     </div>`;
   }).join('');
