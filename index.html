@@ -15,9 +15,14 @@
 <script src="config.js"></script>
 <script>
 // Auth check — redireciona para login se não autenticado
-if(!sessionStorage.getItem('clinica_auth')){
-  window.location.replace('login.html');
-}
+try{
+  const auth = JSON.parse(localStorage.getItem('clinica_auth')||'{}');
+  if(!auth.ok || auth.expires < Date.now()){
+    window.location.replace('login.html');
+  } else {
+    sessionStorage.setItem('clinica_auth','1');
+  }
+}catch(e){ window.location.replace('login.html'); }
 </script>
 <style>
 :root {
