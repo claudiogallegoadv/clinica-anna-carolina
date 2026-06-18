@@ -561,7 +561,7 @@ textarea{resize:vertical;min-height:70px}
   <div class="mx" style="max-width:520px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
       <h3 style="margin:0">🩺 Detalhes do Atendimento</h3>
-      <button class="btn sm dan" onclick="document.getElementById('m-atend-det').classList.remove('open')" style="border:none">✕</button>
+      <button class="btn sm dan" onclick="document.getElementById('m-atend-det').classList.remove('open')" style="border:none" title="Fechar">✕</button>
     </div>
 
     <!-- Data -->
@@ -1245,7 +1245,7 @@ async function renderDocumentos(){
       </div>
       <div class="doc-acoes">
         <a href="documentos.html?pac=${pac.id}&doc=${d.id}&tipo=${d.tipo}" class="btn sm">👁 Ver</a>
-        <button class="btn sm dan" onclick="excluirDoc('${d.id}')">🗑</button>
+        <button class="btn sm dan" onclick="excluirDoc('${d.id}')" title="Excluir: ${nomes[d.tipo]||d.tipo}">🗑</button>
       </div>
     </div>
   `).join('');
@@ -1358,7 +1358,7 @@ function renderLembretes(){
         <div style="font-size:12px;color:var(--ct);margin-top:3px">📅 ${fDt(l.data)} · <strong>${txt}</strong></div>
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0">
-        <button class="btn sm" onclick="editarLembrete(${JSON.stringify(l).replace(/"/g,'&quot;')})">✏️</button>
+        <button class="btn sm" onclick="editarLembrete(${JSON.stringify(l).replace(/"/g,'&quot;')})" title="Editar lembrete">✏️</button>
         <button class="btn sm dan" onclick="delLembr('${l.id}')">✓ Feito</button>
       </div>
     </div>`;

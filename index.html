@@ -332,9 +332,9 @@ textarea{resize:vertical;min-height:70px}
     <div id="ag-pedidos-online" style="margin-bottom:8px"></div>
     <div class="card">
       <div class="ag-nav">
-        <button class="btn" style="padding:6px 11px" onclick="mvMes(-1)">◀</button>
+        <button class="btn" style="padding:6px 11px" onclick="mvMes(-1)" title="Mês anterior">◀</button>
         <span class="ag-mes" id="ag-mes"></span>
-        <button class="btn" style="padding:6px 11px" onclick="mvMes(1)">▶</button>
+        <button class="btn" style="padding:6px 11px" onclick="mvMes(1)" title="Próximo mês">▶</button>
       </div>
       <div class="ag-grid" id="ag-grid"></div>
     </div>
@@ -931,7 +931,7 @@ function opsPrazo(sel){return PRAZOS.map(m=>`<option value="${m}" ${sel==m?'sele
 function addTrat(lid,nome='',prazo=0,valor=''){
   const el=document.getElementById(lid);
   const d=document.createElement('div');d.className='ti';
-  d.innerHTML=`<select onchange="onTS(this)"><option value="">Selecione...</option>${opsTrat()}</select><select onchange="calcDRf(this)">${opsPrazo(prazo)}</select><input type="date" title="Data de retorno (editável)" style="font-size:12px;color:var(--verde-e);background:var(--verde-c);border-color:var(--verde-c);font-weight:500;text-align:center;cursor:pointer" onchange="this.style.background='var(--amarelo-c)';this.style.color='#8a6000'" /><input type="number" placeholder="0,00" min="0" step="0.01" value="${valor}" style="font-size:12px" title="Valor R$"/><button class="btn-rt" onclick="this.parentElement.remove()">✕</button>`;
+  d.innerHTML=`<select onchange="onTS(this)"><option value="">Selecione...</option>${opsTrat()}</select><select onchange="calcDRf(this)">${opsPrazo(prazo)}</select><input type="date" title="Data de retorno (editável)" style="font-size:12px;color:var(--verde-e);background:var(--verde-c);border-color:var(--verde-c);font-weight:500;text-align:center;cursor:pointer" onchange="this.style.background='var(--amarelo-c)';this.style.color='#8a6000'" /><input type="number" placeholder="0,00" min="0" step="0.01" value="${valor}" style="font-size:12px" title="Valor R$"/><button class="btn-rt" onclick="this.parentElement.remove()" title="Remover tratamento">✕</button>`;
   el.appendChild(d);
   if(nome){const s=d.querySelector('select');const op=Array.from(s.options).find(o=>o.value===nome);if(op)s.value=nome;}
   calcDRf(d.querySelectorAll('select')[1],null);
@@ -940,7 +940,7 @@ function addTrat(lid,nome='',prazo=0,valor=''){
 function addTratComData(lid,nome='',prazo=0,valor=''){
   const el=document.getElementById(lid);
   const d=document.createElement('div');d.className='ti';
-  d.innerHTML=`<select onchange="onTSa(this)"><option value="">Selecione...</option>${opsTrat()}</select><select onchange="calcDR(this)">${opsPrazo(prazo)}</select><input type="date" title="Data de retorno (editável)" style="font-size:12px;color:var(--verde-e);background:var(--verde-c);border-color:var(--verde-c);font-weight:500;text-align:center;cursor:pointer" onchange="this.style.background='var(--amarelo-c)';this.style.color='#8a6000'" /><input type="number" placeholder="0,00" min="0" step="0.01" value="${valor}" style="font-size:12px" title="Valor R$"/><button class="btn-rt" onclick="this.parentElement.remove()">✕</button>`;
+  d.innerHTML=`<select onchange="onTSa(this)"><option value="">Selecione...</option>${opsTrat()}</select><select onchange="calcDR(this)">${opsPrazo(prazo)}</select><input type="date" title="Data de retorno (editável)" style="font-size:12px;color:var(--verde-e);background:var(--verde-c);border-color:var(--verde-c);font-weight:500;text-align:center;cursor:pointer" onchange="this.style.background='var(--amarelo-c)';this.style.color='#8a6000'" /><input type="number" placeholder="0,00" min="0" step="0.01" value="${valor}" style="font-size:12px" title="Valor R$"/><button class="btn-rt" onclick="this.parentElement.remove()" title="Remover tratamento">✕</button>`;
   el.appendChild(d);
   if(nome){const s=d.querySelector('select');const op=Array.from(s.options).find(o=>o.value===nome);if(op)s.value=nome;}
   calcDR(d.querySelectorAll('select')[1]);
@@ -2333,8 +2333,8 @@ function renderFinLista(tipo, elId){
             </div>
             <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
               ${l.status==='pendente'?`<button class="btn" style="padding:4px 8px;font-size:11px;background:var(--amarelo);color:white;border-color:var(--amarelo)" onclick="abrirMarcarRecebido('${l.id}')">⏳ Marcar recebido</button>`:''}
-              <button class="btn" style="padding:4px 8px;font-size:11px" onclick="editarLancamento('${l.id}')" title="Editar lançamento">✏️</button>
-              <button class="btn dan" style="padding:4px 8px;font-size:11px" onclick="excluirLancamento('${l.id}')" title="Excluir lançamento">🗑</button>
+              <button class="btn" style="padding:4px 8px;font-size:11px" onclick="editarLancamento('${l.id}')" title="Editar: ${escapeHtml(l.descricao)}">✏️</button>
+              <button class="btn dan" style="padding:4px 8px;font-size:11px" onclick="excluirLancamento('${l.id}')" title="Excluir: ${escapeHtml(l.descricao)}">🗑</button>
             </div>
           </div>`).join('')}
       </div>`).join('');
