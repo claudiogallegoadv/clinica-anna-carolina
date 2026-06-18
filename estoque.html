@@ -118,11 +118,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-
 
 <header class="hdr">
   <div class="hdr-left">
-    <button class="btn-back" onclick="history.back()" title="Voltar">←</button>
+    <button class="btn-back" aria-label="Voltar" onclick="history.back()" title="Voltar">←</button>
     <h1>📦 Estoque <span style="font-size:12px;opacity:.6;font-family:'DM Sans',sans-serif">Dra. Anna Carolina</span></h1>
   </div>
   <div class="hdr-right">
-    <button class="btn-dark" onclick="toggleTheme()" title="Tema">🌙</button>
+    <button class="btn-dark" aria-label="Tema" onclick="toggleTheme()" title="Tema">🌙</button>
   </div>
 </header>
 
@@ -149,7 +149,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-
     <div class="card">
       <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
         <span>📊 Visão geral do estoque</span>
-        <button class="btn pri" onclick="exportarEstoqueExcel()" style="font-size:12px;padding:7px 12px">📥 Exportar Excel</button>
+        <button class="btn pri" aria-label="Registrar entrada" onclick="exportarEstoqueExcel()" style="font-size:12px;padding:7px 12px">📥 Exportar Excel</button>
       </div>
       <div id="dashboard-lista"></div>
     </div>
@@ -232,7 +232,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-
   <div class="mb-box">
     <div class="mb-head">
       <h3 id="modal-produto-titulo">📦 Novo produto</h3>
-      <button class="btn dan" onclick="fecharModal('modal-produto')" title="Fechar">✕</button>
+      <button class="btn dan" aria-label="Fechar" onclick="fecharModal('modal-produto')" title="Fechar">✕</button>
     </div>
     <div class="mb-body">
       <input type="hidden" id="prod-id"/>
@@ -293,7 +293,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-
   <div class="mb-box">
     <div class="mb-head">
       <h3 id="modal-mov-titulo">🔄 Registrar movimentação</h3>
-      <button class="btn dan" onclick="fecharModal('modal-movimento')" title="Fechar">✕</button>
+      <button class="btn dan" aria-label="Fechar" onclick="fecharModal('modal-movimento')" title="Fechar">✕</button>
     </div>
     <div class="mb-body">
       <div class="fg">
@@ -333,7 +333,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-
   <div class="mb-box">
     <div class="mb-head">
       <h3 id="modal-forn-titulo">🏭 Novo fornecedor</h3>
-      <button class="btn dan" onclick="fecharModal('modal-fornecedor')" title="Fechar">✕</button>
+      <button class="btn dan" aria-label="Fechar" onclick="fecharModal('modal-fornecedor')" title="Fechar">✕</button>
     </div>
     <div class="mb-body">
       <input type="hidden" id="forn-id"/>
@@ -358,7 +358,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-
   <div class="mb-box">
     <div class="mb-head">
       <h3>📥 Entrada de produto</h3>
-      <button class="btn dan" onclick="fecharModal('modal-entrada-rapida')" title="Fechar">✕</button>
+      <button class="btn dan" aria-label="Fechar" onclick="fecharModal('modal-entrada-rapida')" title="Fechar">✕</button>
     </div>
     <div class="mb-body">
       <input type="hidden" id="er-produto-id"/>
@@ -535,7 +535,7 @@ function renderDashboard(){
         <td><div style="font-weight:700;color:${critico?'var(--vermelho)':'var(--txt)'}">${p.quantidade} ${p.unidade||''}</div>${p.estoque_minimo>0?`<div style="font-size:11px;color:var(--ct)">Mín: ${p.estoque_minimo}</div>`:''}</td>
         <td style="min-width:100px">${p.estoque_minimo>0?`<div class="prog-bar"><div class="prog-fill" style="width:${Math.min(100,pct)}%;background:${cor}"></div></div><div style="font-size:10px;color:var(--ct);margin-top:2px">${pct}%</div>`:'<span style="font-size:11px;color:var(--ct)">Sem mín.</span>'}</td>
         <td>${ultEnt?`<div style="font-size:12px">Lote: <strong>${escapeHtml(ultEnt.lote)}</strong></div><div style="font-size:11px;color:var(--ct)">Val: ${fDt(ultEnt.validade)}</div>`:'<span style="font-size:11px;color:var(--ct)">—</span>'}</td>
-        <td><button class="btn sm pri" onclick="abrirEntradaRapida('${p.id}','${p.nome.replace(/'/g,"\\'")}')">📥 Entrada</button></td>
+        <td><button class="btn sm pri" aria-label="Registrar entrada" onclick="abrirEntradaRapida('${p.id}','${p.nome.replace(/'/g,"\\'")}')">📥 Entrada</button></td>
       </tr>`;
     }).join('')}</tbody>
   </table>`;
@@ -572,9 +572,9 @@ function renderTblProdutos(lista){
       <td>${critico?'<span class="badge vermelho">🚨 Crítico</span>':ok?'<span class="badge verde">✅ OK</span>':'<span class="badge amarelo">⚠️ Baixo</span>'}</td>
       <td style="font-size:12px;color:var(--ct)">${forn?forn.nome:'—'}</td>
       <td style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn sm" onclick="abrirEntradaRapida('${p.id}','${p.nome.replace(/'/g,"\\'")}')" title="Registrar entrada: ${escapeHtml(p.nome)}">📥</button>
-        <button class="btn sm" onclick="editarProduto('${p.id}')" title="Editar: ${escapeHtml(p.nome)}">✏️</button>
-        <button class="btn sm dan" onclick="excluirProduto('${p.id}')" title="Excluir: ${escapeHtml(p.nome)}">🗑</button>
+        <button class="btn sm" aria-label="Registrar entrada: ${escapeHtml(p.nome)}" onclick="abrirEntradaRapida('${p.id}','${p.nome.replace(/'/g,"\\'")}')" title="Registrar entrada: ${escapeHtml(p.nome)}">📥</button>
+        <button class="btn sm" aria-label="Editar: ${escapeHtml(p.nome)}" onclick="editarProduto('${p.id}')" title="Editar: ${escapeHtml(p.nome)}">✏️</button>
+        <button class="btn sm dan" aria-label="Excluir: ${escapeHtml(p.nome)}" onclick="excluirProduto('${p.id}')" title="Excluir: ${escapeHtml(p.nome)}">🗑</button>
       </td>
     </tr>`;
   }).join('');
@@ -852,8 +852,8 @@ function renderTblFornecedores(lista){
     <td style="font-size:12px">${f.telefone?`<a href="https://wa.me/55${f.telefone.replace(/\D/g,'')}" target="_blank" style="color:var(--verde)">💬 ${escapeHtml(f.telefone)}</a>`:'—'}</td>
     <td style="font-size:12px">${f.email?`<a href="mailto:${f.email}" style="color:var(--azul)">${f.email}</a>`:'—'}</td>
     <td style="display:flex;gap:6px">
-      <button class="btn sm" onclick="editarFornecedor('${f.id}')" title="Editar: ${escapeHtml(f.nome)}">✏️</button>
-      <button class="btn sm dan" onclick="excluirFornecedor('${f.id}')" title="Excluir: ${escapeHtml(f.nome)}">🗑</button>
+      <button class="btn sm" aria-label="Editar: ${escapeHtml(f.nome)}" onclick="editarFornecedor('${f.id}')" title="Editar: ${escapeHtml(f.nome)}">✏️</button>
+      <button class="btn sm dan" aria-label="Excluir: ${escapeHtml(f.nome)}" onclick="excluirFornecedor('${f.id}')" title="Excluir: ${escapeHtml(f.nome)}">🗑</button>
     </td>
   </tr>`).join('');
 }

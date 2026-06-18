@@ -133,7 +133,40 @@ try{
 
 // ── PIN ──
 const TAMANHO = CLINICA_CONFIG.senha.length || 4;
+const MAX_TENTATIVAS = 5;
+const BLOQUEIO_MS = 15 * 60 * 1000; // 15 minutos
+const STORAGE_KEY = 'clinica_pin_falhas';
 let pin = '';
+
+// ── Controle de tentativas ──
+function getFalhas(){
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{"n":0,"t":0}'); }catch(e){ return {n:0,t:0}; }
+}
+function setFalhas(n,t){ localStorage.setItem(STORAGE_KEY,JSON.stringify({n,t})); }
+function resetFalhas(){ localStorage.removeItem(STORAGE_KEY); }
+
+function verificarBloqueio(){
+  const f = getFalhas();
+  if(f.n >= MAX_TENTATIVAS){
+    const restante = f.t + BLOQUEIO_MS - Date.now();
+    if(restante > 0){
+      const min = Math.ceil(restante/60000);
+      return `🔒 Acesso bloqueado. Tente novamente em ${min} minuto${min>1?'s':''}.`;
+    } else {
+      resetFalhas(); // bloqueio expirou
+    }
+  }
+  return null;
+}
+
+function registrarFalha(){
+  const f = getFalhas();
+  const novas = f.n + 1;
+  setFalhas(novas, novas >= MAX_TENTATIVAS ? Date.now() : f.t);
+  const restantes = MAX_TENTATIVAS - novas;
+  if(restantes <= 0) return `🔒 Acesso bloqueado por 15 minutos.`;
+  return `❌ PIN incorreto. ${restantes} tentativa${restantes>1?'s':''} restante${restantes>1?'s':''}.`;
+}
 
 // Renderizar dots
 function renderDots(){
@@ -149,6 +182,15 @@ renderDots();
 
 function pressKey(k){
   const msg = document.getElementById('msg');
+
+  // Verificar bloqueio antes de qualquer ação
+  const bloqueado = verificarBloqueio();
+  if(bloqueado){
+    msg.className = 'msg erro';
+    msg.textContent = bloqueado;
+    return;
+  }
+
   if(k === 'del'){
     pin = pin.slice(0,-1);
     msg.textContent = '';
@@ -159,6 +201,7 @@ function pressKey(k){
     if(k !== 'enter' && pin.length < TAMANHO){ pin += k; renderDots(); return; }
     // Tentar login
     if(authLogin(pin)){
+      resetFalhas();
       msg.className = 'msg ok';
       msg.textContent = '✅ Acesso liberado!';
       setTimeout(()=>{
@@ -166,8 +209,9 @@ function pressKey(k){
         window.location.href = params.get('r') || 'index.html';
       }, 500);
     } else {
+      const erroMsg = registrarFalha();
       msg.className = 'msg erro';
-      msg.textContent = '❌ PIN incorreto. Tente novamente.';
+      msg.textContent = erroMsg;
       const box = document.getElementById('box');
       box.classList.add('shake');
       setTimeout(()=>box.classList.remove('shake'), 400);

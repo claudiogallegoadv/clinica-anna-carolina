@@ -240,9 +240,9 @@ textarea{resize:vertical;min-height:70px}
   </div>
   <div class="hdr-right">
     <div class="hdr-date" id="dt-hoje"></div>
-    <a href="documentos.html" class="btn-dark" title="Documentos" style="font-size:15px;text-decoration:none">📄</a>
-    <button class="btn-dark" onclick="toggleDark()" id="btn-dark-icon" title="Modo escuro">🌙</button>
-    <button class="btn-dark" onclick="fazerLogout()" title="Sair" style="font-size:14px">🔒 Sair</button>
+    <a href="documentos.html" class="btn-dark" aria-label="Documentos" title="Documentos" style="font-size:15px;text-decoration:none">📄</a>
+    <button class="btn-dark" aria-label="Modo escuro" onclick="toggleDark()" id="btn-dark-icon" title="Modo escuro">🌙</button>
+    <button class="btn-dark" aria-label="Sair" onclick="fazerLogout()" title="Sair" style="font-size:14px">🔒 Sair</button>
   </div>
 </header>
 <main class="main">
@@ -281,9 +281,9 @@ textarea{resize:vertical;min-height:70px}
       <select id="fin-ano" style="padding:7px 10px;font-size:13px;border:1.5px solid var(--borda);border-radius:8px" onchange="carregarFinanceiro()">
       </select>
       <button class="btn pri" onclick="abrirLancamento('receita')" style="margin-left:auto">+ Receita</button>
-      <button class="btn" onclick="importarHistorico()" title="Importar atendimentos do cadastro para o financeiro" style="font-size:12px">📥 Importar histórico</button>
+      <button class="btn" aria-label="Importar atendimentos do cadastro para o financeiro" onclick="importarHistorico()" title="Importar atendimentos do cadastro para o financeiro" style="font-size:12px">📥 Importar histórico</button>
       <button class="btn" onclick="abrirLancamento('despesa')" style="background:var(--vermelho-c);border-color:var(--vermelho);color:var(--vermelho)">− Despesa</button>
-      <button class="btn" onclick="exportarFinanceiro()" title="Exportar Excel">📥 Excel</button>
+      <button class="btn" aria-label="Exportar Excel" onclick="exportarFinanceiro()" title="Exportar Excel">📥 Excel</button>
     </div>
 
     <!-- Busca no extrato -->
@@ -332,9 +332,9 @@ textarea{resize:vertical;min-height:70px}
     <div id="ag-pedidos-online" style="margin-bottom:8px"></div>
     <div class="card">
       <div class="ag-nav">
-        <button class="btn" style="padding:6px 11px" onclick="mvMes(-1)" title="Mês anterior">◀</button>
+        <button class="btn" aria-label="Mês anterior" style="padding:6px 11px" onclick="mvMes(-1)" title="Mês anterior">◀</button>
         <span class="ag-mes" id="ag-mes"></span>
-        <button class="btn" style="padding:6px 11px" onclick="mvMes(1)" title="Próximo mês">▶</button>
+        <button class="btn" aria-label="Próximo mês" style="padding:6px 11px" onclick="mvMes(1)" title="Próximo mês">▶</button>
       </div>
       <div class="ag-grid" id="ag-grid"></div>
     </div>
@@ -348,7 +348,7 @@ textarea{resize:vertical;min-height:70px}
             <button class="ag-view-tab" id="ag-tab-semana" onclick="setAgView('semana')">📅 Semana</button>
           </div>
           <button class="btn pri" style="padding:7px 13px;font-size:13px" onclick="abrAg()">+ Agendar</button>
-          <button class="btn" style="padding:7px 10px;font-size:12px;background:#7c3aed;color:white;border-color:#7c3aed" onclick="abrirConfAgOnline()" title="Configurar agendamento online">📱</button>
+          <button class="btn" aria-label="Configurar agendamento online" style="padding:7px 10px;font-size:12px;background:#7c3aed;color:white;border-color:#7c3aed" onclick="abrirConfAgOnline()" title="Configurar agendamento online">📱</button>
         </div>
       </div>
       <div id="ag-cons"></div>
@@ -363,9 +363,9 @@ textarea{resize:vertical;min-height:70px}
   <div id="p-alertas" class="panel">
     <div class="filtro-row">
       <button class="filtro-btn active" onclick="setFiltro('todos',this)">Todos</button>
-      <button class="filtro-btn" onclick="setFiltro('pendente',this)">🔔 Pendentes</button>
+      <button class="filtro-btn" aria-label="Lembrete de retorno" onclick="setFiltro('pendente',this)">🔔 Pendentes</button>
       <button class="filtro-btn" onclick="setFiltro('instagram',this)">📷 Com Instagram</button>
-      <button class="filtro-btn" onclick="setFiltro('aguardando',this)">💬 Aguardando</button>
+      <button class="filtro-btn" aria-label="Enviar WhatsApp" onclick="setFiltro('aguardando',this)">💬 Aguardando</button>
       <button class="filtro-btn" onclick="setFiltro('atrasado',this)">⚠️ Atrasados</button>
       <button class="filtro-btn" id="btn-campanha" onclick="abrirCampanha()" style="background:var(--verde);color:white;border-color:var(--verde);margin-left:auto">📣 Campanhas</button>
       <select id="alerta-periodo" onchange="renderAlertas()" style="padding:6px 10px;font-size:12px;border:1.5px solid var(--borda);border-radius:20px;background:var(--card)">
@@ -379,7 +379,7 @@ textarea{resize:vertical;min-height:70px}
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
       <div style="flex:1"></div>
-      <button class="btn" style="font-size:12px;padding:5px 12px" onclick="abrirEditorTemplates()" title="Editar mensagens das campanhas">✏️ Editar templates</button>
+      <button class="btn" aria-label="Editar mensagens das campanhas" style="font-size:12px;padding:5px 12px" onclick="abrirEditorTemplates()" title="Editar mensagens das campanhas">✏️ Editar templates</button>
     </div>
     <div id="l-alertas"></div>
 
@@ -491,7 +491,7 @@ textarea{resize:vertical;min-height:70px}
     <div style="margin-bottom:10px">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <input type="text" id="busca" placeholder="🔍 Buscar por nome ou apelido..." oninput="renderPac()" style="border-radius:10px;flex:1"/>
-        <button class="btn" style="font-size:12px;padding:7px 12px;white-space:nowrap" onclick="exportarPacientesCSV()" title="Exportar lista de pacientes">📥 Exportar</button>
+        <button class="btn" aria-label="Exportar lista de pacientes" style="font-size:12px;padding:7px 12px;white-space:nowrap" onclick="exportarPacientesCSV()" title="Exportar lista de pacientes">📥 Exportar</button>
       </div>
     </div>
     <div class="card"><div id="l-pac"><div class="loading">Carregando...</div></div></div>
@@ -511,7 +511,7 @@ textarea{resize:vertical;min-height:70px}
       </select>
       <div style="margin-left:auto;display:flex;gap:6px">
         <button id="btn-anual" onclick="toggleRelAnual(this)" class="btn" style="font-size:12px;padding:6px 14px">📊 Anual</button>
-        <button id="btn-executivo" onclick="toggleRelExec(this)" class="btn" style="font-size:12px;padding:6px 14px">📋 Executivo</button>
+        <button id="btn-executivo" onclick="toggleRelExec(this)" class="btn" aria-label="Copiar" style="font-size:12px;padding:6px 14px">📋 Executivo</button>
       </div>
     </div>
     <!-- Relatório Anual (oculto por padrão) -->
@@ -680,8 +680,8 @@ textarea{resize:vertical;min-height:70px}
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--borda)">
       <button class="btn" onclick="fchAtend()">Fechar</button>
-      <button class="btn" onclick="toggleAtendDocs()" id="btn-atend-docs">📄 Docs</button>
-      <button class="btn" id="btn-atend-inf" onclick="abrirInformativosAtend()" title="Enviar informativo pós-procedimento" style="background:var(--azul-c);border-color:var(--azul);color:var(--azul)">📲 Pós-proc.</button>
+      <button class="btn" aria-label="Documentos" onclick="toggleAtendDocs()" id="btn-atend-docs">📄 Docs</button>
+      <button class="btn" aria-label="Enviar informativo pós-procedimento" id="btn-atend-inf" onclick="abrirInformativosAtend()" title="Enviar informativo pós-procedimento" style="background:var(--azul-c);border-color:var(--azul);color:var(--azul)">📲 Pós-proc.</button>
       <button class="btn pri" id="btn-atend-salvar" onclick="salvarAtend()">✓ Salvar</button>
     </div>
   </div>
@@ -724,7 +724,7 @@ textarea{resize:vertical;min-height:70px}
     </div>
     <div class="br">
       <button class="btn" onclick="fchLembr()">Cancelar</button>
-      <button class="btn pri" onclick="salvarLembr()">📌 Salvar</button>
+      <button class="btn pri" aria-label="Adicionar lembrete" onclick="salvarLembr()">📌 Salvar</button>
     </div>
   </div>
 </div>
@@ -767,7 +767,7 @@ textarea{resize:vertical;min-height:70px}
       <div class="fgr full"><label>Observação</label><textarea id="ag-obs" style="min-height:55px"></textarea></div>
     </div>
     <div class="br">
-      <button class="btn dan" id="ag-canc-btn" onclick="cancConsulta()" style="display:none;margin-right:auto">✕ Cancelar</button>
+      <button class="btn dan" aria-label="Fechar" id="ag-canc-btn" onclick="cancConsulta()" style="display:none;margin-right:auto">✕ Cancelar</button>
       <button class="btn" onclick="fchAg()">Fechar</button>
       <button class="btn pri" id="ag-salvar-btn" onclick="salvarConsulta()">✓ Salvar</button>
     </div>
@@ -959,7 +959,7 @@ function opsPrazo(sel){return PRAZOS.map(m=>`<option value="${m}" ${sel==m?'sele
 function addTrat(lid,nome='',prazo=0,valor=''){
   const el=document.getElementById(lid);
   const d=document.createElement('div');d.className='ti';
-  d.innerHTML=`<select onchange="onTS(this)"><option value="">Selecione...</option>${opsTrat()}</select><select onchange="calcDRf(this)">${opsPrazo(prazo)}</select><input type="date" title="Data de retorno (editável)" style="font-size:12px;color:var(--verde-e);background:var(--verde-c);border-color:var(--verde-c);font-weight:500;text-align:center;cursor:pointer" onchange="this.style.background='var(--amarelo-c)';this.style.color='#8a6000'" /><input type="number" placeholder="0,00" min="0" step="0.01" value="${valor}" style="font-size:12px" title="Valor R$"/><button class="btn-rt" onclick="this.parentElement.remove()" title="Remover tratamento">✕</button>`;
+  d.innerHTML=`<select onchange="onTS(this)"><option value="">Selecione...</option>${opsTrat()}</select><select onchange="calcDRf(this)">${opsPrazo(prazo)}</select><input type="date" title="Data de retorno (editável)" style="font-size:12px;color:var(--verde-e);background:var(--verde-c);border-color:var(--verde-c);font-weight:500;text-align:center;cursor:pointer" onchange="this.style.background='var(--amarelo-c)';this.style.color='#8a6000'" /><input type="number" placeholder="0,00" min="0" step="0.01" value="${valor}" style="font-size:12px" title="Valor R$"/><button class="btn-rt" aria-label="Remover tratamento" onclick="this.parentElement.remove()" title="Remover tratamento">✕</button>`;
   el.appendChild(d);
   if(nome){const s=d.querySelector('select');const op=Array.from(s.options).find(o=>o.value===nome);if(op)s.value=nome;}
   calcDRf(d.querySelectorAll('select')[1],null);
@@ -968,7 +968,7 @@ function addTrat(lid,nome='',prazo=0,valor=''){
 function addTratComData(lid,nome='',prazo=0,valor=''){
   const el=document.getElementById(lid);
   const d=document.createElement('div');d.className='ti';
-  d.innerHTML=`<select onchange="onTSa(this)"><option value="">Selecione...</option>${opsTrat()}</select><select onchange="calcDR(this)">${opsPrazo(prazo)}</select><input type="date" title="Data de retorno (editável)" style="font-size:12px;color:var(--verde-e);background:var(--verde-c);border-color:var(--verde-c);font-weight:500;text-align:center;cursor:pointer" onchange="this.style.background='var(--amarelo-c)';this.style.color='#8a6000'" /><input type="number" placeholder="0,00" min="0" step="0.01" value="${valor}" style="font-size:12px" title="Valor R$"/><button class="btn-rt" onclick="this.parentElement.remove()" title="Remover tratamento">✕</button>`;
+  d.innerHTML=`<select onchange="onTSa(this)"><option value="">Selecione...</option>${opsTrat()}</select><select onchange="calcDR(this)">${opsPrazo(prazo)}</select><input type="date" title="Data de retorno (editável)" style="font-size:12px;color:var(--verde-e);background:var(--verde-c);border-color:var(--verde-c);font-weight:500;text-align:center;cursor:pointer" onchange="this.style.background='var(--amarelo-c)';this.style.color='#8a6000'" /><input type="number" placeholder="0,00" min="0" step="0.01" value="${valor}" style="font-size:12px" title="Valor R$"/><button class="btn-rt" aria-label="Remover tratamento" onclick="this.parentElement.remove()" title="Remover tratamento">✕</button>`;
   el.appendChild(d);
   if(nome){const s=d.querySelector('select');const op=Array.from(s.options).find(o=>o.value===nome);if(op)s.value=nome;}
   calcDR(d.querySelectorAll('select')[1]);
@@ -1148,12 +1148,12 @@ function renderHoje(){
           <div class="cd">${escapeHtml(c.procedimento)}${c.telefone?' · '+escapeHtml(c.telefone):''}</div>
         </div>
         <div class="ca">
-          ${tel&&!isReal&&!isFalt?`<a href="https://wa.me/${tel}?text=${encodeURIComponent(msgConsulta(c))}" target="_blank" class="btn wpp" title="Enviar WhatsApp">💬</a>`:''}
-          ${c.paciente_id?`<a href="paciente.html?id=${c.paciente_id}" class="btn" style="padding:5px 8px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde)" title="Abrir ficha do paciente">👤</a>`:''}
+          ${tel&&!isReal&&!isFalt?`<a href="https://wa.me/${tel}?text=${encodeURIComponent(msgConsulta(c))}" target="_blank" class="btn wpp" aria-label="Enviar WhatsApp" title="Enviar WhatsApp">💬</a>`:''}
+          ${c.paciente_id?`<a href="paciente.html?id=${c.paciente_id}" class="btn" aria-label="Abrir ficha do paciente" style="padding:5px 8px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde)" title="Abrir ficha do paciente">👤</a>`:''}
           ${!isReal&&!isFalt
-            ?`<button class="btn" style="padding:5px 9px;font-size:12px;background:var(--verde);color:white;border-color:var(--verde)" onclick="marcarStatus('${c.id}','realizado')" title="Marcar como realizado">✅</button><button class="btn" style="padding:5px 9px;font-size:12px" onclick="marcarStatus('${c.id}','faltou')" title="Paciente faltou">❌</button>`
-            :`<button class="btn" style="padding:5px 9px;font-size:11px;color:var(--ct)" onclick="marcarStatus('${c.id}','pendente')" title="Desfazer">↩</button>`}
-          <button class="btn btn-vincular" style="padding:5px 8px;font-size:12px;background:var(--amarelo-c);color:#7a5800;border-color:var(--amarelo)" onclick='abrirVincular(${J(c)})' title="${c.paciente_id?'Substituir vínculo':'Vincular ao cadastro'}">🔗</button>
+            ?`<button class="btn" aria-label="Marcar como realizado" style="padding:5px 9px;font-size:12px;background:var(--verde);color:white;border-color:var(--verde)" onclick="marcarStatus('${c.id}','realizado')" title="Marcar como realizado">✅</button><button class="btn" aria-label="Paciente faltou" style="padding:5px 9px;font-size:12px" onclick="marcarStatus('${c.id}','faltou')" title="Paciente faltou">❌</button>`
+            :`<button class="btn" aria-label="Desfazer" style="padding:5px 9px;font-size:11px;color:var(--ct)" onclick="marcarStatus('${c.id}','pendente')" title="Desfazer">↩</button>`}
+          <button class="btn btn-vincular" aria-label="${c.paciente_id?'Substituir vínculo':'Vincular ao cadastro'}" style="padding:5px 8px;font-size:12px;background:var(--amarelo-c);color:#7a5800;border-color:var(--amarelo)" onclick='abrirVincular(${J(c)})' title="${c.paciente_id?'Substituir vínculo':'Vincular ao cadastro'}">🔗</button>
         </div>
       </div>`;
     }).join('')
@@ -1161,33 +1161,33 @@ function renderHoje(){
       <span style="color:var(--verde-e);font-weight:600">✅ ${real} realizada${real!==1?'s':''}</span>
       <span style="color:var(--ct)">❌ ${falt} faltou${falt!==1?'s':''}</span>
       <span style="color:var(--ct)">⏳ ${pend} pendente${pend!==1?'s':''}</span>
-      ${pend>0?`<button class="btn" style="margin-left:auto;font-size:11px;padding:4px 10px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde)" onclick="fecharDia()" title="Marcar todas as pendentes como faltou">🔒 Fechar dia</button>`:'<span style="margin-left:auto;font-size:11px;color:var(--verde-e);font-weight:600">✅ Dia encerrado</span>'}
+      ${pend>0?`<button class="btn" aria-label="Marcar todas as pendentes como faltou" style="margin-left:auto;font-size:11px;padding:4px 10px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde)" onclick="fecharDia()" title="Marcar todas as pendentes como faltou">🔒 Fechar dia</button>`:'<span style="margin-left:auto;font-size:11px;color:var(--verde-e);font-weight:600">✅ Dia encerrado</span>'}
     </div>`:'');
 
   // Consultas amanhã
   const ca=consultas.filter(c=>c.data===AMANHA_STR&&c.status!=='cancelado').sort((a,b)=>a.hora.localeCompare(b.hora));
   document.getElementById('l-cons-amanha').innerHTML=ca.length===0
     ?`<div class="empty" style="padding:1rem"><div class="empty-icon">📋</div><p>Nenhuma consulta amanhã.</p></div>`
-    :ca.map(c=>{const tel=c.telefone?'55'+c.telefone.replace(/\D/g,''):'';const conf=c.status==='confirmado';return`<div class="ci" data-cid="${c.id}"><div class="ch">${c.hora.slice(0,5)}</div><div style="flex:1"><div class="cn">${escapeHtml(c.nome)}</div><div class="cd">${escapeHtml(c.procedimento)}${c.telefone?' · '+escapeHtml(c.telefone):''}</div></div><div class="ca">${tel?`<a href="https://wa.me/${tel}?text=${encodeURIComponent(msgConsulta(c))}" target="_blank" class="btn wpp">💬 Confirmar</a>`:''}<button class="btn" style="padding:6px 9px;font-size:12px;background:${conf?'var(--verde)':'var(--bg)'};color:${conf?'white':'var(--ct)'};border-color:${conf?'var(--verde)':'var(--borda)'}" onclick="confirmarConsulta('${c.id}')" title="${conf?'Confirmada — clique para desfazer':'Marcar como confirmada'}">${conf?'✅':'⬜'}</button> ${c.paciente_id?`<a href="paciente.html?id=${c.paciente_id}" class="btn" style="padding:6px 9px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">Ficha</a>`:''}<button class="btn btn-vincular" style="padding:6px 9px;font-size:12px;background:var(--amarelo-c);color:#7a5800;border-color:var(--amarelo)" onclick='abrirVincular(${J(c)})' title="${c.paciente_id?'Substituir vínculo':'Vincular ao cadastro'}">🔗</button></div></div>`;}).join('');
+    :ca.map(c=>{const tel=c.telefone?'55'+c.telefone.replace(/\D/g,''):'';const conf=c.status==='confirmado';return`<div class="ci" data-cid="${c.id}"><div class="ch">${c.hora.slice(0,5)}</div><div style="flex:1"><div class="cn">${escapeHtml(c.nome)}</div><div class="cd">${escapeHtml(c.procedimento)}${c.telefone?' · '+escapeHtml(c.telefone):''}</div></div><div class="ca">${tel?`<a href="https://wa.me/${tel}?text=${encodeURIComponent(msgConsulta(c))}" target="_blank" class="btn wpp" aria-label="Enviar WhatsApp">💬 Confirmar</a>`:''}<button class="btn" aria-label="${conf?'Confirmada — clique para desfazer':'Marcar como confirmada'}" style="padding:6px 9px;font-size:12px;background:${conf?'var(--verde)':'var(--bg)'};color:${conf?'white':'var(--ct)'};border-color:${conf?'var(--verde)':'var(--borda)'}" onclick="confirmarConsulta('${c.id}')" title="${conf?'Confirmada — clique para desfazer':'Marcar como confirmada'}">${conf?'✅':'⬜'}</button> ${c.paciente_id?`<a href="paciente.html?id=${c.paciente_id}" class="btn" style="padding:6px 9px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">Ficha</a>`:''}<button class="btn btn-vincular" aria-label="${c.paciente_id?'Substituir vínculo':'Vincular ao cadastro'}" style="padding:6px 9px;font-size:12px;background:var(--amarelo-c);color:#7a5800;border-color:var(--amarelo)" onclick='abrirVincular(${J(c)})' title="${c.paciente_id?'Substituir vínculo':'Vincular ao cadastro'}">🔗</button></div></div>`;}).join('');
 
   // Verificações
   const vers=[];
   pacs.forEach(p=>(p.atendimentos||[]).forEach(a=>{if(a.verificacaoData){const d=dias(a.verificacaoData);if(d!==null&&d<=3&&d>=-2)vers.push({p,a,d});}}) );
   document.getElementById('l-verificacoes').innerHTML=vers.length===0
     ?`<div class="empty" style="padding:1rem"><div class="empty-icon">🔬</div><p>Nenhuma verificação nos próximos dias.</p></div>`
-    :vers.map(({p,a,d})=>{const tel='55'+p.telefone.replace(/\D/g,'');const txt=d<0?`${Math.abs(d)}d atrasada`:d===0?'Hoje!':` em ${d}d`;return`<div class="ai ver"><div><div class="an">🔬 ${escapeHtml(p.nome)}</div><div class="ad">${a.trats?.map(t=>t.nome).join(', ')||''} · ${escapeHtml(p.telefone)}</div></div><div class="aa"><span class="ab">${txt}</span><a href="https://wa.me/${tel}?text=${encodeURIComponent(msgVerificacao(p,a.trats?.map(t=>t.nome).join(', ')||'procedimento'))}" target="_blank" class="btn wpp">💬 WhatsApp</a><a href="paciente.html?id=${p.id}" class="btn" style="font-size:12px;padding:7px 10px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">👤 Ficha</a></div></div>`;}).join('');
+    :vers.map(({p,a,d})=>{const tel='55'+p.telefone.replace(/\D/g,'');const txt=d<0?`${Math.abs(d)}d atrasada`:d===0?'Hoje!':` em ${d}d`;return`<div class="ai ver"><div><div class="an">🔬 ${escapeHtml(p.nome)}</div><div class="ad">${a.trats?.map(t=>t.nome).join(', ')||''} · ${escapeHtml(p.telefone)}</div></div><div class="aa"><span class="ab">${txt}</span><a href="https://wa.me/${tel}?text=${encodeURIComponent(msgVerificacao(p,a.trats?.map(t=>t.nome).join(', ')||'procedimento'))}" target="_blank" class="btn wpp">💬 WhatsApp</a><a href="paciente.html?id=${p.id}" class="btn" aria-label="Abrir ficha do paciente" style="font-size:12px;padding:7px 10px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">👤 Ficha</a></div></div>`;}).join('');
 
   // Aniversários
   const anivs=pacs.filter(p=>anivHoje(p.data_nascimento));
   document.getElementById('l-aniv').innerHTML=anivs.length===0
     ?`<div class="empty" style="padding:1rem"><div class="empty-icon">🎂</div><p>Nenhum aniversariante hoje.</p></div>`
-    :anivs.map(p=>`<div class="ai anv"><div><div class="an">🎂 ${escapeHtml(p.nome)}</div><div class="ad">${escapeHtml(p.telefone)}</div></div><div class="aa"><span class="ab">Aniversário hoje!</span><button class="btn anv" onclick='abrAniv(${J(p)})'>🎉 Parabenizar</button><a href="paciente.html?id=${p.id}" class="btn" style="padding:7px 11px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">👤 Ficha</a></div></div>`).join('');
+    :anivs.map(p=>`<div class="ai anv"><div><div class="an">🎂 ${escapeHtml(p.nome)}</div><div class="ad">${escapeHtml(p.telefone)}</div></div><div class="aa"><span class="ab">Aniversário hoje!</span><button class="btn anv" aria-label="Parabenizar aniversário" onclick='abrAniv(${J(p)})'>🎉 Parabenizar</button><a href="paciente.html?id=${p.id}" class="btn" aria-label="Abrir ficha do paciente" style="padding:7px 11px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">👤 Ficha</a></div></div>`).join('');
 
   // Lembretes
   const lems=[];pacs.forEach(p=>(p.lembretes||[]).forEach(l=>{const d=dias(l.data);if(d!==null&&d<=15&&(l.recado||l.texto))lems.push({...l,_p:p,_d:d});}));lems.sort((a,b)=>a._d-b._d);
   document.getElementById('l-lembr').innerHTML=lems.length===0
     ?`<div class="empty" style="padding:1rem"><div class="empty-icon">📌</div><p>Nenhum lembrete nos próximos 15 dias.</p></div>`
-    :lems.map(l=>{const cls=l._d<=0?'urg':'lem';const txt=l._d<0?`${Math.abs(l._d)}d atrasado`:l._d===0?'Hoje!':`em ${l._d}d`;const icone=l.tipo==='cobranca'?'💰':'📌';const recadoTxt=l.recado||l.texto||'';return`<div class="ai ${cls}"><div style="flex:1"><div class="an">${icone} ${l._p.nome}</div><div class="ad">${recadoTxt}</div></div><div class="aa"><span class="ab">${txt}</span>${l.tipo==='cobranca'?`<button class="btn" style="font-size:12px;padding:7px 10px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde)" onclick="abrAtend(${J(l._p)})">💰 Ver</button>`:''}<a href="paciente.html?id=${l._p.id}" class="btn" style="font-size:12px;padding:7px 10px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">👤 Ficha</a><button class="btn" style="font-size:12px;padding:7px 10px;color:var(--vermelho)" onclick="delLembr('${l._p.id}','${l.id}')">✓ Feito</button></div></div>`;}).join('');
+    :lems.map(l=>{const cls=l._d<=0?'urg':'lem';const txt=l._d<0?`${Math.abs(l._d)}d atrasado`:l._d===0?'Hoje!':`em ${l._d}d`;const icone=l.tipo==='cobranca'?'💰':'📌';const recadoTxt=l.recado||l.texto||'';return`<div class="ai ${cls}"><div style="flex:1"><div class="an">${icone} ${l._p.nome}</div><div class="ad">${recadoTxt}</div></div><div class="aa"><span class="ab">${txt}</span>${l.tipo==='cobranca'?`<button class="btn" style="font-size:12px;padding:7px 10px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde)" onclick="abrAtend(${J(l._p)})">💰 Ver</button>`:''}<a href="paciente.html?id=${l._p.id}" class="btn" aria-label="Abrir ficha do paciente" style="font-size:12px;padding:7px 10px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">👤 Ficha</a><button class="btn" style="font-size:12px;padding:7px 10px;color:var(--vermelho)" onclick="delLembr('${l._p.id}','${l.id}')">✓ Feito</button></div></div>`;}).join('');
 
   // Retornos
   const rets=[];pacs.forEach(p=>(p.tratamentos_adicionais||[]).forEach(t=>{const d=dias(t.dataRetorno);if(d!==null&&d<=15)rets.push({...p,_t:t,_d:d});}));rets.sort((a,b)=>a._d-b._d);
@@ -1223,7 +1223,7 @@ async function renderAlertasFinHoje(){
       </div>
       <div class="aa">
         <button class="btn" style="padding:6px 10px;font-size:12px;background:var(--amarelo);color:white;border-color:var(--amarelo)" onclick="abrirMarcarRecebido('${l.id}')">⏳ Marcar recebido</button>
-        ${l.paciente_id?`<a href="paciente.html?id=${l.paciente_id}" class="btn" style="padding:6px 10px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">👤 Ficha</a>`:''}
+        ${l.paciente_id?`<a href="paciente.html?id=${l.paciente_id}" class="btn" aria-label="Abrir ficha do paciente" style="padding:6px 10px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">👤 Ficha</a>`:''}
       </div>
     </div>`;
   }).join('');
@@ -1282,12 +1282,12 @@ function cardAlerta(p, d, nomeTrat) {
     ? `<span class="ab" style="background:var(--azul-c);color:var(--azul)">💬 Msg enviada</span>`
     : `<span class="ab">${txt}</span>`;
  const botoes = status==='aguardando'
-    ? `<button class="btn" style="padding:7px 11px;font-size:12px;color:var(--verde);border-color:var(--verde)" onclick="setStatusRetorno('${p.id}',${JSON.stringify(nomeTrat)},'confirmado')">✅ Retornou</button>
-       <button class="btn" style="padding:7px 11px;font-size:12px;color:var(--vermelho)" onclick="setStatusRetorno('${p.id}',${JSON.stringify(nomeTrat)},'pendente')">↩ Reabrir</button>
-       <a href="paciente.html?id=${p.id}" class="btn" style="padding:7px 11px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">👤 Ficha</a>`
-    : `<button class="btn wpp" onclick='abrRet(${J(p)},${JSON.stringify(nomeTrat)})'>🔔 WhatsApp</button>
-       <button class="btn" style="padding:7px 11px;font-size:12px;color:var(--ct);opacity:.7" onclick="arquivarAlerta('${p.id}',${JSON.stringify(nomeTrat)})" title="Arquivar">📁</button>
-       <a href="paciente.html?id=${p.id}" class="btn" style="padding:7px 11px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">👤 Ficha</a>`;
+    ? `<button class="btn" aria-label="Confirmar" style="padding:7px 11px;font-size:12px;color:var(--verde);border-color:var(--verde)" onclick="setStatusRetorno('${p.id}',${JSON.stringify(nomeTrat)},'confirmado')">✅ Retornou</button>
+       <button class="btn" aria-label="Desfazer" style="padding:7px 11px;font-size:12px;color:var(--vermelho)" onclick="setStatusRetorno('${p.id}',${JSON.stringify(nomeTrat)},'pendente')">↩ Reabrir</button>
+       <a href="paciente.html?id=${p.id}" class="btn" aria-label="Abrir ficha do paciente" style="padding:7px 11px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">👤 Ficha</a>`
+    : `<button class="btn wpp" aria-label="Lembrete de retorno" onclick='abrRet(${J(p)},${JSON.stringify(nomeTrat)})'>🔔 WhatsApp</button>
+       <button class="btn" aria-label="Arquivar" style="padding:7px 11px;font-size:12px;color:var(--ct);opacity:.7" onclick="arquivarAlerta('${p.id}',${JSON.stringify(nomeTrat)})" title="Arquivar">📁</button>
+       <a href="paciente.html?id=${p.id}" class="btn" aria-label="Abrir ficha do paciente" style="padding:7px 11px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600">👤 Ficha</a>`;
   return `<div class="ai ${cls}">
     <div><div class="an">${escapeHtml(p.nome)}</div><div class="ad">${nomeTrat} · ${escapeHtml(p.telefone)} · Retorno: ${fDt(p.tratamentos_adicionais?.find(t=>t.nome===nomeTrat)?.dataRetorno)}</div></div>
     <div class="aa">${statusBadge}${botoes}</div>
@@ -1347,20 +1347,20 @@ function renderPac(){
         <div class="ps">${tls}<br><a href="tel:${p.telefone.replace(/\D/g,'')}" style="color:var(--ct);text-decoration:none">📞 ${escapeHtml(p.telefone)}</a>${p.data_nascimento?' · 🎂 '+fDt(p.data_nascimento):''}${p.indicacao?` · 👥 ${escapeHtml(p.indicacao)}`:''}${fatTotal>0?` · 💰 ${fmtBRL(fatTotal)}`:''}
         </div>
         <div class="pa">
-        <a href="paciente.html?id=${p.id}" class="btn" style="padding:6px 10px;font-size:12px">👤 Ficha</a>
-          ${isPend?`<button class="btn" style="padding:6px 10px;color:var(--amarelo);border-color:var(--amarelo);font-weight:600" onclick='completarCad(${J(p)})'>✏️ Completar</button>`:''}
-          ${p.link_drive&&!isPend?`<button class="btn" style="padding:6px 10px;color:var(--verde-e)" onclick="window.open('${escapeHtml(p.link_drive)}','_blank')" title="Abrir pasta no Drive">📁</button>`:''}
-          ${p.instagram&&!isPend?`<a href="https://instagram.com/${p.instagram.replace('@','').trim()}" target="_blank" class="btn" style="padding:6px 10px;background:#E1306C;color:white;border-color:#E1306C" title="Instagram: ${escapeHtml(p.instagram)}">📷</a>`:''}
-          ${p.facebook&&!isPend?`<a href="${(p.facebook||'').startsWith('http')?p.facebook:'https://facebook.com/'+(p.facebook||'').trim()}" target="_blank" class="btn" style="padding:6px 10px;background:#1877F2;color:white;border-color:#1877F2" title="Facebook: ${escapeHtml(p.facebook)}">👥</a>`:''}
-          <a href="tel:${p.telefone.replace(/\D/g,'')}" class="btn" style="padding:6px 10px;color:var(--azul)" title="Ligar">📞</a>
-          <a href="https://wa.me/${tel55}" target="_blank" class="btn wpp" style="padding:6px 10px" title="Enviar WhatsApp">💬</a>
-          ${prox&&!isPend?`<button class="btn" style="padding:6px 10px;background:var(--amarelo);color:white;border-color:var(--amarelo)" onclick='abrRet(${J(p)},${JSON.stringify(prox.nome)})' title="Lembrete de retorno">🔔</button>`:''}
-          ${isAniv?`<button class="btn anv" style="padding:6px 10px" onclick='abrAniv(${J(p)})' title="Parabenizar aniversário">🎉</button>`:''}
-          ${!isPend?`<button class="btn" style="padding:6px 10px;color:var(--azul)" onclick="abrLembr('${p.id}')" title="Adicionar lembrete">📌</button>`:''}
-          <button class="btn" style="padding:6px 10px" onclick='abrEdit(${J(p)})' title="Editar cadastro">✏️</button>
-          ${!isPend?`<button class="btn pri" style="padding:6px 10px;font-size:12px" onclick='abrAtend(${J(p)})' title="Registrar atendimento">🩺</button>`:''}
-        ${!isPend?`<button class="btn" style="padding:6px 10px;font-size:12px;color:var(--azul);border-color:var(--azul)" onclick='abrDocs(${J(p)})' title="Documentos">📄</button>`:''}
-          <button class="btn dan" onclick="excluir('${p.id}','${p.nome.replace(/'/g,"\\'")}')" title="Excluir paciente">🗑</button>
+        <a href="paciente.html?id=${p.id}" class="btn" aria-label="Abrir ficha do paciente" style="padding:6px 10px;font-size:12px">👤 Ficha</a>
+          ${isPend?`<button class="btn" aria-label="Editar" style="padding:6px 10px;color:var(--amarelo);border-color:var(--amarelo);font-weight:600" onclick='completarCad(${J(p)})'>✏️ Completar</button>`:''}
+          ${p.link_drive&&!isPend?`<button class="btn" aria-label="Abrir pasta no Drive" style="padding:6px 10px;color:var(--verde-e)" onclick="window.open('${escapeHtml(p.link_drive)}','_blank')" title="Abrir pasta no Drive">📁</button>`:''}
+          ${p.instagram&&!isPend?`<a href="https://instagram.com/${p.instagram.replace('@','').trim()}" target="_blank" class="btn" aria-label="Instagram: ${escapeHtml(p.instagram)}" style="padding:6px 10px;background:#E1306C;color:white;border-color:#E1306C" title="Instagram: ${escapeHtml(p.instagram)}">📷</a>`:''}
+          ${p.facebook&&!isPend?`<a href="${(p.facebook||'').startsWith('http')?p.facebook:'https://facebook.com/'+(p.facebook||'').trim()}" target="_blank" class="btn" aria-label="Facebook: ${escapeHtml(p.facebook)}" style="padding:6px 10px;background:#1877F2;color:white;border-color:#1877F2" title="Facebook: ${escapeHtml(p.facebook)}">👥</a>`:''}
+          <a href="tel:${p.telefone.replace(/\D/g,'')}" class="btn" aria-label="Ligar" style="padding:6px 10px;color:var(--azul)" title="Ligar">📞</a>
+          <a href="https://wa.me/${tel55}" target="_blank" class="btn wpp" aria-label="Enviar WhatsApp" style="padding:6px 10px" title="Enviar WhatsApp">💬</a>
+          ${prox&&!isPend?`<button class="btn" aria-label="Lembrete de retorno" style="padding:6px 10px;background:var(--amarelo);color:white;border-color:var(--amarelo)" onclick='abrRet(${J(p)},${JSON.stringify(prox.nome)})' title="Lembrete de retorno">🔔</button>`:''}
+          ${isAniv?`<button class="btn anv" aria-label="Parabenizar aniversário" style="padding:6px 10px" onclick='abrAniv(${J(p)})' title="Parabenizar aniversário">🎉</button>`:''}
+          ${!isPend?`<button class="btn" aria-label="Adicionar lembrete" style="padding:6px 10px;color:var(--azul)" onclick="abrLembr('${p.id}')" title="Adicionar lembrete">📌</button>`:''}
+          <button class="btn" aria-label="Editar cadastro" style="padding:6px 10px" onclick='abrEdit(${J(p)})' title="Editar cadastro">✏️</button>
+          ${!isPend?`<button class="btn pri" aria-label="Registrar atendimento" style="padding:6px 10px;font-size:12px" onclick='abrAtend(${J(p)})' title="Registrar atendimento">🩺</button>`:''}
+        ${!isPend?`<button class="btn" aria-label="Documentos" style="padding:6px 10px;font-size:12px;color:var(--azul);border-color:var(--azul)" onclick='abrDocs(${J(p)})' title="Documentos">📄</button>`:''}
+          <button class="btn dan" aria-label="Excluir paciente" onclick="excluir('${p.id}','${p.nome.replace(/'/g,"\\'")}')" title="Excluir paciente">🗑</button>
         </div>
       </div>
       <span class="badge ${isPend?'prox':bc}" style="align-self:flex-start;margin-top:4px">${isPend?'A receber':bt}</span>
@@ -1730,7 +1730,7 @@ function renderHistorico(p){
     return`<div style="background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:8px;border:1px solid var(--borda)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <div><span style="font-size:13px;font-weight:600;color:var(--txt)">${fDt(data)}</span>${at?.valor?`<span style="font-size:12px;color:var(--verde);margin-left:8px">💰 ${fmtBRL(at.valor)}</span>`:''}${at?.verificacaoData?`<span class="ver-badge" style="margin-left:6px">🔬 ver. ${fDt(at.verificacaoData)}</span>`:''}</div>
-        <div style="display:flex;gap:6px"><button class="btn" style="padding:4px 10px;font-size:12px;color:var(--azul)" onclick="editarAtendData('${data}')">✏️ Editar</button><button class="btn" style="padding:4px 10px;font-size:12px;color:var(--vermelho)" onclick="excluirAtendData('${data}')" title="Excluir atendimento">🗑</button></div>
+        <div style="display:flex;gap:6px"><button class="btn" aria-label="Editar" style="padding:4px 10px;font-size:12px;color:var(--azul)" onclick="editarAtendData('${data}')">✏️ Editar</button><button class="btn" aria-label="Excluir atendimento" style="padding:4px 10px;font-size:12px;color:var(--vermelho)" onclick="excluirAtendData('${data}')" title="Excluir atendimento">🗑</button></div>
       </div>
       ${ts.map(t=>`<div style="font-size:13px;color:var(--ct);padding:2px 0">• ${escapeHtml(t.nome)} · ${t.prazo>0?t.prazo+' '+(t.prazo===1?'mês':'meses'):'Sem retorno'}${t.dataRetorno?' → '+fDt(t.dataRetorno):''}${t.valor?` · <span style="color:var(--verde);font-weight:500">${fmtBRL(t.valor)}</span>`:''}</div>`).join('')}
     </div>`;
@@ -1964,7 +1964,7 @@ async function carregarAtendDocs(pacId){
         <div style="font-size:13px;font-weight:500">${DOCS_NOMES[d.tipo]||d.tipo}</div>
         <div style="font-size:11px;color:var(--ct)">Salvo em ${fDt(d.data_assinatura||d.criado_em?.split('T')[0])}</div>
       </div>
-      <a href="documentos.html?pac=${pacId}&ver=${d.id}&doc=${d.tipo}" target="_blank" class="btn" style="padding:5px 10px;font-size:12px">👁 Ver</a>
+      <a href="documentos.html?pac=${pacId}&ver=${d.id}&doc=${d.tipo}" target="_blank" class="btn" aria-label="Ver documento" style="padding:5px 10px;font-size:12px">👁 Ver</a>
     </div>`).join('');
 }
 
@@ -2361,8 +2361,8 @@ function renderFinLista(tipo, elId){
             </div>
             <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
               ${l.status==='pendente'?`<button class="btn" style="padding:4px 8px;font-size:11px;background:var(--amarelo);color:white;border-color:var(--amarelo)" onclick="abrirMarcarRecebido('${l.id}')">⏳ Marcar recebido</button>`:''}
-              <button class="btn" style="padding:4px 8px;font-size:11px" onclick="editarLancamento('${l.id}')" title="Editar: ${escapeHtml(l.descricao)}">✏️</button>
-              <button class="btn dan" style="padding:4px 8px;font-size:11px" onclick="excluirLancamento('${l.id}')" title="Excluir: ${escapeHtml(l.descricao)}">🗑</button>
+              <button class="btn" aria-label="Editar: ${escapeHtml(l.descricao)}" style="padding:4px 8px;font-size:11px" onclick="editarLancamento('${l.id}')" title="Editar: ${escapeHtml(l.descricao)}">✏️</button>
+              <button class="btn dan" aria-label="Excluir: ${escapeHtml(l.descricao)}" style="padding:4px 8px;font-size:11px" onclick="excluirLancamento('${l.id}')" title="Excluir: ${escapeHtml(l.descricao)}">🗑</button>
             </div>
           </div>`).join('')}
       </div>`).join('');
@@ -2671,7 +2671,7 @@ async function abrDocs(p){
   } else {
     el.innerHTML=data.map(d=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:5px;border:1px solid var(--borda)">
       <div><div style="font-size:13px;font-weight:500">${nomes[d.tipo]||d.tipo}</div><div style="font-size:11px;color:var(--ct)">${d.data_assinatura||d.criado_em?.split('T')[0]||''}</div></div>
-      <a href="documentos.html?pac=${p.id}" class="btn" style="padding:5px 10px;font-size:12px">👁 Ver</a>
+      <a href="documentos.html?pac=${p.id}" class="btn" aria-label="Ver documento" style="padding:5px 10px;font-size:12px">👁 Ver</a>
     </div>`).join('');
   }
   document.getElementById('m-docs').classList.add('open');
@@ -2881,7 +2881,7 @@ function renderConsDia(ds){
   const el=document.getElementById('ag-cons');
   const cs=consultas.filter(c=>c.data===ds).sort((a,b)=>a.hora.localeCompare(b.hora));
   if(!cs.length){el.innerHTML=`<div class="empty" style="padding:1.5rem"><div class="empty-icon">📋</div><p>Nenhuma consulta. Clique em "+ Agendar".</p></div>`;renderConsMes();return;}
-  el.innerHTML=cs.map(c=>{const tel=c.telefone?'55'+c.telefone.replace(/\D/g,''):'';const cls=c.status==='cancelado'?'can':c.status==='pendente'?'pen':c.status==='aguardando'?'online':'';return`<div class="ci ${cls}" data-cid="${c.id}"><div class="ch">${c.hora.slice(0,5)}</div><div style="flex:1"><div class="cn">${escapeHtml(c.nome)}${c.status==='cancelado'?' <span style="font-size:11px;color:var(--vermelho)">(cancelado)</span>':''}${c.origem==='online'?'<span class="badge-online">📱 Online</span>':''}</div><div class="cd">${escapeHtml(c.procedimento)||'Sem procedimento'}${c.telefone?' · '+escapeHtml(c.telefone):''}${c.observacao?' · '+escapeHtml(c.observacao):''}</div></div><div class="ca">${tel?`<a href="https://wa.me/${tel}?text=${encodeURIComponent(msgConsulta(c))}" target="_blank" class="btn wpp" title="Enviar WhatsApp">💬</a>`:''}<a href="${urlGcal(c)}" target="_blank" class="btn gcal" title="Adicionar ao Google Agenda">📆</a><button class="btn" style="padding:6px 9px;font-size:12px" onclick='editCons(${J(c)})' title="Editar consulta">✏️</button>${c.paciente_id?`<a href="paciente.html?id=${c.paciente_id}" class="btn" style="padding:6px 9px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600" title="Abrir ficha do paciente">Ficha</a>`:''}<button class="btn btn-vincular" style="padding:6px 9px;font-size:12px;background:var(--amarelo-c);color:#7a5800;border-color:var(--amarelo)" onclick='abrirVincular(${J(c)})' title="${c.paciente_id?'Substituir vínculo':'Vincular ao cadastro'}">🔗</button></div></div>`;}).join('');
+  el.innerHTML=cs.map(c=>{const tel=c.telefone?'55'+c.telefone.replace(/\D/g,''):'';const cls=c.status==='cancelado'?'can':c.status==='pendente'?'pen':c.status==='aguardando'?'online':'';return`<div class="ci ${cls}" data-cid="${c.id}"><div class="ch">${c.hora.slice(0,5)}</div><div style="flex:1"><div class="cn">${escapeHtml(c.nome)}${c.status==='cancelado'?' <span style="font-size:11px;color:var(--vermelho)">(cancelado)</span>':''}${c.origem==='online'?'<span class="badge-online">📱 Online</span>':''}</div><div class="cd">${escapeHtml(c.procedimento)||'Sem procedimento'}${c.telefone?' · '+escapeHtml(c.telefone):''}${c.observacao?' · '+escapeHtml(c.observacao):''}</div></div><div class="ca">${tel?`<a href="https://wa.me/${tel}?text=${encodeURIComponent(msgConsulta(c))}" target="_blank" class="btn wpp" aria-label="Enviar WhatsApp" title="Enviar WhatsApp">💬</a>`:''}<a href="${urlGcal(c)}" target="_blank" class="btn gcal" aria-label="Adicionar ao Google Agenda" title="Adicionar ao Google Agenda">📆</a><button class="btn" aria-label="Editar consulta" style="padding:6px 9px;font-size:12px" onclick='editCons(${J(c)})' title="Editar consulta">✏️</button>${c.paciente_id?`<a href="paciente.html?id=${c.paciente_id}" class="btn" aria-label="Abrir ficha do paciente" style="padding:6px 9px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600" title="Abrir ficha do paciente">Ficha</a>`:''}<button class="btn btn-vincular" aria-label="${c.paciente_id?'Substituir vínculo':'Vincular ao cadastro'}" style="padding:6px 9px;font-size:12px;background:var(--amarelo-c);color:#7a5800;border-color:var(--amarelo)" onclick='abrirVincular(${J(c)})' title="${c.paciente_id?'Substituir vínculo':'Vincular ao cadastro'}">🔗</button></div></div>`;}).join('');
   renderConsMes();
   setTimeout(injetarBtnFicha,300);
   setTimeout(injetarBtnFicha,1200);
@@ -2907,9 +2907,9 @@ function renderTimeline(ds){
             <div class="ev-nome">${escapeHtml(c.nome)}</div>
             ${c.procedimento?`<div class="ev-proc">${escapeHtml(c.procedimento)}</div>`:''}
             <div class="ev-acoes">
-              ${tel?`<a href="https://wa.me/${tel}?text=${encodeURIComponent(msgConsulta(c))}" target="_blank" class="btn wpp" style="padding:4px 8px;font-size:11px" onclick="event.stopPropagation()">💬 WhatsApp</a>`:''}
-              ${c.paciente_id?`<a href="paciente.html?id=${c.paciente_id}" class="btn" style="padding:4px 8px;font-size:11px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600" onclick="event.stopPropagation()">👤 Ficha</a>`:''}<button class="btn btn-vincular" style="padding:4px 8px;font-size:11px;background:var(--amarelo-c);color:#7a5800;border-color:var(--amarelo)" onclick="event.stopPropagation();abrirVincular(${J(c)})" title="${c.paciente_id?'Substituir vínculo':'Vincular ao cadastro'}">🔗</button>
-              <button class="btn" style="padding:4px 8px;font-size:11px" onclick="event.stopPropagation();editCons(${J(c)})">✏️ Editar</button>
+              ${tel?`<a href="https://wa.me/${tel}?text=${encodeURIComponent(msgConsulta(c))}" target="_blank" class="btn wpp" aria-label="Enviar WhatsApp" style="padding:4px 8px;font-size:11px" onclick="event.stopPropagation()">💬 WhatsApp</a>`:''}
+              ${c.paciente_id?`<a href="paciente.html?id=${c.paciente_id}" class="btn" aria-label="Abrir ficha do paciente" style="padding:4px 8px;font-size:11px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600" onclick="event.stopPropagation()">👤 Ficha</a>`:''}<button class="btn btn-vincular" aria-label="${c.paciente_id?'Substituir vínculo':'Vincular ao cadastro'}" style="padding:4px 8px;font-size:11px;background:var(--amarelo-c);color:#7a5800;border-color:var(--amarelo)" onclick="event.stopPropagation();abrirVincular(${J(c)})" title="${c.paciente_id?'Substituir vínculo':'Vincular ao cadastro'}">🔗</button>
+              <button class="btn" aria-label="Editar" style="padding:4px 8px;font-size:11px" onclick="event.stopPropagation();editCons(${J(c)})">✏️ Editar</button>
             </div>
           </div>`;
         }).join('')}
@@ -2972,7 +2972,7 @@ function renderConsMes(){
   const cs=consultas.filter(c=>c.data.startsWith(`${ano}-${mesStr}`)&&c.status!=='cancelado').sort((a,b)=>a.data.localeCompare(b.data)||a.hora.localeCompare(b.hora));
   if(!cs.length){el.innerHTML=`<div class="empty" style="padding:1rem"><div class="empty-icon">📋</div><p>Nenhuma consulta em ${MESES_N[mes]}.</p></div>`;return;}
   const grupos={};cs.forEach(c=>{if(!grupos[c.data])grupos[c.data]=[];grupos[c.data].push(c);});
-  el.innerHTML=Object.entries(grupos).map(([data,cons])=>{const[y,m,d]=data.split('-');const isH=data===HOJE_STR;return`<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:600;color:${isH?'var(--verde-e)':'var(--ct)'};text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;cursor:pointer" onclick="selDia('${data}')">${DIAS[new Date(data+'T12:00:00').getDay()]}, ${d}/${m}/${y}${isH?' · hoje':''}</div>${cons.map(c=>{const tel=c.telefone?'55'+c.telefone.replace(/\D/g,''):'';return`<div class="ci" data-cid="${c.id}" style="margin-bottom:5px"><div class="ch">${c.hora.slice(0,5)}</div><div style="flex:1"><div class="cn">${escapeHtml(c.nome)}</div><div class="cd">${escapeHtml(c.procedimento)}${c.telefone?' · '+escapeHtml(c.telefone):''}</div></div><div class="ca">${tel?`<a href="https://wa.me/${tel}?text=${encodeURIComponent(msgConsulta(c))}" target="_blank" class="btn wpp" style="padding:6px 9px" title="Enviar WhatsApp">💬</a>`:''}<button class="btn" style="padding:6px 9px;font-size:12px" onclick='editCons(${J(c)})' title="Editar consulta">✏️</button>${c.paciente_id?`<a href="paciente.html?id=${c.paciente_id}" class="btn" style="padding:6px 9px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600" title="Abrir ficha do paciente">Ficha</a>`:''}<button class="btn btn-vincular" style="padding:6px 9px;font-size:12px;background:var(--amarelo-c);color:#7a5800;border-color:var(--amarelo)" onclick='abrirVincular(${J(c)})' title="${c.paciente_id?'Substituir vínculo':'Vincular ao cadastro'}">🔗</button></div></div>`;}).join('')}</div>`;}).join('');
+  el.innerHTML=Object.entries(grupos).map(([data,cons])=>{const[y,m,d]=data.split('-');const isH=data===HOJE_STR;return`<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:600;color:${isH?'var(--verde-e)':'var(--ct)'};text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;cursor:pointer" onclick="selDia('${data}')">${DIAS[new Date(data+'T12:00:00').getDay()]}, ${d}/${m}/${y}${isH?' · hoje':''}</div>${cons.map(c=>{const tel=c.telefone?'55'+c.telefone.replace(/\D/g,''):'';return`<div class="ci" data-cid="${c.id}" style="margin-bottom:5px"><div class="ch">${c.hora.slice(0,5)}</div><div style="flex:1"><div class="cn">${escapeHtml(c.nome)}</div><div class="cd">${escapeHtml(c.procedimento)}${c.telefone?' · '+escapeHtml(c.telefone):''}</div></div><div class="ca">${tel?`<a href="https://wa.me/${tel}?text=${encodeURIComponent(msgConsulta(c))}" target="_blank" class="btn wpp" aria-label="Enviar WhatsApp" style="padding:6px 9px" title="Enviar WhatsApp">💬</a>`:''}<button class="btn" aria-label="Editar consulta" style="padding:6px 9px;font-size:12px" onclick='editCons(${J(c)})' title="Editar consulta">✏️</button>${c.paciente_id?`<a href="paciente.html?id=${c.paciente_id}" class="btn" aria-label="Abrir ficha do paciente" style="padding:6px 9px;font-size:12px;background:var(--verde-c);color:var(--verde-e);border-color:var(--verde);font-weight:600" title="Abrir ficha do paciente">Ficha</a>`:''}<button class="btn btn-vincular" aria-label="${c.paciente_id?'Substituir vínculo':'Vincular ao cadastro'}" style="padding:6px 9px;font-size:12px;background:var(--amarelo-c);color:#7a5800;border-color:var(--amarelo)" onclick='abrirVincular(${J(c)})' title="${c.paciente_id?'Substituir vínculo':'Vincular ao cadastro'}">🔗</button></div></div>`;}).join('')}</div>`;}).join('');
 }
 
 function abrAg(data){
@@ -2992,9 +2992,16 @@ async function cancConsulta(){if(!agEditando||!confirm('Cancelar esta consulta?'
 async function salvarConsulta(){
   const nome=document.getElementById('ag-nome').value.trim();const data=document.getElementById('ag-data').value;const hora=document.getElementById('ag-hora').value;const tel=document.getElementById('ag-tel').value.trim();
   if(!nome||!data||!hora){toast('Preencha nome, data e horário!','vermelho');return;}
+  const aid=document.getElementById('ag-id').value;
+  // Verificar conflito de horário (só em consultas novas ou quando data/hora mudou)
+  const{data:conflitos}=await db.from('agenda').select('id,nome').eq('data',data).eq('hora',hora).neq('status','cancelado');
+  const conflitoReal=conflitos?.filter(c=>c.id!==aid);
+  if(conflitoReal&&conflitoReal.length>0){
+    const nomeConflito=conflitoReal[0].nome;
+    if(!confirm(`⚠️ Já existe uma consulta neste horário (${nomeConflito}). Deseja agendar mesmo assim?`))return;
+  }
   const payload={nome,telefone:tel||null,procedimento:document.getElementById('ag-proc').value||null,data,hora,observacao:document.getElementById('ag-obs').value.trim()||null,paciente_id:agPacId||null,status:'agendado'};
   const btn=document.getElementById('ag-salvar-btn');btn.disabled=true;btn.textContent='Salvando...';
-  const aid=document.getElementById('ag-id').value;
   const{error}=aid?await db.from('agenda').update(payload).eq('id',aid):await db.from('agenda').insert(payload);
   btn.disabled=false;btn.innerHTML='✓ Salvar';
   if(error){toast('Erro: '+error.message,'vermelho');return;}
@@ -3580,8 +3587,8 @@ async function renderPedidosOnline(){
               ${c.telefone?`<div style="font-size:11px;color:var(--ct)">${escapeHtml(c.telefone)}</div>`:''}
             </div>
             <div style="display:flex;gap:6px;flex-shrink:0">
-              <button class="btn" style="padding:5px 12px;font-size:12px;background:var(--verde);color:white;border-color:var(--verde)" onclick="aprovarPedido('${c.id}')">✅ Aprovar</button>
-              <button class="btn" style="padding:5px 12px;font-size:12px;background:var(--vermelho-c);color:var(--vermelho);border-color:var(--vermelho)" onclick="rejeitarPedido('${c.id}','${c.telefone||''}','${escapeHtml(c.nome)}')">❌ Recusar</button>
+              <button class="btn" aria-label="Confirmar" style="padding:5px 12px;font-size:12px;background:var(--verde);color:white;border-color:var(--verde)" onclick="aprovarPedido('${c.id}')">✅ Aprovar</button>
+              <button class="btn" aria-label="Recusar" style="padding:5px 12px;font-size:12px;background:var(--vermelho-c);color:var(--vermelho);border-color:var(--vermelho)" onclick="rejeitarPedido('${c.id}','${c.telefone||''}','${escapeHtml(c.nome)}')">❌ Recusar</button>
             </div>
           </div>`).join('')}
       </div>`;
@@ -4113,7 +4120,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn" onclick="fecharMarcarRecebido()">Cancelar</button>
-      <button class="btn pri" id="mrec-btn" onclick="confirmarMarcarRecebido()">✅ Confirmar recebimento</button>
+      <button class="btn pri" aria-label="Confirmar" id="mrec-btn" onclick="confirmarMarcarRecebido()">✅ Confirmar recebimento</button>
     </div>
   </div>
 </div>
@@ -4164,13 +4171,13 @@ document.getElementById('modal-mrec').addEventListener('click',function(e){if(e.
     <div style="font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;margin-bottom:8px">Link para compartilhar</div>
     <div style="display:flex;gap:6px;margin-bottom:14px">
       <input type="text" id="cao-link" readonly style="font-size:11px;background:var(--bg);flex:1"/>
-      <button class="btn" onclick="copiarLinkAgOnline()" style="flex-shrink:0;font-size:12px">📋 Copiar</button>
-      <button class="btn" onclick="compartilharWppAgOnline()" style="flex-shrink:0;font-size:12px;background:#25D366;color:white;border-color:#25D366" title="Compartilhar via WhatsApp">💬</button>
+      <button class="btn" aria-label="Copiar" onclick="copiarLinkAgOnline()" style="flex-shrink:0;font-size:12px">📋 Copiar</button>
+      <button class="btn" aria-label="Compartilhar via WhatsApp" onclick="compartilharWppAgOnline()" style="flex-shrink:0;font-size:12px;background:#25D366;color:white;border-color:#25D366" title="Compartilhar via WhatsApp">💬</button>
     </div>
 
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn" onclick="document.getElementById('m-ag-online').classList.remove('open')">Cancelar</button>
-      <button class="btn pri" onclick="salvarConfAgOnline()">✅ Salvar configurações</button>
+      <button class="btn pri" aria-label="Confirmar" onclick="salvarConfAgOnline()">✅ Salvar configurações</button>
     </div>
   </div>
 </div>
@@ -4261,7 +4268,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementB
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
       <button class="btn" onclick="document.getElementById('m-templates').classList.remove('open')">Cancelar</button>
-      <button class="btn pri" onclick="salvarTemplates()">✅ Salvar templates</button>
+      <button class="btn pri" aria-label="Confirmar" onclick="salvarTemplates()">✅ Salvar templates</button>
     </div>
   </div>
 </div>

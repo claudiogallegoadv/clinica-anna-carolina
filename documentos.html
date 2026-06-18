@@ -386,7 +386,7 @@ textarea{resize:vertical}
       <div class="br no-print">
         <button class="btn" onclick="voltarDocs()">← Voltar</button>
         <button class="btn" onclick="imprimirOrcamento()">🖨️ Imprimir</button>
-        <button class="btn" style="background:var(--verde);color:white;border-color:var(--verde)" onclick="abrirModalRealizado()">✅ Procedimento realizado</button>
+        <button class="btn" aria-label="Confirmar" style="background:var(--verde);color:white;border-color:var(--verde)" onclick="abrirModalRealizado()">✅ Procedimento realizado</button>
         <button class="btn pri" onclick="salvarDoc('orcamento')">✓ Salvar orçamento</button>
       </div>
     </div>
@@ -543,7 +543,7 @@ textarea{resize:vertical}
     <!-- Botões -->
     <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:4px">
       <button class="btn" onclick="fecharModalRealizado()">Cancelar</button>
-      <button class="btn pri" id="btn-confirmar-realizado" onclick="confirmarRealizado()">✅ Confirmar e registrar</button>
+      <button class="btn pri" aria-label="Confirmar" id="btn-confirmar-realizado" onclick="confirmarRealizado()">✅ Confirmar e registrar</button>
     </div>
 
   </div>
@@ -861,7 +861,7 @@ async function carregarDocsSalvos(){
   const el=document.getElementById('docs-salvos');
   if(!data||!data.length){el.innerHTML='<div style="color:var(--ct);font-size:13px">Nenhum documento salvo ainda.</div>';return;}
   const nomes={anamnese:'📋 Ficha de Anamnese','termo-botox':'💉 Termo - Toxina Botulínica','termo-preenchimento':'💉 Termo - Preenchimento Facial','termo-bioestimulador':'💉 Termo - Bioestimuladores','autorizacao-imagem':'📸 Autorização de Imagem',orcamento:'💰 Ficha de Orçamento',planejamento:'📐 Planejamento de Procedimentos',odontograma:'🦷 Ficha Clínica / Odontograma','anamnese-odonto':'📋 Anamnese Odontológica',receituario:'💊 Receituário Médico','receituario-estetico':'✨ Receituário Estético'};
-  el.innerHTML=data.map(d=>`<div class="doc-salvo"><div><div class="doc-salvo-info">${nomes[d.tipo]||d.tipo}</div><div class="doc-salvo-sub">Salvo em ${fDt(d.data_assinatura||d.criado_em?.split('T')[0])}</div></div><div style="display:flex;gap:6px"><button class="btn" style="padding:6px 10px;font-size:12px" onclick="verDoc('${d.id}','${d.tipo}')">👁 Ver</button><button class="btn dan" style="padding:6px 10px;font-size:12px" onclick="excluirDoc('${d.id}')" title="Excluir: ${nomes[d.tipo]||d.tipo}">🗑</button></div></div>`).join('');
+  el.innerHTML=data.map(d=>`<div class="doc-salvo"><div><div class="doc-salvo-info">${nomes[d.tipo]||d.tipo}</div><div class="doc-salvo-sub">Salvo em ${fDt(d.data_assinatura||d.criado_em?.split('T')[0])}</div></div><div style="display:flex;gap:6px"><button class="btn" aria-label="Ver documento" style="padding:6px 10px;font-size:12px" onclick="verDoc('${d.id}','${d.tipo}')">👁 Ver</button><button class="btn dan" aria-label="Excluir: ${nomes[d.tipo]||d.tipo}" style="padding:6px 10px;font-size:12px" onclick="excluirDoc('${d.id}')" title="Excluir: ${nomes[d.tipo]||d.tipo}">🗑</button></div></div>`).join('');
 }
 
 async function excluirDoc(id){
@@ -1319,7 +1319,7 @@ function addItemOrc(){
     <input type="text" class="orc-dente" placeholder="Dente" style="width:64px;flex-shrink:0;display:${ehDente?'block':'none'}"/>
     <input type="text" class="orc-trat" list="${ehDente?'lista-trats-dente':'lista-trats-harmonizacao'}" placeholder="Tratamento..." style="flex:1"/>
     <input type="number" class="orc-val" placeholder="R$" min="0" step="0.01" oninput="calcTotal()" style="width:110px;text-align:right;flex-shrink:0"/>
-    <button class="btn dan" style="padding:6px 8px;flex-shrink:0" onclick="this.closest('.orc-linha').remove();calcTotal()" title="Remover item">✕</button>`;
+    <button class="btn dan" aria-label="Remover item" style="padding:6px 8px;flex-shrink:0" onclick="this.closest('.orc-linha').remove();calcTotal()" title="Remover item">✕</button>`;
   el.appendChild(d);
 }
 
@@ -2020,7 +2020,7 @@ function addLinhaPreench(){
   d.innerHTML=`<input type="text" placeholder="Região..." style="font-size:13px;padding:6px 8px" oninput="toggleSecoesPlan()"/>
     <input type="text" placeholder="Volume" style="font-size:13px;padding:6px 8px" oninput="toggleSecoesPlan()"/>
     <input type="text" placeholder="Produto..." style="font-size:13px;padding:6px 8px" oninput="toggleSecoesPlan()"/>
-    <button class="btn dan no-print" style="padding:5px 8px" onclick="this.parentElement.remove();toggleSecoesPlan()" title="Remover item">✕</button>`;
+    <button class="btn dan no-print" aria-label="Remover item" style="padding:5px 8px" onclick="this.parentElement.remove();toggleSecoesPlan()" title="Remover item">✕</button>`;
   el.appendChild(d);
 }
 
@@ -2989,7 +2989,7 @@ function renderItensPlano() {
         ${isPago?'readonly':''} placeholder="R$" min="0" step="0.01"
         oninput="calcTotal()" style="text-align:right;background:transparent;border-color:transparent;${isPago?'opacity:.7;cursor:default':''}"/>
       ${statusBadge || '<span></span>'}
-      <button class="btn dan" style="padding:5px 7px;${isPago?'opacity:.3;cursor:not-allowed':''}" 
+      <button class="btn dan" aria-label="${isPago?'Já pago — não pode cancelar':'Cancelar: '+(item.procedimento||'item')}" style="padding:5px 7px;${isPago?'opacity:.3;cursor:not-allowed':''}" 
         ${isPago?'disabled':''} title="${isPago?'Já pago — não pode cancelar':'Cancelar: '+(item.procedimento||'item')}"
         onclick="cancelarItem('${item.id}',this)">✕</button>
     `;
@@ -3043,7 +3043,7 @@ window.addItemOrc = function() {
     <input type="number" class="orc-val" placeholder="R$" min="0" step="0.01"
       oninput="calcTotal()" style="text-align:right"/>
     <span></span>
-    <button class="btn dan" style="padding:5px 7px" title="Remover item"
+    <button class="btn dan" aria-label="Remover item" style="padding:5px 7px" title="Remover item"
       onclick="this.closest('.orc-linha').remove();calcTotal()">✕</button>
   `;
   el.appendChild(d);
