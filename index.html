@@ -820,6 +820,18 @@ const AMANHA_STR=AMANHA.toISOString().split('T')[0];
 const DIAS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const MESES_N=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
+// ── Log de auditoria global ──
+async function logAuditoria(acao, descricao, paciente_id=null){
+  try{
+    await db.from('historico_paciente').insert({
+      paciente_id: paciente_id||null,
+      acao,
+      descricao,
+      criado_em: new Date().toISOString()
+    });
+  }catch(e){ console.warn('[log]',e); }
+}
+
 agMes=new Date(HOJE.getFullYear(),HOJE.getMonth(),1);
 agDia=HOJE_STR;
 
@@ -2592,6 +2604,7 @@ async function salvarLancamento(){
   if(error){toast('Erro: '+error.message,'vermelho');return;}
   fecharModalFin();
   toast(id?'Atualizado! ✓':'Lançamento salvo! ✓','verde');
+  await logAuditoria(id?'Lançamento financeiro editado':'Lançamento financeiro criado', `${desc} · R$ ${valor.toFixed(2).replace('.',',')} · ${tipo}`);
   carregarFinanceiro();
 }
 
@@ -2607,6 +2620,7 @@ async function excluirLancamento(id){
   if(!confirm('Excluir este lançamento?')) return;
   await db.from('financeiro').delete().eq('id',id);
   toast('Excluído ✓','verde');
+  await logAuditoria('Lançamento financeiro excluído', `ID: ${id}`);
   carregarFinanceiro();
 }
 
@@ -2988,7 +3002,7 @@ function editCons(c){
   // Se já tem paciente vinculado, mostrar banner
   if(c.paciente_id){const p=pacs.find(x=>x.id===c.paciente_id);if(p){agPacId=p.id;mostrarVinculado(p);}}
 }
-async function cancConsulta(){if(!agEditando||!confirm('Cancelar esta consulta?'))return;const{error}=await db.from('agenda').update({status:'cancelado'}).eq('id',agEditando.id);if(error){toast('Erro','vermelho');return;}toast('Consulta cancelada');fchAg();carregarAgenda();}
+async function cancConsulta(){if(!agEditando||!confirm('Cancelar esta consulta?'))return;const{error}=await db.from('agenda').update({status:'cancelado'}).eq('id',agEditando.id);if(error){toast('Erro','vermelho');return;}toast('Consulta cancelada');await logAuditoria('Consulta cancelada',`${agEditando.nome} · ${agEditando.data} ${agEditando.hora.slice(0,5)}`,agEditando.paciente_id||null);fchAg();carregarAgenda();}
 async function salvarConsulta(){
   const nome=document.getElementById('ag-nome').value.trim();const data=document.getElementById('ag-data').value;const hora=document.getElementById('ag-hora').value;const tel=document.getElementById('ag-tel').value.trim();
   if(!nome||!data||!hora){toast('Preencha nome, data e horário!','vermelho');return;}
@@ -3007,6 +3021,7 @@ async function salvarConsulta(){
   if(error){toast('Erro: '+error.message,'vermelho');return;}
   if(!aid&&!agPacId&&tel){const telL=tel.replace(/\D/g,'');const jaExiste=pacs.find(p=>p.telefone.replace(/\D/g,'')===telL||p.nome.toLowerCase().trim()===nome.toLowerCase().trim());if(!jaExiste){await db.from('pacientes').insert({nome,telefone:tel,tratamento:document.getElementById('ag-proc').value||null,cadastro_pendente:true});await carregar();}}
   toast(`Consulta salva! ✓`,'verde');agDia=data;fchAg();carregarAgenda();
+  await logAuditoria(aid?'Consulta editada':'Consulta criada', `${nome} · ${data} ${hora}${payload.procedimento?' · '+payload.procedimento:''}`, payload.paciente_id||null);
 }
 function mostrarVinculado(p){
   agPacId=p.id;
@@ -3545,6 +3560,8 @@ async function marcarStatus(id, status){
   if(error){toast('Erro ao atualizar','vermelho');return;}
   const msgs={realizado:'✅ Marcado como realizado!',faltou:'❌ Marcado como faltou',pendente:'↩ Status revertido'};
   toast(msgs[status]||'Atualizado','verde');
+  const cLog=consultas.find(c=>c.id===id);
+  await logAuditoria('Status de consulta alterado',`${cLog?.nome||id} → ${status} · ${cLog?.data||''} ${(cLog?.hora||'').slice(0,5)}`,cLog?.paciente_id||null);
   await carregarAgenda();
 }
 

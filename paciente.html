@@ -792,6 +792,7 @@ async function exportarDadosPaciente(){
   a.click();
   URL.revokeObjectURL(url);
   toast('Dados exportados ✓','verde');
+  await registrarHistorico('Exportação de dados (LGPD)', 'Todos os dados do paciente foram exportados');
 }
 
 // ── Alerta fixo de alergia (lê a Anamnese mais recente) ──
@@ -1192,6 +1193,7 @@ async function deletarFoto(filename){
   const{error}=await db.storage.from('fotos-pacientes').remove([`${pac.id}/${filename}`]);
   if(error){toast('Erro ao excluir','vermelho');return;}
   toast('Foto excluída','verde');
+    await registrarHistorico('Foto excluída', 'Foto removida da galeria');
   await renderFotos();
 }
 
@@ -1357,6 +1359,7 @@ async function excluirDoc(id){
     if(!confirm('Excluir este documento?')) return;
     await db.from('documentos').delete().eq('id',id);
     toast('Documento excluído');
+    await registrarHistorico('Documento excluído', `Tipo: ${doc.tipo} · Data: ${fDt(doc.data_assinatura||doc.criado_em?.split('T')[0])}`);
     renderDocumentos();
     return;
   }
@@ -1432,6 +1435,7 @@ async function excluirDoc(id){
 
   await db.from('documentos').delete().eq('id',id);
   toast('Orçamento excluído ✓ '+(resumo.length?resumo.join(' · '):''),'verde');
+  await registrarHistorico('Orçamento excluído', resumo.join(' · ')||'Orçamento removido');
   renderDocumentos();
   // Recarregar financeiro se a aba estiver ativa
   if(typeof renderFinanceiro==='function') renderFinanceiro();
@@ -1506,6 +1510,7 @@ async function salvarLembr(){
   if(error){toast('Erro ao salvar','vermelho');return;}
   pac.lembretes=lembs;
   toast('Lembrete salvo 📌','verde');
+  await registrarHistorico('Lembrete adicionado', document.getElementById('lemb-txt')?.value?.slice(0,80)||'Lembrete criado');
   fchLembr();
   renderLembretes();
 }
@@ -1515,6 +1520,7 @@ async function delLembr(lid){
   await db.from('pacientes').update({lembretes:lembs}).eq('id',pac.id);
   pac.lembretes=lembs;
   toast('Lembrete removido ✓');
+  await registrarHistorico('Lembrete removido', 'Lembrete excluído da ficha');
   renderLembretes();
 }
 
@@ -1577,6 +1583,7 @@ async function salvarEdit(){
   Object.assign(pac,updates);
   await registrarHistorico('Cadastro atualizado','Dados pessoais foram editados');
   toast('Dados atualizados ✅','verde');
+  await registrarHistorico('Dados pessoais atualizados', 'Cadastro editado manualmente');
   fchEdit();
   renderHero();
   renderResumo();
@@ -1731,6 +1738,7 @@ async function salvarEditAtend() {
 
   pac.tratamentos_adicionais = trats;
   toast('Atendimento atualizado ✅', 'verde');
+  await registrarHistorico('Atendimento atualizado', `Data: ${atendAtual?.data||'—'} · Forma: ${document.getElementById('det-pgto')?.value||'—'}`);
   document.getElementById('m-atend-det').classList.remove('open');
   renderHistorico();
   renderResumo();

@@ -423,6 +423,19 @@ function toast(msg,tipo=''){
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),3000);
 }
+
+// ── Log de auditoria ──
+async function logAuditoria(acao, descricao){
+  try{
+    await db.from('historico_paciente').insert({
+      paciente_id: null,
+      acao,
+      descricao,
+      criado_em: new Date().toISOString()
+    });
+  }catch(e){ console.warn('[log]',e); }
+}
+
 function fDt(d){if(!d)return'—';const[y,m,dd]=(d+'').split('T')[0].split('-');return`${dd}/${m}/${y}`;}
 // Escapa caracteres HTML perigosos antes de inserir dados de produto/fornecedor via innerHTML (previne XSS armazenado)
 function escapeHtml(s){if(s===null||s===undefined)return'';return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -678,6 +691,7 @@ async function salvarProduto(){
     }
   }
   toast(id?'Produto atualizado ✓':'Produto cadastrado ✓','verde');
+  await logAuditoria(id?'Produto atualizado':'Produto cadastrado', `${nome}`);
   fecharModal('modal-produto');
   await carregar();
   if(_tabAtual==='produtos')renderProdutos();
@@ -689,6 +703,8 @@ async function excluirProduto(id){
   const{error}=await db.from('produtos').delete().eq('id',id);
   if(error){toast('Erro ao excluir','vermelho');return;}
   toast('Produto excluído');
+  const pExcl=_produtos.find(p=>p.id===id);
+  await logAuditoria('Produto excluído', pExcl?.nome||id);
   await carregar();
   if(_tabAtual==='produtos')renderProdutos();
 }
@@ -729,6 +745,8 @@ async function salvarEntradaRapida(){
   if(validade) atualizacao.validade_atual=validade;
   await db.from('produtos').update(atualizacao).eq('id',prodId);
   toast('Entrada registrada ✅','verde');
+  const pEnt=_produtos.find(p=>p.id===prodId);
+  await logAuditoria('Entrada de estoque', `${pEnt?.nome||prodId} · +${qtd} ${pEnt?.unidade||'un'}${lote?' · Lote: '+lote:''}`);
   fecharModal('modal-entrada-rapida');
   await carregar();
   if(_tabAtual==='produtos')renderProdutos();
@@ -781,6 +799,8 @@ async function salvarMovimento(){
   if(tipo==='entrada'&&validade) atualizacaoMov.validade_atual=validade;
   await db.from('produtos').update(atualizacaoMov).eq('id',prodId);
   toast('Movimentação registrada ✓','verde');
+  const pMov=_produtos.find(p=>p.id===prodId);
+  await logAuditoria('Movimentação de estoque', `${pMov?.nome||prodId} · ${tipo} · ${qtd} ${pMov?.unidade||'un'}`);
   fecharModal('modal-movimento');
   await carregar();
   if(_tabAtual==='movimentos')renderMovimentos();
@@ -894,6 +914,7 @@ async function salvarFornecedor(){
     :await db.from('fornecedores').insert(obj);
   if(error){toast('Erro: '+error.message,'vermelho');return;}
   toast(id?'Fornecedor atualizado ✓':'Fornecedor cadastrado ✓','verde');
+  await logAuditoria(id?'Fornecedor atualizado':'Fornecedor cadastrado', nome);
   fecharModal('modal-fornecedor');
   await carregar();
   if(_tabAtual==='fornecedores')renderFornecedores();
@@ -904,6 +925,8 @@ async function excluirFornecedor(id){
   const{error}=await db.from('fornecedores').delete().eq('id',id);
   if(error){toast('Erro ao excluir','vermelho');return;}
   toast('Fornecedor excluído');
+  const fExcl=_fornecedores.find(f=>f.id===id);
+  await logAuditoria('Fornecedor excluído', fExcl?.nome||id);
   await carregar();
   if(_tabAtual==='fornecedores')renderFornecedores();
 }
