@@ -251,6 +251,8 @@ textarea{resize:vertical;min-height:70px}
   <div id="loading-main" class="loading">Carregando ficha...</div>
   <div id="conteudo" style="display:none">
 
+    <div id="alerta-alergia" style="display:none;background:#fde8e8;border:1.5px solid #f5b5b5;border-radius:12px;padding:14px 16px;margin-bottom:16px"></div>
+
     <!-- TABS -->
     <div class="tabs">
       <button class="tb active" onclick="aba('resumo',this)">📋 Resumo</button>
@@ -649,6 +651,34 @@ textarea{resize:vertical;min-height:70px}
 <script>
 const {createClient}=supabase;
 const db=createClient(SB_URL,SB_KEY);
+// Aviso automático: qualquer insert/update/delete/upsert que falhar mostra toast de erro,
+// mesmo que o código que chamou não verifique 'error' explicitamente.
+(function(){
+  const _from=db.from.bind(db);
+  const _ACAO={insert:'salvar',update:'atualizar',delete:'excluir',upsert:'salvar'};
+  db.from=function(tabela){
+    const qb=_from(tabela);
+    ['insert','update','delete','upsert'].forEach(function(metodo){
+      const orig=qb[metodo];
+      if(typeof orig!=='function')return;
+      qb[metodo]=function(...args){
+        const res=orig.apply(qb,args);
+        const origThen=res.then.bind(res);
+        res.then=function(onOk,onErr){
+          return origThen(function(r){
+            if(r&&r.error){
+              console.error('['+tabela+'.'+metodo+']',r.error);
+              if(typeof toast==='function')toast('Erro ao '+_ACAO[metodo]+' ('+tabela+'): '+(r.error.message||'falha desconhecida'),'vermelho');
+            }
+            return onOk?onOk(r):r;
+          },onErr);
+        };
+        return res;
+      };
+    });
+    return qb;
+  };
+})();
 
 let pac=null;
 let todasFotos=[];
@@ -711,9 +741,27 @@ async function iniciar(){
   renderResumo();
   carregarStatusAnamnese();
   carregarHistoricoPaciente();
+  carregarAlertaAlergia();
 
   document.getElementById('loading-main').style.display='none';
   document.getElementById('conteudo').style.display='block';
+}
+
+// ── Alerta fixo de alergia (lê a Anamnese mais recente) ──
+async function carregarAlertaAlergia(){
+  const{data}=await db.from('documentos').select('dados').eq('paciente_id',pac.id).eq('tipo','anamnese').order('criado_em',{ascending:false}).limit(1);
+  if(!data||!data.length) return;
+  const r=data[0].dados?.respostas||{};
+  const ROTULOS={'alergia':'Alergia','alergia-ovo':'Alergia a ovo','alergia-abelha':'Alergia a picada de abelha'};
+  const achados=[];
+  Object.keys(ROTULOS).forEach(id=>{
+    const resp=r[id];
+    if(resp&&resp.v==='sim') achados.push(ROTULOS[id]+(resp.qual?': '+escapeHtml(resp.qual):''));
+  });
+  if(!achados.length) return;
+  const el=document.getElementById('alerta-alergia');
+  el.innerHTML=`<div style="display:flex;align-items:flex-start;gap:10px"><span style="font-size:22px">⚠️</span><div><div style="font-weight:700;color:#8a1d1d;margin-bottom:2px">Alerta de alergia registrado na Anamnese</div><div style="font-size:13px;color:#8a1d1d">${achados.join(' · ')}</div></div></div>`;
+  el.style.display='block';
 }
 
 // ─── HERO ───
