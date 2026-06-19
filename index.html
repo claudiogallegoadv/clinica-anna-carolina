@@ -841,6 +841,7 @@ textarea{resize:vertical;min-height:70px}
     </div>
   </div>
 </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -3299,6 +3300,9 @@ function toggleRecQtd(){
   document.getElementById('ag-rec-qtd-bloco').style.display=freq?'flex':'none';
 }
 function abrAg(data){
+  // Trava de segurança: garante que o modal de config. online não fica preso por trás
+  const mOnline=document.getElementById('m-ag-online');
+  if(mOnline){mOnline.classList.remove('open');mOnline.style.display='';}
   agEditando=null;agPacId=null;
   desvincularPacAg();
   document.getElementById('ag-titulo').textContent='📅 Nova consulta';document.getElementById('ag-id').value='';document.getElementById('ag-nome').value='';document.getElementById('ag-tel').value='';document.getElementById('ag-proc').value='';document.getElementById('ag-data').value=data||agDia;document.getElementById('ag-hora').value='09:00';document.getElementById('ag-obs').value='';document.getElementById('ag-sug').innerHTML='';document.getElementById('ag-tel-sug').innerHTML='';document.getElementById('ag-canc-btn').style.display='none';
@@ -3307,6 +3311,9 @@ function abrAg(data){
 }
 function fchAg(){document.getElementById('m-ag').classList.remove('open');document.getElementById('ag-sug').innerHTML='';}
 function editCons(c){
+  // Trava de segurança: garante que o modal de config. online não fica preso por trás
+  const mOnline2=document.getElementById('m-ag-online');
+  if(mOnline2){mOnline2.classList.remove('open');mOnline2.style.display='';}
   agEditando=c;agPacId=null;
   desvincularPacAg();
   document.getElementById('ag-titulo').textContent='✏️ Editar consulta';document.getElementById('ag-id').value=c.id;document.getElementById('ag-nome').value=c.nome;document.getElementById('ag-tel').value=c.telefone||'';document.getElementById('ag-proc').value=c.procedimento||'';document.getElementById('ag-data').value=c.data;document.getElementById('ag-hora').value=c.hora.slice(0,5);document.getElementById('ag-obs').value=c.observacao||'';document.getElementById('ag-sug').innerHTML='';document.getElementById('ag-tel-sug').innerHTML='';document.getElementById('ag-canc-btn').style.display=c.status!=='cancelado'?'inline-flex':'none';
@@ -4024,6 +4031,9 @@ async function rejeitarPedido(id, tel, nome){
 
 // ── Modal de configuração do agendamento online ──
 function abrirConfAgOnline(){
+  // Trava de segurança: garante que o modal Nova Consulta não fica preso por trás
+  const mAg=document.getElementById('m-ag');
+  if(mAg) mAg.classList.remove('open');
   const m=document.getElementById('m-ag-online');
   if(!m){console.error('[confAgOnline] não encontrado');return;}
   m.classList.add('open');
