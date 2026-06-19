@@ -4026,7 +4026,6 @@ async function rejeitarPedido(id, tel, nome){
 function abrirConfAgOnline(){
   const m=document.getElementById('m-ag-online');
   if(!m){console.error('[confAgOnline] não encontrado');return;}
-  m.style.display='flex';
   m.classList.add('open');
   const conf=JSON.parse(localStorage.getItem('conf_ag_online')||'{}');
   if(document.getElementById('cao-ativo')) document.getElementById('cao-ativo').checked = conf.ativo !== false;
@@ -4055,6 +4054,7 @@ function salvarConfAgOnline(){
   };
   localStorage.setItem('conf_ag_online', JSON.stringify(conf));
   document.getElementById('m-ag-online').classList.remove('open');
+  document.getElementById('m-ag-online').style.display='';
   toast('Configurações salvas ✅','verde');
 }
 
@@ -4580,13 +4580,13 @@ document.getElementById('modal-mrec').addEventListener('click',function(e){if(e.
     </div>
 
     <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button class="btn" onclick="document.getElementById('m-ag-online').classList.remove('open')">Cancelar</button>
+      <button class="btn" onclick="const m=document.getElementById('m-ag-online');m.classList.remove('open');m.style.display=''">Cancelar</button>
       <button class="btn pri" aria-label="Confirmar" onclick="salvarConfAgOnline()">✅ Salvar configurações</button>
     </div>
   </div>
 </div>
 <script>
-document.getElementById('m-ag-online').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
+document.getElementById('m-ag-online').addEventListener('click',e=>{if(e.target===e.currentTarget){e.currentTarget.classList.remove('open');e.currentTarget.style.display='';}});
 // Preencher dias da semana no HTML (innerHTML não funciona em atributos)
 (function(){
   const DIAS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
