@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Configurações — Clínica</title>
+  <script src="config.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --verde:#1D9E75;--verde-c:#E1F5EE;--verde-e:#0F6E56;
+      --vermelho:#E24B4A;--txt:#1a1916;--ct:#6B6860;
+      --bg:#F7F6F3;--card:#fff;--borda:#E8E6E1;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:15px}
+
+    .hdr{background:var(--verde-e);color:#fff;padding:0 1.5rem;display:flex;align-items:center;gap:1rem;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+    .hdr a{color:rgba(255,255,255,.75);text-decoration:none;font-size:13px}
+    .hdr a:hover{color:#fff}
+    .hdr h1{font-size:15px;font-weight:600;flex:1}
+    .badge{background:rgba(255,255,255,.2);font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+
+    .wrap{max-width:780px;margin:0 auto;padding:1.5rem}
+    .secao{background:var(--card);border-radius:14px;border:1px solid var(--borda);margin-bottom:1.25rem;overflow:hidden}
+    .sec-hdr{padding:1rem 1.25rem;border-bottom:1px solid var(--borda);display:flex;align-items:center;gap:.625rem}
+    .sec-icon{font-size:18px}
+    .sec-title{font-size:14px;font-weight:700;color:var(--txt)}
+    .sec-sub{font-size:12px;color:var(--ct);margin-left:auto}
+    .sec-body{padding:1.25rem}
+
+    .fg{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    .fg.full{grid-template-columns:1fr}
+    @media(max-width:600px){.fg{grid-template-columns:1fr}}
+    .fi{display:flex;flex-direction:column;gap:.375rem}
+    .fi label{font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.05em}
+    .fi input,.fi textarea,.fi select{
+      padding:.55rem .875rem;border:1.5px solid var(--borda);border-radius:8px;
+      font-size:14px;font-family:inherit;color:var(--txt);background:var(--card);
+      transition:.15s;
+    }
+    .fi input:focus,.fi textarea:focus,.fi select:focus{outline:none;border-color:var(--verde);box-shadow:0 0 0 3px rgba(29,158,117,.1)}
+    .fi textarea{resize:vertical;min-height:64px}
+    .fi .hint{font-size:11px;color:var(--ct)}
+
+    /* Preview logo */
+    .logo-preview{
+      width:80px;height:80px;border-radius:12px;border:2px dashed var(--borda);
+      display:flex;align-items:center;justify-content:center;overflow:hidden;
+      background:var(--bg);cursor:pointer;transition:.15s;flex-shrink:0;
+    }
+    .logo-preview:hover{border-color:var(--verde)}
+    .logo-preview img{width:100%;height:100%;object-fit:contain}
+    .logo-preview .icon{font-size:28px;color:var(--ct)}
+    .logo-row{display:flex;align-items:center;gap:1rem}
+    .logo-info{flex:1;display:flex;flex-direction:column;gap:.5rem}
+
+    /* Cor principal */
+    .cor-row{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+    .cor-swatch{
+      width:36px;height:36px;border-radius:8px;cursor:pointer;
+      border:2.5px solid transparent;transition:.12s;flex-shrink:0;
+    }
+    .cor-swatch.sel{border-color:var(--txt);transform:scale(1.1)}
+    .cor-custom{display:flex;align-items:center;gap:.5rem}
+    .cor-custom input[type=color]{width:36px;height:36px;border:1.5px solid var(--borda);border-radius:8px;padding:2px;cursor:pointer;background:none}
+    .cor-custom input[type=text]{width:90px;padding:.4rem .6rem;border:1.5px solid var(--borda);border-radius:8px;font-size:13px;font-family:inherit}
+
+    /* PIN */
+    .pin-atual{
+      display:inline-flex;align-items:center;gap:.5rem;
+      background:var(--bg);border:1.5px solid var(--borda);border-radius:8px;
+      padding:.5rem 1rem;font-size:15px;font-weight:700;letter-spacing:.2em;
+      font-family:monospace;
+    }
+    .pin-dots{display:flex;gap:6px;align-items:center}
+    .pin-dot{width:10px;height:10px;border-radius:50%;background:var(--verde)}
+
+    /* Novo PIN */
+    .pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:220px;margin-top:.75rem}
+    .pkey{
+      padding:12px;border-radius:10px;border:1.5px solid var(--borda);
+      background:var(--bg);font-size:17px;font-weight:600;cursor:pointer;
+      font-family:inherit;color:var(--txt);transition:.1s;
+    }
+    .pkey:hover{background:var(--verde-c);border-color:var(--verde)}
+    .pkey:active{transform:scale(.95)}
+    .pkey.del{font-size:15px;color:var(--ct)}
+    .pkey.conf{background:var(--verde);color:#fff;border-color:var(--verde);font-size:13px;font-weight:700}
+    .pkey.conf:hover{background:var(--verde-e)}
+    .pdots{display:flex;gap:10px;margin:.75rem 0 .25rem}
+    .pdot{width:12px;height:12px;border-radius:50%;border:2px solid var(--borda);transition:.15s}
+    .pdot.f{background:var(--verde);border-color:var(--verde)}
+    .pin-msg{font-size:12px;min-height:16px;margin-bottom:.5rem}
+    .pin-msg.ok{color:var(--verde-e);font-weight:600}
+    .pin-msg.err{color:var(--vermelho)}
+
+    /* Botão salvar */
+    .bsalvar{
+      background:var(--verde);color:#fff;border:none;border-radius:10px;
+      padding:.75rem 2rem;font-size:14px;font-weight:700;cursor:pointer;
+      font-family:inherit;transition:.15s;width:100%;margin-top:.25rem;
+    }
+    .bsalvar:hover{background:var(--verde-e)}
+    .bsalvar:disabled{opacity:.5;cursor:not-allowed}
+
+    /* Preview card */
+    .preview-card{
+      background:var(--verde-e);color:#fff;border-radius:12px;
+      padding:1rem 1.25rem;display:flex;align-items:center;gap:1rem;
+      margin-bottom:1rem;
+    }
+    .preview-logo{width:48px;height:48px;border-radius:10px;object-fit:contain;background:#fff;padding:4px}
+    .preview-nome{font-size:15px;font-weight:700}
+    .preview-esp{font-size:12px;opacity:.75}
+
+    /* Toast */
+    .toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;background:var(--txt);color:#fff;padding:.625rem 1.25rem;border-radius:10px;font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:.25s;transform:translateY(8px)}
+    .toast.show{opacity:1;transform:none}
+    .toast.ok{background:var(--verde-e)}
+    .toast.err{background:var(--vermelho)}
+
+    .divider{height:1px;background:var(--borda);margin:1rem 0}
+    .label-sec{font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem}
+  </style>
+</head>
+<body>
+
+<div class="hdr">
+  <a href="index.html">← Início</a>
+  <h1>⚙️ Configurações da Clínica</h1>
+  <span class="badge">Administração</span>
+</div>
+
+<div class="wrap">
+
+  <!-- Preview ao vivo -->
+  <div class="preview-card" id="preview-card">
+    <img class="preview-logo" id="prev-logo" src="logo.jpg" alt="Logo"/>
+    <div>
+      <div class="preview-nome" id="prev-nome">Clínica</div>
+      <div class="preview-esp" id="prev-esp"></div>
+    </div>
+  </div>
+
+  <!-- Identidade -->
+  <div class="secao">
+    <div class="sec-hdr">
+      <span class="sec-icon">🏥</span>
+      <span class="sec-title">Identidade da clínica</span>
+    </div>
+    <div class="sec-body">
+      <div class="logo-row" style="margin-bottom:1rem">
+        <div class="logo-preview" id="logo-preview" onclick="document.getElementById('logo-file').click()" title="Clique para trocar o logo">
+          <img id="logo-img" src="logo.jpg" alt="Logo" onerror="this.style.display='none';document.getElementById('logo-icon').style.display='block'"/>
+          <span class="icon" id="logo-icon" style="display:none">🖼️</span>
+        </div>
+        <div class="logo-info">
+          <div class="fi">
+            <label>URL do logo</label>
+            <input type="text" id="cfg-logo" placeholder="logo.jpg ou https://..." oninput="atualizarPreview()"/>
+            <span class="hint">Use o nome do arquivo (ex: logo.jpg) se estiver no repositório, ou cole uma URL externa.</span>
+          </div>
+          <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="previewLogoFile(this)"/>
+        </div>
+      </div>
+
+      <div class="fg">
+        <div class="fi">
+          <label>Nome da clínica / profissional</label>
+          <input type="text" id="cfg-nome" placeholder="Ex: Dra. Anna Carolina Dias" oninput="atualizarPreview()"/>
+        </div>
+        <div class="fi">
+          <label>Especialidade</label>
+          <input type="text" id="cfg-esp" placeholder="Ex: Harmonização Orofacial" oninput="atualizarPreview()"/>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="label-sec">Cor principal</div>
+
+      <div class="cor-row">
+        <div class="cor-swatch" style="background:#1D9E75" data-cor="#1D9E75" onclick="selecionarCor('#1D9E75',this)" title="Verde"></div>
+        <div class="cor-swatch" style="background:#2563eb" data-cor="#2563eb" onclick="selecionarCor('#2563eb',this)" title="Azul"></div>
+        <div class="cor-swatch" style="background:#7C3AED" data-cor="#7C3AED" onclick="selecionarCor('#7C3AED',this)" title="Roxo"></div>
+        <div class="cor-swatch" style="background:#D4537E" data-cor="#D4537E" onclick="selecionarCor('#D4537E',this)" title="Rosa"></div>
+        <div class="cor-swatch" style="background:#f59e0b" data-cor="#f59e0b" onclick="selecionarCor('#f59e0b',this)" title="Âmbar"></div>
+        <div class="cor-swatch" style="background:#0F6E56" data-cor="#0F6E56" onclick="selecionarCor('#0F6E56',this)" title="Verde escuro"></div>
+        <div class="cor-swatch" style="background:#E24B4A" data-cor="#E24B4A" onclick="selecionarCor('#E24B4A',this)" title="Vermelho"></div>
+        <div class="cor-custom">
+          <input type="color" id="cor-picker" value="#1D9E75" oninput="selecionarCorCustom(this.value)"/>
+          <input type="text" id="cor-hex" value="#1D9E75" placeholder="#1D9E75" oninput="selecionarCorHex(this.value)" maxlength="7"/>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contato -->
+  <div class="secao">
+    <div class="sec-hdr">
+      <span class="sec-icon">📞</span>
+      <span class="sec-title">Contato e endereço</span>
+    </div>
+    <div class="sec-body">
+      <div class="fg">
+        <div class="fi">
+          <label>Telefone</label>
+          <input type="tel" id="cfg-tel" placeholder="(17) 99999-9999"/>
+        </div>
+        <div class="fi">
+          <label>WhatsApp</label>
+          <input type="tel" id="cfg-wpp" placeholder="5517999999999 (com DDI)"/>
+        </div>
+        <div class="fi">
+          <label>E-mail</label>
+          <input type="email" id="cfg-email" placeholder="contato@clinica.com"/>
+        </div>
+        <div class="fi">
+          <label>Instagram</label>
+          <input type="text" id="cfg-insta" placeholder="@draannacarolina"/>
+        </div>
+      </div>
+      <div class="fi" style="margin-top:.75rem">
+        <label>Endereço</label>
+        <textarea id="cfg-end" placeholder="Rua, número — Bairro — Cidade/UF"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIN de acesso -->
+  <div class="secao">
+    <div class="sec-hdr">
+      <span class="sec-icon">🔐</span>
+      <span class="sec-title">PIN de acesso</span>
+      <span class="sec-sub">Mínimo 4 dígitos</span>
+    </div>
+    <div class="sec-body">
+      <div class="label-sec">PIN atual</div>
+      <div class="pin-atual">
+        <div class="pin-dots" id="pin-atual-dots"></div>
+        <span style="font-size:11px;color:var(--ct);font-family:inherit;font-weight:400;letter-spacing:0;margin-left:.5rem">oculto por segurança</span>
+      </div>
+
+      <div class="divider"></div>
+      <div class="label-sec">Definir novo PIN</div>
+      <div class="label-sec" style="font-size:12px;color:var(--ct);text-transform:none;letter-spacing:0;margin-top:-.5rem;margin-bottom:.5rem">
+        Digite o novo PIN no teclado abaixo (4 a 6 dígitos) e confirme.
+      </div>
+
+      <!-- Dots progresso -->
+      <div class="pdots" id="pdots"></div>
+      <div class="pin-msg" id="pin-msg"></div>
+
+      <!-- Teclado numérico -->
+      <div class="pin-grid">
+        <button class="pkey" onclick="pinKey('1')">1</button>
+        <button class="pkey" onclick="pinKey('2')">2</button>
+        <button class="pkey" onclick="pinKey('3')">3</button>
+        <button class="pkey" onclick="pinKey('4')">4</button>
+        <button class="pkey" onclick="pinKey('5')">5</button>
+        <button class="pkey" onclick="pinKey('6')">6</button>
+        <button class="pkey" onclick="pinKey('7')">7</button>
+        <button class="pkey" onclick="pinKey('8')">8</button>
+        <button class="pkey" onclick="pinKey('9')">9</button>
+        <button class="pkey del" onclick="pinKey('del')">⌫</button>
+        <button class="pkey" onclick="pinKey('0')">0</button>
+        <button class="pkey conf" id="btn-conf-pin" onclick="confirmarPin()" disabled>OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Salvar -->
+  <button class="bsalvar" id="btn-salvar" onclick="salvar()">💾 Salvar todas as configurações</button>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Auth ──
+const authData = JSON.parse(localStorage.getItem('clinica_auth')||'{}');
+if(!authData.ok || authData.expires < Date.now()) window.location.href='login.html?r=configuracoes.html';
+
+const {createClient} = supabase;
+const sb = createClient(SB_URL, SB_KEY, {
+  global:{headers:{Authorization:`Bearer ${authData.access_token||SB_KEY}`}}
+});
+
+let configId = null;
+let corAtual = '#1D9E75';
+let pinNovo = '';
+let pinTamanhoAtual = 4;
+const PIN_MIN = 4, PIN_MAX = 6;
+
+// ── Init ──
+async function init(){
+  const {data} = await sb.from('config_clinica').select('*').limit(1);
+  if(data && data.length){
+    const c = data[0];
+    configId = c.id;
+    document.getElementById('cfg-logo').value  = c.logo_url || 'logo.jpg';
+    document.getElementById('cfg-nome').value  = c.nome || '';
+    document.getElementById('cfg-esp').value   = c.especialidade || '';
+    document.getElementById('cfg-tel').value   = c.telefone || '';
+    document.getElementById('cfg-wpp').value   = c.whatsapp || '';
+    document.getElementById('cfg-email').value = c.email || '';
+    document.getElementById('cfg-insta').value = c.instagram || '';
+    document.getElementById('cfg-end').value   = c.endereco || '';
+
+    // PIN atual — mostra pontos
+    pinTamanhoAtual = (c.pin_atual||'2411').length;
+    renderPinAtual(pinTamanhoAtual);
+
+    // Cor
+    selecionarCor(c.cor_principal || '#1D9E75', null);
+
+    atualizarPreview();
+  }
+  renderPdots();
+}
+
+// ── Preview ao vivo ──
+function atualizarPreview(){
+  const nome = document.getElementById('cfg-nome').value || 'Clínica';
+  const esp  = document.getElementById('cfg-esp').value || '';
+  const logo = document.getElementById('cfg-logo').value || 'logo.jpg';
+  document.getElementById('prev-nome').textContent = nome;
+  document.getElementById('prev-esp').textContent  = esp;
+  document.getElementById('prev-logo').src = logo;
+  document.getElementById('logo-img').src  = logo;
+  document.title = 'Configurações — ' + nome;
+}
+
+function previewLogoFile(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('logo-img').src = e.target.result;
+    document.getElementById('prev-logo').src = e.target.result;
+    document.getElementById('cfg-logo').value = file.name;
+    toast('Logo visualizado. O arquivo precisa estar no repositório para funcionar online.','ok');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Cor ──
+function selecionarCor(cor, el){
+  corAtual = cor;
+  document.querySelectorAll('.cor-swatch').forEach(s=>s.classList.remove('sel'));
+  if(el) el.classList.add('sel');
+  document.getElementById('cor-picker').value = cor;
+  document.getElementById('cor-hex').value = cor;
+  document.getElementById('preview-card').style.background = cor;
+  document.documentElement.style.setProperty('--verde', cor);
+}
+function selecionarCorCustom(cor){
+  corAtual = cor;
+  document.querySelectorAll('.cor-swatch').forEach(s=>s.classList.remove('sel'));
+  document.getElementById('cor-hex').value = cor;
+  document.getElementById('preview-card').style.background = cor;
+  document.documentElement.style.setProperty('--verde', cor);
+}
+function selecionarCorHex(v){
+  if(/^#[0-9A-Fa-f]{6}$/.test(v)) selecionarCorCustom(v);
+}
+
+// ── PIN ──
+function renderPinAtual(len){
+  const el = document.getElementById('pin-atual-dots');
+  el.innerHTML = Array(len).fill('<div class="pin-dot"></div>').join('');
+}
+function renderPdots(){
+  const el = document.getElementById('pdots');
+  el.innerHTML = Array(PIN_MAX).fill(0).map((_,i)=>
+    `<div class="pdot${i < pinNovo.length?' f':''}"></div>`
+  ).join('');
+  document.getElementById('btn-conf-pin').disabled = pinNovo.length < PIN_MIN;
+}
+function pinKey(k){
+  const msg = document.getElementById('pin-msg');
+  if(k==='del'){ pinNovo=pinNovo.slice(0,-1); msg.textContent=''; renderPdots(); return; }
+  if(pinNovo.length >= PIN_MAX) return;
+  pinNovo += k;
+  msg.textContent='';
+  renderPdots();
+}
+async function confirmarPin(){
+  if(pinNovo.length < PIN_MIN){
+    document.getElementById('pin-msg').className='pin-msg err';
+    document.getElementById('pin-msg').textContent=`Mínimo ${PIN_MIN} dígitos.`;
+    return;
+  }
+  // Atualiza senha no Supabase Auth
+  const btnConf = document.getElementById('btn-conf-pin');
+  btnConf.textContent='...'; btnConf.disabled=true;
+  try {
+    const res = await fetch(`${SB_URL}/auth/v1/user`, {
+      method:'PUT',
+      headers:{
+        'Content-Type':'application/json',
+        'apikey': SB_KEY,
+        'Authorization': `Bearer ${authData.access_token}`
+      },
+      body: JSON.stringify({ password: pinNovo })
+    });
+    const data = await res.json();
+    if(!res.ok){
+      document.getElementById('pin-msg').className='pin-msg err';
+      document.getElementById('pin-msg').textContent='Erro ao atualizar PIN: ' + (data.message||'tente novamente.');
+      btnConf.textContent='OK'; btnConf.disabled=false;
+      return;
+    }
+    // Salva novo pin_atual na config_clinica (para referência de tamanho)
+    if(configId){
+      await sb.from('config_clinica').update({pin_atual: pinNovo}).eq('id', configId);
+    }
+    pinTamanhoAtual = pinNovo.length;
+    renderPinAtual(pinTamanhoAtual);
+    document.getElementById('pin-msg').className='pin-msg ok';
+    document.getElementById('pin-msg').textContent='✅ PIN atualizado com sucesso!';
+    pinNovo=''; renderPdots();
+    toast('PIN atualizado!');
+  } catch(e){
+    document.getElementById('pin-msg').className='pin-msg err';
+    document.getElementById('pin-msg').textContent='Erro de conexão.';
+  }
+  btnConf.textContent='OK'; btnConf.disabled=false;
+}
+
+// ── Salvar configurações ──
+async function salvar(){
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled=true; btn.textContent='Salvando...';
+
+  const dados = {
+    nome:          document.getElementById('cfg-nome').value.trim(),
+    especialidade: document.getElementById('cfg-esp').value.trim(),
+    logo_url:      document.getElementById('cfg-logo').value.trim(),
+    cor_principal: corAtual,
+    telefone:      document.getElementById('cfg-tel').value.trim(),
+    whatsapp:      document.getElementById('cfg-wpp').value.trim(),
+    email:         document.getElementById('cfg-email').value.trim(),
+    instagram:     document.getElementById('cfg-insta').value.trim(),
+    endereco:      document.getElementById('cfg-end').value.trim(),
+    updated_at:    new Date().toISOString()
+  };
+
+  if(!dados.nome){ toast('O nome da clínica é obrigatório.','err'); btn.disabled=false; btn.textContent='💾 Salvar todas as configurações'; return; }
+
+  let error;
+  if(configId){
+    const r = await sb.from('config_clinica').update(dados).eq('id', configId);
+    error = r.error;
+  } else {
+    const r = await sb.from('config_clinica').insert([dados]).select();
+    error = r.error;
+    if(!error && r.data) configId = r.data[0].id;
+  }
+
+  btn.disabled=false; btn.textContent='💾 Salvar todas as configurações';
+
+  if(error){ toast('Erro ao salvar: '+error.message,'err'); return; }
+  toast('Configurações salvas!');
+  atualizarPreview();
+}
+
+// ── Toast ──
+let toastT;
+function toast(msg, tipo='ok'){
+  const el=document.getElementById('toast');
+  el.textContent=(tipo==='err'?'⚠️ ':'✅ ')+msg;
+  el.className='toast show '+(tipo==='err'?'err':'ok');
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+init();
+</script>
+</body>
+</html>
