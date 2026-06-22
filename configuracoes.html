@@ -225,7 +225,7 @@
       <div class="divider"></div>
       <div class="label-sec">Endereço</div>
 
-      <!-- Linha 1: CEP -->
+      <!-- Linha 1: CEP isolado -->
       <div class="fg" style="grid-template-columns:160px 1fr;margin-bottom:.75rem">
         <div class="fi">
           <label>CEP</label>
@@ -236,13 +236,20 @@
             <span id="cep-spin" style="position:absolute;right:.6rem;top:50%;transform:translateY(-50%);font-size:13px;display:none">⏳</span>
           </div>
         </div>
+        <div style="display:flex;align-items:flex-end;padding-bottom:.375rem">
+          <span style="font-size:12px;color:var(--ct)">Digite o CEP e saia do campo para preencher automaticamente.</span>
+        </div>
+      </div>
+
+      <!-- Linha 2: Rua inteira -->
+      <div style="margin-bottom:.75rem">
         <div class="fi">
           <label>Rua / Logradouro</label>
           <input type="text" id="cfg-rua" placeholder="Rua das Flores"/>
         </div>
       </div>
 
-      <!-- Linha 2: Número + Complemento + Bairro -->
+      <!-- Linha 3: Número + Complemento + Bairro -->
       <div class="fg" style="grid-template-columns:100px 1fr 1fr;margin-bottom:.75rem">
         <div class="fi">
           <label>Número</label>
@@ -258,7 +265,7 @@
         </div>
       </div>
 
-      <!-- Linha 3: Cidade + UF -->
+      <!-- Linha 4: Cidade + UF -->
       <div class="fg" style="grid-template-columns:1fr 80px">
         <div class="fi">
           <label>Cidade</label>
