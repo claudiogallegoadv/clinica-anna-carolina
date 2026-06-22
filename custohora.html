@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Custo Hora — Clínica</title>
+  <script src="config.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --verde:#2D9B6F;--verde-c:#e8f5f0;--verde-e:#1a6e4a;
+      --vermelho:#E24B4A;--azul:#2563eb;--laranja:#f59e0b;
+      --txt:#1a1a2e;--ct:#6b7280;--bg:#f0f4f0;--card:#fff;--borda:#e5e7eb;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt)}
+
+    /* Header */
+    .header{
+      background:var(--card);border-bottom:1px solid var(--borda);
+      padding:.75rem 1.5rem;display:flex;align-items:center;gap:1rem;
+      position:sticky;top:0;z-index:100;
+    }
+    .header a{color:var(--ct);text-decoration:none;font-size:14px}
+    .header a:hover{color:var(--verde)}
+    .header h1{font-size:16px;font-weight:700;flex:1}
+    .badge-modulo{
+      background:var(--verde-c);color:var(--verde-e);
+      font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;
+    }
+
+    /* Layout */
+    .container{max-width:1100px;margin:0 auto;padding:1.5rem}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+    @media(max-width:768px){.grid-2{grid-template-columns:1fr}.grid-3{grid-template-columns:1fr}}
+
+    /* Cards */
+    .card{background:var(--card);border-radius:14px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+    .card-title{font-size:13px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.05em;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+
+    /* KPI Cards */
+    .kpi{
+      background:var(--card);border-radius:14px;padding:1.25rem;
+      box-shadow:0 1px 4px rgba(0,0,0,.06);
+    }
+    .kpi-label{font-size:12px;color:var(--ct);margin-bottom:.25rem}
+    .kpi-valor{font-size:28px;font-weight:700;line-height:1}
+    .kpi-sub{font-size:11px;color:var(--ct);margin-top:.25rem}
+    .kpi.verde .kpi-valor{color:var(--verde)}
+    .kpi.azul .kpi-valor{color:var(--azul)}
+    .kpi.laranja .kpi-valor{color:var(--laranja)}
+
+    /* Tabela de itens */
+    .item-list{display:flex;flex-direction:column;gap:.5rem}
+    .item-row{
+      display:flex;align-items:center;gap:.75rem;
+      padding:.6rem .75rem;background:var(--bg);border-radius:10px;
+      transition:.15s;
+    }
+    .item-row:hover{background:var(--verde-c)}
+    .item-categoria{
+      font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;
+      white-space:nowrap;
+    }
+    .cat-infraestrutura{background:#dbeafe;color:#1e40af}
+    .cat-utilidades{background:#fef3c7;color:#92400e}
+    .cat-pessoal{background:#f3e8ff;color:#6b21a8}
+    .cat-administrativo{background:#e0f2fe;color:#0c4a6e}
+    .cat-equipamentos{background:#dcfce7;color:#14532d}
+    .cat-outros{background:#f1f5f9;color:#475569}
+    .item-desc{flex:1;font-size:14px}
+    .item-valor{font-size:14px;font-weight:600;color:var(--txt);white-space:nowrap}
+    .btn-del{
+      background:none;border:none;cursor:pointer;color:var(--ct);
+      padding:2px 6px;border-radius:6px;font-size:14px;
+      transition:.1s;
+    }
+    .btn-del:hover{background:#fee2e2;color:var(--vermelho)}
+
+    /* Formulário de adição */
+    .form-add{
+      display:flex;gap:.5rem;flex-wrap:wrap;
+      padding:.75rem;background:var(--bg);border-radius:10px;margin-top:.75rem;
+    }
+    .form-add input,.form-add select{
+      padding:.5rem .75rem;border:1.5px solid var(--borda);border-radius:8px;
+      font-size:13px;font-family:inherit;background:var(--card);
+      color:var(--txt);
+    }
+    .form-add input:focus,.form-add select:focus{outline:none;border-color:var(--verde)}
+    .form-add .f-desc{flex:2;min-width:140px}
+    .form-add .f-cat{flex:1;min-width:120px}
+    .form-add .f-val{width:110px}
+    .btn-add{
+      background:var(--verde);color:#fff;border:none;border-radius:8px;
+      padding:.5rem 1rem;font-size:13px;font-weight:600;cursor:pointer;
+      white-space:nowrap;font-family:inherit;
+    }
+    .btn-add:hover{background:var(--verde-e)}
+
+    /* Config agenda */
+    .config-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+    .config-item label{font-size:12px;color:var(--ct);display:block;margin-bottom:4px}
+    .config-item input{
+      width:100%;padding:.5rem .75rem;border:1.5px solid var(--borda);
+      border-radius:8px;font-size:14px;font-family:inherit;
+    }
+    .config-item input:focus{outline:none;border-color:var(--verde)}
+    .btn-salvar{
+      background:var(--verde);color:#fff;border:none;border-radius:8px;
+      padding:.6rem 1.25rem;font-size:13px;font-weight:600;cursor:pointer;
+      font-family:inherit;margin-top:.75rem;
+    }
+    .btn-salvar:hover{background:var(--verde-e)}
+
+    /* Gráfico de distribuição */
+    .dist-bar{display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem}
+    .dist-item{display:flex;align-items:center;gap:.75rem}
+    .dist-label{font-size:12px;color:var(--ct);width:120px;text-align:right}
+    .dist-track{flex:1;height:20px;background:var(--bg);border-radius:6px;overflow:hidden}
+    .dist-fill{height:100%;border-radius:6px;transition:.4s}
+    .dist-valor{font-size:12px;font-weight:600;width:70px}
+
+    /* Toast */
+    .toast{
+      position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;
+      background:#1a1a2e;color:#fff;padding:.75rem 1.25rem;
+      border-radius:10px;font-size:13px;opacity:0;pointer-events:none;
+      transition:.3s;transform:translateY(8px);
+    }
+    .toast.show{opacity:1;transform:none}
+
+    /* Loading */
+    .loading{text-align:center;padding:2rem;color:var(--ct);font-size:14px}
+
+    /* Seção divisor */
+    .section-sep{font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.08em;margin:1.5rem 0 .75rem;padding-bottom:.5rem;border-bottom:1px solid var(--borda)}
+
+    /* Totalizador */
+    .totalizador{
+      background:linear-gradient(135deg,var(--verde-e),var(--verde));
+      color:#fff;border-radius:14px;padding:1.5rem;
+      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;
+    }
+    .tot-label{font-size:12px;opacity:.85}
+    .tot-valor{font-size:32px;font-weight:700;line-height:1}
+    .tot-sub{font-size:11px;opacity:.7;margin-top:2px}
+    .tot-item{text-align:center}
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <a href="index.html">← Início</a>
+  <h1>💰 Custo Hora da Clínica</h1>
+  <span class="badge-modulo">Gestão Financeira</span>
+</div>
+
+<div class="container">
+
+  <!-- KPIs principais -->
+  <div class="grid-3" id="kpis-section">
+    <div class="kpi verde">
+      <div class="kpi-label">Custo por hora</div>
+      <div class="kpi-valor" id="kpi-custo-hora">—</div>
+      <div class="kpi-sub">Custo operacional / horas produtivas</div>
+    </div>
+    <div class="kpi azul">
+      <div class="kpi-label">Custo mensal total</div>
+      <div class="kpi-valor" id="kpi-custo-mes">—</div>
+      <div class="kpi-sub" id="kpi-custo-mes-sub">Fixos + estimativa variáveis</div>
+    </div>
+    <div class="kpi laranja">
+      <div class="kpi-label">Horas produtivas/mês</div>
+      <div class="kpi-valor" id="kpi-horas-mes">—</div>
+      <div class="kpi-sub" id="kpi-horas-sub">Após descontar ociosidade</div>
+    </div>
+  </div>
+
+  <!-- Totalizador destaque -->
+  <div class="totalizador" id="totalizador" style="margin-top:1.25rem">
+    <div class="tot-item">
+      <div class="tot-label">Valor mínimo por hora para cobrir custos</div>
+      <div class="tot-valor" id="tot-minimo">Calculando...</div>
+      <div class="tot-sub">Sem margem de lucro</div>
+    </div>
+    <div class="tot-item">
+      <div class="tot-label">Com 30% de margem</div>
+      <div class="tot-valor" id="tot-30">—</div>
+      <div class="tot-sub">Recomendado</div>
+    </div>
+    <div class="tot-item">
+      <div class="tot-label">Com 50% de margem</div>
+      <div class="tot-valor" id="tot-50">—</div>
+      <div class="tot-sub">Meta ideal</div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:1.5rem">
+
+    <!-- COLUNA ESQUERDA -->
+    <div>
+      <!-- Custos Fixos -->
+      <div class="card">
+        <div class="card-title">📋 Custos fixos mensais</div>
+        <div class="item-list" id="lista-fixos">
+          <div class="loading">Carregando...</div>
+        </div>
+
+        <!-- Form adicionar -->
+        <div class="form-add">
+          <input class="f-desc" type="text" id="f-desc" placeholder="Descrição (ex: Aluguel)"/>
+          <select class="f-cat" id="f-cat">
+            <option value="infraestrutura">Infraestrutura</option>
+            <option value="utilidades">Utilidades</option>
+            <option value="pessoal">Pessoal</option>
+            <option value="administrativo">Administrativo</option>
+            <option value="equipamentos">Equipamentos</option>
+            <option value="outros">Outros</option>
+          </select>
+          <input class="f-val" type="number" id="f-val" placeholder="R$ valor" min="0" step="0.01"/>
+          <button class="btn-add" onclick="adicionarCustoFixo()">+ Adicionar</button>
+        </div>
+
+        <div style="margin-top:.75rem;padding:.75rem;background:var(--verde-c);border-radius:10px;font-size:13px;color:var(--verde-e);display:flex;justify-content:space-between">
+          <span>Total custos fixos</span>
+          <strong id="total-fixos">R$ 0,00</strong>
+        </div>
+      </div>
+
+      <!-- Custos Variáveis -->
+      <div class="card" style="margin-top:1rem">
+        <div class="card-title">🧴 Custos variáveis (insumos/mês)</div>
+        <div class="item-list" id="lista-variaveis">
+          <div class="loading">Carregando...</div>
+        </div>
+
+        <div class="form-add">
+          <input class="f-desc" type="text" id="v-desc" placeholder="Insumo (ex: Anestésico)"/>
+          <input style="width:90px" type="text" id="v-unid" placeholder="Unidade"/>
+          <input class="f-val" type="number" id="v-val" placeholder="R$/mês" min="0" step="0.01"/>
+          <button class="btn-add" onclick="adicionarVariavel()">+ Adicionar</button>
+        </div>
+
+        <div style="margin-top:.75rem;padding:.75rem;background:#fef3c7;border-radius:10px;font-size:13px;color:#92400e;display:flex;justify-content:space-between">
+          <span>Total custos variáveis</span>
+          <strong id="total-variaveis">R$ 0,00</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUNA DIREITA -->
+    <div>
+      <!-- Configuração da Agenda -->
+      <div class="card">
+        <div class="card-title">📅 Capacidade produtiva</div>
+        <div class="config-grid">
+          <div class="config-item">
+            <label>Dias de trabalho/semana</label>
+            <input type="number" id="c-dias" value="5" min="1" max="7" step="1"/>
+          </div>
+          <div class="config-item">
+            <label>Horas produtivas/dia</label>
+            <input type="number" id="c-horas" value="8" min="1" max="24" step="0.5"/>
+          </div>
+          <div class="config-item">
+            <label>% Ociosidade esperada</label>
+            <input type="number" id="c-ocio" value="20" min="0" max="80" step="1"/>
+          </div>
+          <div class="config-item">
+            <label>% Overhead / Imprevistos</label>
+            <input type="number" id="c-over" value="15" min="0" max="50" step="1"/>
+          </div>
+        </div>
+        <button class="btn-salvar" onclick="salvarConfig()">Salvar configuração</button>
+
+        <div style="margin-top:1rem;padding:.75rem;background:var(--bg);border-radius:10px;font-size:12px;color:var(--ct);line-height:1.6" id="resumo-agenda">
+          Configure os campos acima para ver o resumo.
+        </div>
+      </div>
+
+      <!-- Distribuição de custos -->
+      <div class="card" style="margin-top:1rem">
+        <div class="card-title">📊 Distribuição por categoria</div>
+        <div class="dist-bar" id="dist-bar">
+          <div class="loading">Aguardando dados...</div>
+        </div>
+      </div>
+
+      <!-- Preço sugerido por procedimento -->
+      <div class="card" style="margin-top:1rem">
+        <div class="card-title">⏱️ Preço mínimo por procedimento</div>
+        <div style="font-size:12px;color:var(--ct);margin-bottom:.75rem">
+          Baseado no custo/hora — informe a duração de cada procedimento:
+        </div>
+        <div id="proc-list">
+          <div class="form-add" style="margin:0">
+            <input style="flex:2;min-width:120px" type="text" id="p-nome" placeholder="Procedimento"/>
+            <input style="width:90px" type="number" id="p-min" placeholder="Minutos" min="1"/>
+            <button class="btn-add" onclick="calcularProcedimento()">Calcular</button>
+          </div>
+        </div>
+        <div id="proc-resultados" style="margin-top:.75rem;display:flex;flex-direction:column;gap:.5rem"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Supabase ──
+const { createClient } = supabase;
+const sb = createClient(SB_URL, SB_KEY, {
+  global: { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem('clinica_auth')||'{}').access_token || SB_KEY} ` }}
+});
+
+// Estado global
+let custosFixos = [];
+let custosVariaveis = [];
+let config = { dias_semana:5, horas_dia:8, semanas_mes:4.33, perc_ociosidade:20, perc_overhead:15 };
+
+// ── Init ──
+async function init(){
+  await Promise.all([carregarFixos(), carregarVariaveis(), carregarConfig()]);
+  recalcular();
+}
+
+// ── Carregar dados ──
+async function carregarFixos(){
+  const { data } = await sb.from('custos_fixos').select('*').eq('ativo',true).order('categoria');
+  custosFixos = data || [];
+  renderFixos();
+}
+
+async function carregarVariaveis(){
+  const { data } = await sb.from('custos_variaveis').select('*').eq('ativo',true);
+  custosVariaveis = data || [];
+  renderVariaveis();
+}
+
+async function carregarConfig(){
+  const { data } = await sb.from('config_custohorario').select('*').limit(1);
+  if(data && data.length > 0){
+    config = data[0];
+    document.getElementById('c-dias').value = config.dias_semana;
+    document.getElementById('c-horas').value = config.horas_dia;
+    document.getElementById('c-ocio').value = config.perc_ociosidade;
+    document.getElementById('c-over').value = config.perc_overhead;
+  }
+}
+
+// ── Render listas ──
+function categoriaLabel(c){
+  const map = {
+    infraestrutura:'Infraestrutura',utilidades:'Utilidades',pessoal:'Pessoal',
+    administrativo:'Administrativo',equipamentos:'Equipamentos',outros:'Outros'
+  };
+  return map[c]||c;
+}
+
+function renderFixos(){
+  const el = document.getElementById('lista-fixos');
+  if(!custosFixos.length){ el.innerHTML='<div class="loading">Nenhum custo cadastrado ainda.</div>'; atualizarTotalFixos(); return; }
+  el.innerHTML = custosFixos.map(c=>`
+    <div class="item-row">
+      <span class="item-categoria cat-${c.categoria}">${categoriaLabel(c.categoria)}</span>
+      <span class="item-desc">${escapeHtml(c.descricao)}</span>
+      <span class="item-valor">R$ ${fmt(c.valor)}</span>
+      <button class="btn-del" onclick="deletarFixo('${c.id}')">✕</button>
+    </div>
+  `).join('');
+  atualizarTotalFixos();
+}
+
+function renderVariaveis(){
+  const el = document.getElementById('lista-variaveis');
+  if(!custosVariaveis.length){ el.innerHTML='<div class="loading">Nenhum insumo cadastrado ainda.</div>'; atualizarTotalVariaveis(); return; }
+  el.innerHTML = custosVariaveis.map(c=>`
+    <div class="item-row">
+      <span class="item-categoria cat-outros">${escapeHtml(c.unidade||'un')}</span>
+      <span class="item-desc">${escapeHtml(c.descricao)}</span>
+      <span class="item-valor">R$ ${fmt(c.valor_medio)}/mês</span>
+      <button class="btn-del" onclick="deletarVariavel('${c.id}')">✕</button>
+    </div>
+  `).join('');
+  atualizarTotalVariaveis();
+}
+
+// ── Totais ──
+function somaFixos(){ return custosFixos.reduce((s,c)=>s+Number(c.valor),0); }
+function somaVariaveis(){ return custosVariaveis.reduce((s,c)=>s+Number(c.valor_medio),0); }
+
+function atualizarTotalFixos(){
+  document.getElementById('total-fixos').textContent = 'R$ ' + fmt(somaFixos());
+  recalcular();
+}
+
+function atualizarTotalVariaveis(){
+  document.getElementById('total-variaveis').textContent = 'R$ ' + fmt(somaVariaveis());
+  recalcular();
+}
+
+// ── CRUD ──
+async function adicionarCustoFixo(){
+  const desc = document.getElementById('f-desc').value.trim();
+  const cat  = document.getElementById('f-cat').value;
+  const val  = parseFloat(document.getElementById('f-val').value);
+  if(!desc || isNaN(val) || val < 0){ toast('Preencha descrição e valor.','erro'); return; }
+
+  const { data, error } = await sb.from('custos_fixos').insert([{descricao:desc,categoria:cat,valor:val}]).select();
+  if(error){ toast('Erro ao salvar.','erro'); return; }
+  custosFixos.push(data[0]);
+  renderFixos();
+  document.getElementById('f-desc').value='';
+  document.getElementById('f-val').value='';
+  toast('Custo adicionado!');
+}
+
+async function deletarFixo(id){
+  await sb.from('custos_fixos').update({ativo:false}).eq('id',id);
+  custosFixos = custosFixos.filter(c=>c.id!==id);
+  renderFixos();
+  toast('Item removido.');
+}
+
+async function adicionarVariavel(){
+  const desc = document.getElementById('v-desc').value.trim();
+  const unid = document.getElementById('v-unid').value.trim() || 'un';
+  const val  = parseFloat(document.getElementById('v-val').value);
+  if(!desc || isNaN(val) || val < 0){ toast('Preencha descrição e valor.','erro'); return; }
+
+  const { data, error } = await sb.from('custos_variaveis').insert([{descricao:desc,unidade:unid,valor_medio:val}]).select();
+  if(error){ toast('Erro ao salvar.','erro'); return; }
+  custosVariaveis.push(data[0]);
+  renderVariaveis();
+  document.getElementById('v-desc').value='';
+  document.getElementById('v-val').value='';
+  toast('Insumo adicionado!');
+}
+
+async function deletarVariavel(id){
+  await sb.from('custos_variaveis').update({ativo:false}).eq('id',id);
+  custosVariaveis = custosVariaveis.filter(c=>c.id!==id);
+  renderVariaveis();
+  toast('Insumo removido.');
+}
+
+async function salvarConfig(){
+  const dados = {
+    dias_semana: parseInt(document.getElementById('c-dias').value),
+    horas_dia:   parseFloat(document.getElementById('c-horas').value),
+    semanas_mes: 4.33,
+    perc_ociosidade: parseFloat(document.getElementById('c-ocio').value),
+    perc_overhead:   parseFloat(document.getElementById('c-over').value),
+    updated_at: new Date().toISOString()
+  };
+  // Upsert na primeira linha
+  const { data: existing } = await sb.from('config_custohorario').select('id').limit(1);
+  if(existing && existing.length > 0){
+    await sb.from('config_custohorario').update(dados).eq('id', existing[0].id);
+  } else {
+    await sb.from('config_custohorario').insert([dados]);
+  }
+  config = {...config,...dados};
+  toast('Configuração salva!');
+  recalcular();
+}
+
+// ── Cálculo principal ──
+function recalcular(){
+  const totalFixos = somaFixos();
+  const totalVariaveis = somaVariaveis();
+  const totalMes = totalFixos + totalVariaveis;
+
+  const dias = config.dias_semana || 5;
+  const horas = config.horas_dia || 8;
+  const semanas = config.semanas_mes || 4.33;
+  const ocio = (config.perc_ociosidade || 20) / 100;
+  const over = (config.perc_overhead || 15) / 100;
+
+  // Horas brutas por mês
+  const horasBrutas = dias * horas * semanas;
+  // Horas produtivas (descontando ociosidade)
+  const horasProd = horasBrutas * (1 - ocio);
+  // Custo total com overhead
+  const custoComOverhead = totalMes * (1 + over);
+  // Custo por hora
+  const custoHora = horasProd > 0 ? custoComOverhead / horasProd : 0;
+
+  // Atualizar KPIs
+  document.getElementById('kpi-custo-hora').textContent = 'R$ ' + fmt(custoHora);
+  document.getElementById('kpi-custo-mes').textContent = 'R$ ' + fmt(custoComOverhead);
+  document.getElementById('kpi-custo-mes-sub').textContent = `Fixos R$ ${fmt(totalFixos)} + Variáveis R$ ${fmt(totalVariaveis)} + ${Math.round(over*100)}% overhead`;
+  document.getElementById('kpi-horas-mes').textContent = Math.round(horasProd) + 'h';
+  document.getElementById('kpi-horas-sub').textContent = `${Math.round(horasBrutas)}h brutas × ${100-Math.round(ocio*100)}% aproveitamento`;
+
+  // Totalizador
+  document.getElementById('tot-minimo').textContent = 'R$ ' + fmt(custoHora);
+  document.getElementById('tot-30').textContent = 'R$ ' + fmt(custoHora * 1.3);
+  document.getElementById('tot-50').textContent = 'R$ ' + fmt(custoHora * 1.5);
+
+  // Resumo agenda
+  document.getElementById('resumo-agenda').innerHTML =
+    `<strong>${dias}d × ${horas}h × 4,33 semanas</strong> = ${Math.round(horasBrutas)}h brutas/mês<br>
+     Descontando ${Math.round(ocio*100)}% de ociosidade = <strong>${Math.round(horasProd)}h produtivas/mês</strong><br>
+     Overhead de ${Math.round(over*100)}% aplicado sobre os custos.`;
+
+  // Distribuição por categoria
+  renderDistribuicao(totalMes);
+}
+
+function renderDistribuicao(total){
+  const el = document.getElementById('dist-bar');
+  if(total === 0){ el.innerHTML='<div class="loading">Sem dados ainda.</div>'; return; }
+
+  // Agrupar por categoria
+  const cats = {};
+  custosFixos.forEach(c=>{
+    cats[c.categoria] = (cats[c.categoria]||0) + Number(c.valor);
+  });
+  if(custosVariaveis.length > 0){
+    cats['insumos'] = custosVariaveis.reduce((s,c)=>s+Number(c.valor_medio),0);
+  }
+
+  const cores = {
+    infraestrutura:'#3b82f6',utilidades:'#f59e0b',pessoal:'#8b5cf6',
+    administrativo:'#06b6d4',equipamentos:'#10b981',outros:'#94a3b8',insumos:'#f97316'
+  };
+  const labels = {
+    infraestrutura:'Infraestrutura',utilidades:'Utilidades',pessoal:'Pessoal',
+    administrativo:'Administrativo',equipamentos:'Equipamentos',outros:'Outros',insumos:'Insumos'
+  };
+
+  const ordenado = Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  el.innerHTML = ordenado.map(([cat,val])=>{
+    const pct = Math.round(val/total*100);
+    return `
+      <div class="dist-item">
+        <span class="dist-label">${labels[cat]||cat}</span>
+        <div class="dist-track">
+          <div class="dist-fill" style="width:${pct}%;background:${cores[cat]||'#94a3b8'}"></div>
+        </div>
+        <span class="dist-valor" style="color:${cores[cat]||'#94a3b8'}">R$ ${fmt(val)}</span>
+      </div>`;
+  }).join('');
+}
+
+// ── Calculadora de procedimentos ──
+let procedimentos = [];
+
+function calcularProcedimento(){
+  const nome = document.getElementById('p-nome').value.trim();
+  const min  = parseInt(document.getElementById('p-min').value);
+  if(!nome || isNaN(min) || min < 1){ toast('Preencha o nome e duração.','erro'); return; }
+
+  const horas = config.horas_dia || 8;
+  const ocio  = (config.perc_ociosidade||20)/100;
+  const over  = (config.perc_overhead||15)/100;
+  const semanas = config.semanas_mes || 4.33;
+  const dias  = config.dias_semana || 5;
+  const horasProd = dias * horas * semanas * (1-ocio);
+  const totalMes  = (somaFixos() + somaVariaveis()) * (1+over);
+  const custoHora = horasProd > 0 ? totalMes / horasProd : 0;
+
+  const duracaoH = min / 60;
+  const custoProc = custoHora * duracaoH;
+
+  procedimentos.unshift({ nome, min, custo: custoProc });
+  renderProcedimentos();
+  document.getElementById('p-nome').value='';
+  document.getElementById('p-min').value='';
+}
+
+function renderProcedimentos(){
+  const el = document.getElementById('proc-resultados');
+  el.innerHTML = procedimentos.slice(0,8).map(p=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;background:var(--bg);border-radius:10px;font-size:13px">
+      <span style="font-weight:600">${escapeHtml(p.nome)}</span>
+      <span style="color:var(--ct)">${p.min} min</span>
+      <span style="color:var(--vermelho)">Mín: R$ ${fmt(p.custo)}</span>
+      <span style="color:var(--laranja)">+30%: R$ ${fmt(p.custo*1.3)}</span>
+      <span style="color:var(--verde);font-weight:700">+50%: R$ ${fmt(p.custo*1.5)}</span>
+    </div>
+  `).join('');
+}
+
+// ── Utilitários ──
+function fmt(v){ return Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function escapeHtml(s){
+  if(!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+let toastTimer;
+function toast(msg, tipo){
+  const el = document.getElementById('toast');
+  el.textContent = (tipo==='erro' ? '⚠️ ' : '✅ ') + msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 2500);
+}
+
+// Guardar access_token nas chamadas SB
+const authData = JSON.parse(localStorage.getItem('clinica_auth')||'{}');
+if(!authData.ok || authData.expires < Date.now()){
+  window.location.href = 'login.html?r=custohora.html';
+}
+
+init();
+</script>
+</body>
+</html>
