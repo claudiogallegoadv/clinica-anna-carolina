@@ -1,9 +1,7 @@
 // config.js — PRODUÇÃO
-// Credenciais Supabase
 const SB_URL = 'https://nathaeuqbeqlvkftbmes.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdGhhZXVxYmVxbHZrZnRibWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4OTc4MzYsImV4cCI6MjA5NTQ3MzgzNn0.9t3q5C_h1pRb11gqRtpGGVpOUGey5TBzvMgal8h6wtg';
 
-// Fallback local — usado antes do banco carregar
 const CLINICA_CONFIG = {
   nome: 'Dra. Anna Carolina Dias',
   especialidade: 'Harmonização Orofacial',
@@ -13,7 +11,50 @@ const CLINICA_CONFIG = {
   loginEmail: 'clinica@annacarolina.com'
 };
 
-// Carrega config do Supabase e aplica dinamicamente
+// ── Renovação automática do token ──
+async function renovarTokenSeNecessario() {
+  try {
+    const auth = JSON.parse(localStorage.getItem('clinica_auth') || '{}');
+    if (!auth.ok || !auth.refresh_token) return false;
+
+    const faltam = auth.expires - Date.now();
+
+    // Já expirou ou faltam menos de 30 min — renova
+    if (faltam < 30 * 60 * 1000) {
+      const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY },
+        body: JSON.stringify({ refresh_token: auth.refresh_token })
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        localStorage.removeItem('clinica_auth');
+        sessionStorage.removeItem('clinica_auth');
+        window.location.href = 'login.html';
+        return false;
+      }
+      const novaAuth = {
+        ok: true,
+        expires: Date.now() + 8 * 60 * 60 * 1000,
+        access_token: data.access_token,
+        refresh_token: data.refresh_token || auth.refresh_token
+      };
+      localStorage.setItem('clinica_auth', JSON.stringify(novaAuth));
+      sessionStorage.setItem('clinica_auth', '1');
+      return true;
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+// Renova ao carregar e a cada 20 minutos
+(async () => {
+  const auth = JSON.parse(localStorage.getItem('clinica_auth') || '{}');
+  if (auth.ok) await renovarTokenSeNecessario();
+  setInterval(renovarTokenSeNecessario, 20 * 60 * 1000);
+})();
+
+// ── Carrega config da clínica do Supabase ──
 async function carregarConfigClinica() {
   try {
     const res = await fetch(`${SB_URL}/rest/v1/config_clinica?select=*&limit=1`, {
@@ -22,24 +63,22 @@ async function carregarConfigClinica() {
     const data = await res.json();
     if (data && data.length > 0) {
       const c = data[0];
-      CLINICA_CONFIG.nome        = c.nome        || CLINICA_CONFIG.nome;
+      CLINICA_CONFIG.nome          = c.nome          || CLINICA_CONFIG.nome;
       CLINICA_CONFIG.especialidade = c.especialidade || CLINICA_CONFIG.especialidade;
-      CLINICA_CONFIG.logo        = c.logo_url    || CLINICA_CONFIG.logo;
-      CLINICA_CONFIG.cor         = c.cor_principal || CLINICA_CONFIG.cor;
-      CLINICA_CONFIG.telefone    = c.telefone    || '';
-      CLINICA_CONFIG.whatsapp    = c.whatsapp    || '';
-      CLINICA_CONFIG.endereco    = c.endereco    || '';
-      CLINICA_CONFIG.email       = c.email       || '';
-      CLINICA_CONFIG.instagram   = c.instagram   || '';
-      CLINICA_CONFIG._id         = c.id;
-
-      // Aplica cor principal dinamicamente
+      CLINICA_CONFIG.logo          = c.logo_url      || CLINICA_CONFIG.logo;
+      CLINICA_CONFIG.cor           = c.cor_principal || CLINICA_CONFIG.cor;
+      CLINICA_CONFIG.telefone      = c.telefone      || '';
+      CLINICA_CONFIG.whatsapp      = c.whatsapp      || '';
+      CLINICA_CONFIG.endereco      = c.endereco      || '';
+      CLINICA_CONFIG.email         = c.email         || '';
+      CLINICA_CONFIG.instagram     = c.instagram     || '';
+      CLINICA_CONFIG._id           = c.id;
       document.documentElement.style.setProperty('--verde', c.cor_principal || '#1D9E75');
     }
   } catch(e) { /* usa fallback */ }
 }
 
-// Login via Supabase Auth (PIN como senha)
+// ── Login via Supabase Auth (PIN como senha) ──
 async function authLogin(pin) {
   try {
     const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
