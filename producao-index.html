@@ -3967,7 +3967,7 @@ async function verificarNotificacoes(){
           `📅 ${agendamentos.length} consulta${agendamentos.length>1?'s':''} amanhã`,
           nomes,
           'consultas-amanha',
-          'https://claudiogallegoadv.github.io/clinica-anna-carolina/index.html'
+          'https://clinicaannacarolina.github.io/clinica-anna-carolina/index.html'
         );
       }
     }
@@ -3981,7 +3981,7 @@ async function verificarNotificacoes(){
           `🚨 Estoque crítico`,
           criticos.map(p=>p.nome).join(', '),
           'estoque-critico',
-          'https://claudiogallegoadv.github.io/clinica-anna-carolina/estoque.html'
+          'https://clinicaannacarolina.github.io/clinica-anna-carolina/estoque.html'
         );
       }
       // Produtos vencendo em 7 dias
@@ -3996,7 +3996,7 @@ async function verificarNotificacoes(){
           `⏰ Produto vencendo em 7 dias`,
           vencendo.map(p=>p.nome).join(', '),
           'produto-vencendo',
-          'https://claudiogallegoadv.github.io/clinica-anna-carolina/estoque.html'
+          'https://clinicaannacarolina.github.io/clinica-anna-carolina/estoque.html'
         );
       }
     }
@@ -4009,7 +4009,7 @@ async function verificarNotificacoes(){
         `💰 ${cobrancas.length} cobrança${cobrancas.length>1?'s':''} vencida${cobrancas.length>1?'s':''}`,
         `Total: R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}`,
         'cobrancas-vencidas',
-        'https://claudiogallegoadv.github.io/clinica-anna-carolina/index.html?tab=financeiro'
+        'https://clinicaannacarolina.github.io/clinica-anna-carolina/index.html?tab=financeiro'
       );
     }
 
@@ -4028,7 +4028,7 @@ async function verificarNotificacoes(){
           `📌 ${lembretes.length} lembrete${lembretes.length>1?'s':''} para hoje`,
           lembretes.map(l=>`${l.pac}: ${l.texto}`).slice(0,3).join(' | '),
           'lembretes-hoje',
-          'https://claudiogallegoadv.github.io/clinica-anna-carolina/index.html'
+          'https://clinicaannacarolina.github.io/clinica-anna-carolina/index.html'
         );
       }
     }
@@ -4040,7 +4040,7 @@ async function verificarNotificacoes(){
         `🔬 ${atendimentos.length} verificação${atendimentos.length>1?'s':''} pós-procedimento hoje`,
         atendimentos.map(a=>a.pacientes?.nome||'Paciente').join(', '),
         'verificacoes-hoje',
-        'https://claudiogallegoadv.github.io/clinica-anna-carolina/index.html'
+        'https://clinicaannacarolina.github.io/clinica-anna-carolina/index.html'
       );
     }
 
