@@ -254,29 +254,24 @@ textarea{resize:vertical;min-height:70px}
       <button class="tb" onclick="aba('agenda',this)" id="tb-agenda">📅 Agenda<span id="badge-online" style="display:none;background:var(--vermelho);color:white;border-radius:50%;font-size:9px;font-weight:700;padding:1px 5px;margin-left:5px;vertical-align:top;line-height:16px"></span></button>
       <button class="tb" onclick="aba('alertas',this)">🔔 Alertas</button>
       <button class="tb" onclick="aba('pacientes',this)">👥 Pacientes</button>
-      <button class="tb" onclick="aba('cadastro',this)">➕ Cadastrar</button>
-
   <style>
     .hdr-pag{background:var(--verde-e);color:#fff;padding:0 1.5rem;display:flex;align-items:center;gap:1rem;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
     .hdr-pag a{color:rgba(255,255,255,.75);text-decoration:none;font-size:13px}
     .hdr-pag a:hover{color:#fff}
-    .panel{display:block!important;padding:1rem 1.25rem;max-width:1100px;margin:0 auto}
-    /* Esconder elementos do index que não fazem sentido aqui */
-    .kpis,.nav-tabs,.hdr{display:none!important}
+    .panel,.kpis,.nav-tabs,.hdr{display:none!important}
+    main {display:block!important;padding:1rem 1.25rem;max-width:1100px;margin:0 auto}
   </style>
 </head>
 <body>
-
 <div class="hdr-pag">
-  <a href="gestao.html">← Gestao</a>
+  <a href="gestao.html">← Gestão</a>
   <span style="font-size:15px;font-weight:600;flex:1">📊 Relatório Geral</span>
 </div>
-
-<main class="panel">
+<main>
 
 <div style="display:flex;gap:8px;margin-bottom:1rem;align-items:center;flex-wrap:wrap">
   <label style="font-size:13px;color:var(--ct)">Período:</label>
-  <select id="rel-mes" onchange="renderRel()" style="width:auto;padding:7px 10px;font-size:13px">
+  <select id="rel-mes" onchange="renderRel()" style="padding:7px 10px;font-size:13px;border:1.5px solid var(--borda);border-radius:8px">
     <option value="0">Este mês</option>
     <option value="1">Mês passado</option>
     <option value="3">Últimos 3 meses</option>
@@ -286,74 +281,63 @@ textarea{resize:vertical;min-height:70px}
   </select>
   <div style="margin-left:auto;display:flex;gap:6px">
     <button id="btn-anual" onclick="toggleRelAnual(this)" class="btn" style="font-size:12px;padding:6px 14px">📊 Anual</button>
-    <button id="btn-executivo" onclick="toggleRelExec(this)" class="btn" aria-label="Copiar" style="font-size:12px;padding:6px 14px">📋 Executivo</button>
+    <button id="btn-executivo" onclick="toggleRelExec(this)" class="btn" style="font-size:12px;padding:6px 14px">📋 Executivo</button>
   </div>
 </div>
 <div id="rel-anual" style="display:none;margin-bottom:1.5rem"></div>
 <div id="rel-executivo" style="display:none;margin-bottom:1.5rem"></div>
 <div class="rel-grid" id="rel-stats"></div>
-<div class="card"><div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--txt)">⚠️ Inadimplência</div><div id="rel-inadimplencia"></div></div>
-<div class="card"><div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--txt)">🎯 Ticket médio por procedimento</div><div id="rel-ticket-proc"></div></div>
-<div class="card"><div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--txt)">📈 Fluxo de caixa projetado (próx. 3 meses)</div><div id="rel-fluxo"></div></div>
-<div class="card"><div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--txt)">🏆 Procedimentos mais realizados</div><div id="rel-procs"></div></div>
-<div class="card"><div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--txt)">📣 Principais indicações</div><div id="rel-indic"></div></div>
-<div class="card"><div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--txt)">💰 Faturamento estimado</div><div id="rel-fat"></div></div>
-<div class="card"><div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--txt)">🏅 Programa de Indicação — Embaixadoras</div><div id="rel-embaixadoras"></div></div>
-<div class="card"><div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--txt)">📊 Como as pacientes conheceram a clínica</div><div id="rel-conheceu"></div></div>
+<div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">⚠️ Inadimplência</div><div id="rel-inadimplencia"></div></div>
+<div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">🎯 Ticket médio por procedimento</div><div id="rel-ticket-proc"></div></div>
+<div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">📈 Fluxo de caixa projetado (próx. 3 meses)</div><div id="rel-fluxo"></div></div>
+<div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">🏆 Procedimentos mais realizados</div><div id="rel-procs"></div></div>
+<div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">📣 Principais indicações</div><div id="rel-indic"></div></div>
+<div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">💰 Faturamento estimado</div><div id="rel-fat"></div></div>
+<div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">🏅 Programa de Indicação — Embaixadoras</div><div id="rel-embaixadoras"></div></div>
+<div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">📊 Como as pacientes conheceram a clínica</div><div id="rel-conheceu"></div></div>
 
 </main>
 
-
-
-<!-- Stub de elementos que o JS do index referencia mas não existem nesta página -->
-<div id="p-hoje" style="display:none"></div>
-<div id="p-agenda" style="display:none"></div>
-<div id="p-pacientes" style="display:none"></div>
-<div id="p-cadastro" style="display:none"></div>
-<div id="p-relatorio" style="display:none"></div>
-<div id="p-financeiro" style="display:none"></div>
+<!-- Stubs para o JS do index não quebrar -->
+<div id="p-hoje" style="display:none"></div><div id="p-agenda" style="display:none"></div>
+<div id="p-pacientes" style="display:none"></div><div id="p-cadastro" style="display:none"></div>
+<div id="p-relatorio" style="display:none"></div><div id="p-financeiro" style="display:none"></div>
 <div id="p-auditoria" style="display:none"></div>
-<div id="l-cons-hoje" style="display:none"></div>
-<div id="l-cons-amanha" style="display:none"></div>
-<div id="l-verificacoes" style="display:none"></div>
-<div id="l-aniv" style="display:none"></div>
-<div id="l-lembr" style="display:none"></div>
-<div id="l-fin-hoje" style="display:none"></div>
-<div id="l-ret-hoje" style="display:none"></div>
-<div id="sec-lembretes-amanha" style="display:none"></div>
-<div id="sec-pedidos-online" style="display:none"></div>
-<div id="ag-stats" style="display:none"></div>
-<div id="kpi-pacs" style="display:none"></div>
-<div id="kpi-aniv" style="display:none"></div>
-<div id="kpi-alertas" style="display:none"></div>
-<div id="kpi-lembr" style="display:none"></div>
+<div id="l-cons-hoje" style="display:none"></div><div id="l-cons-amanha" style="display:none"></div>
+<div id="l-verificacoes" style="display:none"></div><div id="l-aniv" style="display:none"></div>
+<div id="l-lembr" style="display:none"></div><div id="l-fin-hoje" style="display:none"></div>
+<div id="l-ret-hoje" style="display:none"></div><div id="sec-lembretes-amanha" style="display:none"></div>
+<div id="sec-pedidos-online" style="display:none"></div><div id="ag-stats" style="display:none"></div>
+<div id="kpi-pacs" style="display:none"></div><div id="kpi-aniv" style="display:none"></div>
+<div id="kpi-alertas" style="display:none"></div><div id="kpi-lembr" style="display:none"></div>
 <div id="badge-online" style="display:none"></div>
-
+<div id="_toast" class="toast"></div>
 <script>
-// ── Auth ──
+// Auth
 const authData = JSON.parse(localStorage.getItem('clinica_auth')||'{}');
 if(!authData.ok || authData.expires < Date.now()) window.location.href='login.html';
 
-// ── Supabase (SB_URL e SB_KEY vêm do config.js) ──
+// Supabase — usa SB_URL e SB_KEY do config.js (já declarados)
 const {createClient} = supabase;
 const db = createClient(SB_URL, SB_KEY, {
-  global:{headers:{Authorization:`Bearer ${authData.access_token||SB_KEY}`}}
+  global: {headers: {Authorization: `Bearer ${authData.access_token || SB_KEY}`}}
 });
 
-// ── Stub de funções do index que não são usadas aqui ──
-function aba(){} function toast(m,t){
+// Stubs de funções não usadas nesta página
+function aba(){} 
+function toast(m,t){
   const e=document.getElementById('_toast');
   if(!e)return;
-  e.textContent=m;e.className='toast show '+(t||'');
+  e.textContent=m;
+  e.className='toast show '+(t||'');
   setTimeout(()=>e.classList.remove('show'),3000);
 }
 function renderHoje(){} function carregarAgenda(){} function renderCal(){}
 function abrirLembrete(){} function renderPacs(){} function marcarEnviado(){}
-function abrWpp(){} function fchWpp(){}
+function abrWpp(){} function fchWpp(){} function abrAtend(){}
+function carregar(){} function addTrat(){}
 
-// ── JS COMPLETO DO INDEX ──
-const {createClient}=supabase;
-const db=createClient(SB_URL,SB_KEY);
+// JS do index (sem createClient/db para evitar redeclaração)
 // Aviso automático: qualquer insert/update/delete/upsert que falhar mostra toast de erro,
 // mesmo que o código que chamou não verifique 'error' explicitamente.
 (function(){
@@ -3836,475 +3820,8 @@ if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.ser
 addTrat('f-trats');
 carregar();
 carregarAgenda();
-</script>
 
-<!-- MODAL INFORMATIVOS PÓS-PROCEDIMENTO -->
-<div id="modal-inf" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:center;justify-content:center">
-  <div style="background:var(--card);border-radius:16px;padding:1.5rem;width:92%;max-width:480px;max-height:85vh;display:flex;flex-direction:column">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-shrink:0">
-      <div style="font-size:16px;font-weight:700">📲 Informativo pós-procedimento</div>
-      <button onclick="fecharModalInformativos()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--ct);line-height:1">✕</button>
-    </div>
-    <div style="font-size:12px;color:var(--ct);margin-bottom:1rem;flex-shrink:0" id="modal-inf-pac"></div>
-    <div id="modal-inf-lista" style="overflow-y:auto;flex:1"></div>
-  </div>
-</div>
-<script>
-document.getElementById('modal-inf').addEventListener('click',function(e){if(e.target===this)fecharModalInformativos();});
-</script>
-
-<!-- MODAL LANÇAMENTO FINANCEIRO -->
-<div id="modal-fin" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center">
-  <div style="background:var(--card);border-radius:16px;padding:1.5rem;width:92%;max-width:480px;max-height:90vh;overflow-y:auto">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-      <div style="font-size:16px;font-weight:700" id="fin-modal-titulo">+ Nova Receita</div>
-      <button onclick="fecharModalFin()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--ct)">✕</button>
-    </div>
-    <input type="hidden" id="fin-edit-id"/>
-    <input type="hidden" id="fin-tipo"/>
-
-    <div style="display:grid;gap:12px">
-      <div>
-        <label style="font-size:11px;font-weight:600;color:var(--ct);text-transform:uppercase;letter-spacing:.04em">Data *</label>
-        <input type="date" id="fin-data" style="width:100%;padding:9px 11px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;margin-top:4px"/>
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:600;color:var(--ct);text-transform:uppercase;letter-spacing:.04em">Descrição *</label>
-        <input type="text" id="fin-desc" placeholder="Ex: Botox - Maria Silva" list="fin-desc-list" style="width:100%;padding:9px 11px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;margin-top:4px"/>
-        <datalist id="fin-desc-list"></datalist>
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:600;color:var(--ct);text-transform:uppercase;letter-spacing:.04em">Categoria</label>
-        <select id="fin-cat" style="width:100%;padding:9px 11px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;margin-top:4px">
-        </select>
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:600;color:var(--ct);text-transform:uppercase;letter-spacing:.04em">Valor R$ *</label>
-        <input type="number" id="fin-valor" min="0" step="0.01" placeholder="0,00" style="width:100%;padding:9px 11px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;margin-top:4px"/>
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:600;color:var(--ct);text-transform:uppercase;letter-spacing:.04em">Forma de Pagamento</label>
-        <select id="fin-pgto" onchange="atualizarInfoParcelas()" style="width:100%;padding:9px 11px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;margin-top:4px">
-          <option value="pix">💠 Pix</option>
-          <option value="dinheiro">💵 Dinheiro</option>
-          <option value="debito">💳 Débito</option>
-          <option value="credito-1x">💳 Crédito 1x</option>
-          <option value="credito-2x">💳 Crédito 2x</option>
-          <option value="credito-3x">💳 Crédito 3x</option>
-          <option value="credito-4x">💳 Crédito 4x</option>
-          <option value="credito-5x">💳 Crédito 5x</option>
-          <option value="credito-6x">💳 Crédito 6x</option>
-          <option value="credito-10x">💳 Crédito 10x</option>
-          <option value="credito-12x">💳 Crédito 12x</option>
-          <option value="transferencia">🏦 Transferência</option>
-          <option value="cheque">📄 Cheque</option>
-          <option value="outro">Outro</option>
-        </select>
-      </div>
-      <div id="fin-parcelas-info" style="display:none;background:var(--amarelo-c);border-radius:8px;padding:10px;font-size:13px;color:#8a6000">
-        📅 Parcelado: as parcelas serão lançadas automaticamente nos meses seguintes.
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:600;color:var(--ct);text-transform:uppercase;letter-spacing:.04em">Status</label>
-        <select id="fin-status" style="width:100%;padding:9px 11px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;margin-top:4px">
-          <option value="recebido">✅ Recebido / Pago</option>
-          <option value="pendente">⏳ A receber</option>
-        </select>
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:600;color:var(--ct);text-transform:uppercase;letter-spacing:.04em">Observações</label>
-        <textarea id="fin-obs" rows="2" placeholder="Observações..." style="width:100%;padding:9px 11px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;margin-top:4px;resize:vertical"></textarea>
-      </div>
-    </div>
-
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
-      <button class="btn" onclick="fecharModalFin()">Cancelar</button>
-      <button class="btn pri" id="fin-btn-salvar" onclick="salvarLancamento()">✓ Salvar</button>
-    </div>
-  </div>
-</div>
-
-<script>
-// ── SISTEMA DE NOTIFICAÇÕES ──
-const NOTIF_KEY = 'clinica_notif_ultima_verificacao';
-
-async function iniciarNotificacoes(){
-  if(!('serviceWorker' in navigator) || !('Notification' in window)) return;
-  const perm = await Notification.requestPermission();
-  if(perm !== 'granted') return;
-  verificarNotificacoes();
-  // Verificar a cada 1 hora
-  setInterval(verificarNotificacoes, 60 * 60 * 1000);
-}
-
-async function enviarNotif(title, body, tag, url){
-  if(Notification.permission !== 'granted') return;
-  const reg = await navigator.serviceWorker.ready;
-  reg.active?.postMessage({ type:'SHOW_NOTIFICATION', title, body, tag, url });
-}
-
-async function verificarNotificacoes(){
-  if(Notification.permission !== 'granted') return;
-  const agora = new Date();
-  const horaAtual = agora.getHours();
-  // Só enviar entre 7h e 21h
-  if(horaAtual < 7 || horaAtual > 21) return;
-  // Evitar spam — verificar no máximo 1x por hora
-  const ultima = localStorage.getItem(NOTIF_KEY);
-  if(ultima){
-    const diff = (agora - new Date(ultima)) / 1000 / 60;
-    if(diff < 55) return;
-  }
-  localStorage.setItem(NOTIF_KEY, agora.toISOString());
-
-  try {
-    const hoje = agora.toISOString().split('T')[0];
-    const amanha = new Date(agora); amanha.setDate(amanha.getDate()+1);
-    const amanhaStr = amanha.toISOString().split('T')[0];
-
-    // 1. CONSULTAS AMANHÃ
-    if(horaAtual >= 18){
-      const{data:agendamentos}=await db.from('agenda').select('*,pacientes(nome)').eq('data',amanhaStr).eq('status','agendado');
-      if(agendamentos&&agendamentos.length>0){
-        const nomes=agendamentos.map(a=>a.pacientes?.nome||'Paciente').join(', ');
-        await enviarNotif(
-          `📅 ${agendamentos.length} consulta${agendamentos.length>1?'s':''} amanhã`,
-          nomes,
-          'consultas-amanha',
-          'https://claudiogallegoadv.github.io/clinica-anna-carolina/index.html'
-        );
-      }
-    }
-
-    // 2. ESTOQUE CRÍTICO
-    const{data:produtos}=await db.from('produtos').select('nome,quantidade,estoque_minimo').gt('estoque_minimo',0);
-    if(produtos){
-      const criticos=produtos.filter(p=>p.quantidade<=p.estoque_minimo);
-      if(criticos.length>0){
-        await enviarNotif(
-          `🚨 Estoque crítico`,
-          criticos.map(p=>p.nome).join(', '),
-          'estoque-critico',
-          'https://claudiogallegoadv.github.io/clinica-anna-carolina/estoque.html'
-        );
-      }
-      // Produtos vencendo em 7 dias
-      const em7dias=new Date(); em7dias.setDate(em7dias.getDate()+7);
-      const vencendo=produtos.filter(p=>{
-        if(!p.validade_atual||p.quantidade<=0) return false;
-        const d=new Date(p.validade_atual+'T12:00:00');
-        return d>=agora&&d<=em7dias;
-      });
-      if(vencendo.length>0){
-        await enviarNotif(
-          `⏰ Produto vencendo em 7 dias`,
-          vencendo.map(p=>p.nome).join(', '),
-          'produto-vencendo',
-          'https://claudiogallegoadv.github.io/clinica-anna-carolina/estoque.html'
-        );
-      }
-    }
-
-    // 3. COBRANÇAS VENCIDAS
-    const{data:cobrancas}=await db.from('financeiro').select('id,valor,descricao,data,paciente_id').eq('status','pendente').eq('tipo','receita').lt('data',hoje);
-    if(cobrancas&&cobrancas.length>0){
-      const total=cobrancas.reduce((s,c)=>s+(c.valor||0),0);
-      await enviarNotif(
-        `💰 ${cobrancas.length} cobrança${cobrancas.length>1?'s':''} vencida${cobrancas.length>1?'s':''}`,
-        `Total: R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}`,
-        'cobrancas-vencidas',
-        'https://claudiogallegoadv.github.io/clinica-anna-carolina/index.html?tab=financeiro'
-      );
-    }
-
-    // 4. LEMBRETES DE HOJE
-    const{data:pacientes}=await db.from('pacientes').select('id,nome,lembretes').not('lembretes','is',null);
-    if(pacientes){
-      const lembretes=[];
-      pacientes.forEach(pac=>{
-        if(!Array.isArray(pac.lembretes)) return;
-        pac.lembretes.forEach(l=>{
-          if(l.data===hoje&&!l.feito) lembretes.push({pac:pac.nome,texto:l.recado||l.texto||''});
-        });
-      });
-      if(lembretes.length>0){
-        await enviarNotif(
-          `📌 ${lembretes.length} lembrete${lembretes.length>1?'s':''} para hoje`,
-          lembretes.map(l=>`${l.pac}: ${escapeHtml(l.texto)}`).slice(0,3).join(' | '),
-          'lembretes-hoje',
-          'https://claudiogallegoadv.github.io/clinica-anna-carolina/index.html'
-        );
-      }
-    }
-
-    // 5. VERIFICAÇÕES PÓS-PROCEDIMENTO DE HOJE
-    const verHoje=[];
-    pacs.forEach(p=>(p.atendimentos||[]).forEach(a=>{if(a.verificacaoData===hoje)verHoje.push({pacientes:{nome:p.nome}});}));
-    if(verHoje.length>0){
-      await enviarNotif(
-        `🔬 ${verHoje.length} verificação${verHoje.length>1?'s':''} pós-procedimento hoje`,
-        verHoje.map(a=>a.pacientes?.nome||'Paciente').join(', '),
-        'verificacoes-hoje',
-        'https://claudiogallegoadv.github.io/clinica-anna-carolina/index.html'
-      );
-    }
-
-  } catch(err){
-    console.error('Erro ao verificar notificações:', err);
-  }
-}
-
-// Iniciar após carregar os dados
-document.addEventListener('DOMContentLoaded', ()=>{
-  setTimeout(iniciarNotificacoes, 3000);
-});
-</script>
-<!-- MODAL CONFIRMAR RECEBIMENTO (Regime de Caixa) -->
-<div id="modal-mrec" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:3500;align-items:center;justify-content:center;padding:1rem">
-  <div style="background:var(--card);border-radius:16px;width:100%;max-width:380px;padding:1.5rem;box-shadow:var(--sm)">
-    <div style="font-size:16px;font-weight:700;margin-bottom:4px">✅ Confirmar recebimento</div>
-    <p style="font-size:13px;color:var(--ct);margin-bottom:1.2rem">O pagamento será registrado na data selecionada (regime de caixa).</p>
-    <div style="margin-bottom:1.2rem">
-      <label style="font-size:12px;font-weight:600;color:var(--ct);display:block;margin-bottom:6px">DATA DO RECEBIMENTO</label>
-      <input type="date" id="mrec-data" style="width:100%;padding:10px;font-size:14px;border-radius:8px;border:1.5px solid var(--borda)"/>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button class="btn" onclick="fecharMarcarRecebido()">Cancelar</button>
-      <button class="btn pri" aria-label="Confirmar" id="mrec-btn" onclick="confirmarMarcarRecebido()">✅ Confirmar recebimento</button>
-    </div>
-  </div>
-</div>
-<script>
-document.getElementById('modal-mrec').addEventListener('click',function(e){if(e.target===this)fecharMarcarRecebido();});
-</script>
-
-<!-- MODAL CONFIGURAÇÃO AGENDAMENTO ONLINE -->
-<div class="mb" id="m-ag-online">
-  <div class="mx" style="max-width:460px">
-    <h3 style="margin-bottom:4px">📱 Agendamento Online</h3>
-    <p style="font-size:13px;color:var(--ct);margin-bottom:14px">Configure os horários disponíveis para agendamento pelo paciente.</p>
-
-    <!-- Ativo/inativo -->
-    <label style="display:flex;align-items:center;gap:10px;margin-bottom:14px;cursor:pointer;background:var(--verde-c);border-radius:10px;padding:10px 14px">
-      <input type="checkbox" id="cao-ativo" style="accent-color:var(--verde);width:18px;height:18px"/>
-      <span style="font-size:13px;font-weight:600;color:var(--verde-e)">Agendamento online ativado</span>
-    </label>
-
-    <!-- Dias da semana -->
-    <div style="font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;margin-bottom:8px">Dias disponíveis</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
-      ${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map((d,i)=>`
-        <label style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px">
-          <input type="checkbox" name="cao-dia" value="${i}" style="accent-color:var(--verde)"/>
-          <span style="font-size:11px;font-weight:600">${d}</span>
-        </label>`).join('')}
-    </div>
-
-    <!-- Horários e duração -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
-      <div><label style="font-size:11px;font-weight:600;color:var(--ct);display:block;margin-bottom:4px">INÍCIO</label>
-        <input type="time" id="cao-hora-ini" style="padding:8px"/></div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--ct);display:block;margin-bottom:4px">FIM</label>
-        <input type="time" id="cao-hora-fim" style="padding:8px"/></div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--ct);display:block;margin-bottom:4px">SLOT (min)</label>
-        <select id="cao-duracao" style="padding:8px">
-          <option value="30">30 min</option>
-          <option value="45">45 min</option>
-          <option value="60">60 min</option>
-          <option value="90">90 min</option>
-        </select></div>
-    </div>
-    <div style="margin-bottom:14px"><label style="font-size:11px;font-weight:600;color:var(--ct);display:block;margin-bottom:4px">ANTECEDÊNCIA MÁXIMA (dias)</label>
-      <input type="number" id="cao-max-dias" min="7" max="90" style="padding:8px;width:100px"/></div>
-
-    <!-- Link -->
-    <div style="font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;margin-bottom:8px">Link para compartilhar</div>
-    <div style="display:flex;gap:6px;margin-bottom:14px">
-      <input type="text" id="cao-link" readonly style="font-size:11px;background:var(--bg);flex:1"/>
-      <button class="btn" aria-label="Copiar" onclick="copiarLinkAgOnline()" style="flex-shrink:0;font-size:12px">📋 Copiar</button>
-      <button class="btn" aria-label="Compartilhar via WhatsApp" onclick="compartilharWppAgOnline()" style="flex-shrink:0;font-size:12px;background:#25D366;color:white;border-color:#25D366" title="Compartilhar via WhatsApp">💬</button>
-    </div>
-
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button class="btn" onclick="const m=document.getElementById('m-ag-online');m.classList.remove('open');m.style.display=''">Cancelar</button>
-      <button class="btn pri" aria-label="Confirmar" onclick="salvarConfAgOnline()">✅ Salvar configurações</button>
-    </div>
-  </div>
-</div>
-<script>
-document.getElementById('m-ag-online').addEventListener('click',e=>{if(e.target===e.currentTarget){e.currentTarget.classList.remove('open');e.currentTarget.style.display='';}});
-// Preencher dias da semana no HTML (innerHTML não funciona em atributos)
-(function(){
-  const DIAS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-  const cont=document.querySelector('#m-ag-online .mx [style*="flex;gap:6px;flex-wrap"]');
-  if(!cont)return;
-  cont.innerHTML=DIAS.map((d,i)=>`
-    <label style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 8px;border:1.5px solid var(--borda);border-radius:8px;min-width:44px;text-align:center">
-      <input type="checkbox" name="cao-dia" value="${i}" style="accent-color:var(--verde)"/>
-      <span style="font-size:11px;font-weight:600">${d}</span>
-    </label>`).join('');
-})();
-</script>
-
-<!-- MODAL DISPARO LEMBRETES -->
-<div class="mb" id="m-lembretes">
-  <div class="mx" style="max-width:420px">
-    <h3 style="margin-bottom:4px">🔔 Disparar Lembretes</h3>
-    <div id="lemb-total" style="font-size:13px;color:var(--ct);margin-bottom:14px"></div>
-
-    <!-- Progresso -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-      <div style="font-size:24px;font-weight:700;color:var(--verde-e)" id="lemb-contador-num">0</div>
-      <div style="flex:1">
-        <div style="font-size:12px;color:var(--ct);margin-bottom:4px">de <span id="lemb-contador-total">0</span> enviados</div>
-        <div style="background:var(--borda);border-radius:99px;height:6px">
-          <div id="lemb-barra" style="background:var(--verde);height:6px;border-radius:99px;width:0%;transition:.3s"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Próximo paciente -->
-    <div id="lemb-atual" style="background:var(--verde-c);border:1.5px solid var(--verde);border-radius:12px;padding:12px;margin-bottom:14px">
-      <div style="font-size:11px;font-weight:700;color:var(--verde-e);margin-bottom:4px">PRÓXIMA PACIENTE</div>
-      <div id="lemb-atual-nome" style="font-size:15px;font-weight:700"></div>
-      <div id="lemb-atual-tel" style="font-size:12px;color:var(--ct)"></div>
-      <div id="lemb-atual-msg" style="font-size:11px;white-space:pre-wrap;margin-top:8px;background:white;border-radius:8px;padding:8px;max-height:120px;overflow-y:auto;line-height:1.4"></div>
-    </div>
-
-    <div style="display:flex;gap:8px">
-      <button class="btn" onclick="document.getElementById('m-lembretes').classList.remove('open')">Fechar</button>
-      <button class="btn pri" id="lemb-btn" onclick="enviarProximoLembrete()" style="flex:1;font-size:14px">📲 Enviar próximo</button>
-    </div>
-  </div>
-</div>
-<script>
-document.getElementById('m-lembretes').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
-</script>
-
-<!-- MODAL BUSCA GLOBAL -->
-<div class="mb" id="m-busca-global">
-  <div class="mx" style="max-width:500px;padding:0">
-    <div style="padding:12px 16px;border-bottom:1px solid var(--borda);display:flex;gap:10px;align-items:center">
-      <span style="font-size:18px">🔍</span>
-      <input type="text" id="bg-input" placeholder="Buscar paciente, consulta, procedimento..."
-        oninput="buscarGlobal()" autocomplete="off"
-        style="flex:1;border:none;font-size:15px;outline:none;background:transparent;font-family:inherit"/>
-      <button onclick="document.getElementById('m-busca-global').classList.remove('open')" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ct)">✕</button>
-    </div>
-    <div id="bg-resultados" style="max-height:380px;overflow-y:auto"></div>
-    <div style="padding:8px 12px;font-size:11px;color:var(--ct);border-top:1px solid var(--borda)">Ctrl+K para abrir · Esc para fechar · Clique no resultado para navegar</div>
-  </div>
-</div>
-<style>.bg-item:hover{background:var(--verde-c)!important}</style>
-<script>
-document.getElementById('m-busca-global').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('m-busca-global')?.classList.remove('open');});
-</script>
-
-<!-- MODAL EDITOR DE TEMPLATES -->
-<div class="mb" id="m-templates">
-  <div class="mx" style="max-width:540px">
-    <h3 style="margin-bottom:4px">✏️ Editar Templates de Mensagem</h3>
-    <p style="font-size:13px;color:var(--ct);margin-bottom:14px">Use <strong>{nome}</strong> para o nome da paciente. As mensagens são salvas no seu navegador.</p>
-    <div style="display:flex;flex-direction:column;gap:12px;max-height:60vh;overflow-y:auto;padding-right:4px">
-      <div><label style="font-size:12px;font-weight:700;color:var(--ct);display:block;margin-bottom:4px">🔔 LEMBRETE DE RETORNO (padrão)</label>
-        <textarea id="tmpl-retorno" rows="4" style="width:100%;padding:8px;font-size:13px;border-radius:8px;border:1.5px solid var(--borda);resize:vertical;font-family:inherit"></textarea></div>
-      <div><label style="font-size:12px;font-weight:700;color:var(--ct);display:block;margin-bottom:4px">💉 BOTOX / TOXINA BOTULÍNICA</label>
-        <textarea id="tmpl-botox" rows="4" style="width:100%;padding:8px;font-size:13px;border-radius:8px;border:1.5px solid var(--borda);resize:vertical;font-family:inherit"></textarea></div>
-      <div><label style="font-size:12px;font-weight:700;color:var(--ct);display:block;margin-bottom:4px">💧 PREENCHIMENTO FACIAL</label>
-        <textarea id="tmpl-preenchimento" rows="4" style="width:100%;padding:8px;font-size:13px;border-radius:8px;border:1.5px solid var(--borda);resize:vertical;font-family:inherit"></textarea></div>
-      <div><label style="font-size:12px;font-weight:700;color:var(--ct);display:block;margin-bottom:4px">🎉 MENSAGEM ESPECIAL DE RETORNO</label>
-        <textarea id="tmpl-aniversario" rows="4" style="width:100%;padding:8px;font-size:13px;border-radius:8px;border:1.5px solid var(--borda);resize:vertical;font-family:inherit"></textarea></div>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
-      <button class="btn" onclick="document.getElementById('m-templates').classList.remove('open')">Cancelar</button>
-      <button class="btn pri" aria-label="Confirmar" onclick="salvarTemplates()">✅ Salvar templates</button>
-    </div>
-  </div>
-</div>
-<script>
-document.getElementById('m-templates').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
-</script>
-
-<!-- MODAL VINCULAR PACIENTE -->
-<div class="mb" id="m-vincular">
-  <div class="mx" style="max-width:460px">
-    <h3 style="margin-bottom:4px">🔗 Vincular ao cadastro</h3>
-    <p style="font-size:13px;color:var(--ct);margin-bottom:14px">Consulta agendada para: <strong id="vinc-nome-ag" style="color:var(--txt)"></strong></p>
-    <div style="position:relative;margin-bottom:10px">
-      <input type="text" id="vinc-busca" placeholder="🔍 Buscar por nome ou telefone..." autocomplete="off"/>
-    </div>
-    <div id="vinc-lista" style="max-height:300px;overflow-y:auto;border:1px solid var(--borda);border-radius:10px"></div>
-    <div class="br" style="margin-top:14px">
-      <button class="btn" onclick="fchVincular()">Fechar</button>
-    </div>
-  </div>
-</div>
-
-<script>
-// ── VINCULAR PACIENTE AO AGENDAMENTO ──
-let _vincConsultaId=null;
-
-function abrirVincular(c){
-  _vincConsultaId=c.id;
-  document.getElementById('vinc-nome-ag').textContent=c.nome+(c.procedimento?' · '+c.procedimento:'');
-  const busca=document.getElementById('vinc-busca');
-  busca.value='';
-  busca.oninput=filtrarVincular;
-  filtrarVincular();
-  document.getElementById('m-vincular').classList.add('open');
-  setTimeout(()=>busca.focus(),150);
-}
-
-function fchVincular(){
-  document.getElementById('m-vincular').classList.remove('open');
-  _vincConsultaId=null;
-}
-
-function filtrarVincular(){
-  const q=(document.getElementById('vinc-busca').value||'').toLowerCase().trim();
-  const lista=document.getElementById('vinc-lista');
-  const todos=Array.isArray(pacs)?pacs:[];
-  const r=q.length<1
-    ?todos.slice(0,25)
-    :todos.filter(p=>{
-        const nome=(p.nome||'').toLowerCase();
-        const apelido=(p.apelido||'').toLowerCase();
-        const tel=(p.telefone||'').replace(/\D/g,'');
-        const qTel=q.replace(/\D/g,'');
-        return nome.includes(q)||apelido.includes(q)||(qTel.length>2&&tel.includes(qTel));
-      });
-  if(!r.length){
-    lista.innerHTML='<div style="padding:16px;text-align:center;color:var(--ct);font-size:13px">Nenhum paciente encontrado</div>';
-    return;
-  }
-  lista.innerHTML=r.map((p,i)=>`
-    <div data-vidx="${i}" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--borda)">
-      <div style="font-weight:600;font-size:13px;color:var(--txt)">${escapeHtml(p.nome)}${p.apelido?` <span style="font-weight:400;color:var(--ct);font-size:12px">(${escapeHtml(p.apelido)})</span>`:''}</div>
-      <div style="font-size:12px;color:var(--ct);margin-top:2px">${p.telefone||'Sem telefone'}${p.data_nascimento?' · '+fDt(p.data_nascimento):''}</div>
-    </div>`).join('');
-  // Evento via delegação — sem JSON no onclick
-  lista.querySelectorAll('[data-vidx]').forEach(el=>{
-    const pac=r[parseInt(el.dataset.vidx)];
-    el.addEventListener('mouseenter',()=>el.style.background='var(--verde-c)');
-    el.addEventListener('mouseleave',()=>el.style.background='');
-    el.addEventListener('click',()=>confirmarVinculo(pac));
-  });
-}
-
-async function confirmarVinculo(pac){
-  if(!_vincConsultaId){toast('Erro: consulta não identificada','vermelho');return;}
-  const{error}=await db.from('agenda').update({
-    paciente_id:pac.id,
-    nome:pac.nome,
-    telefone:pac.telefone||null
-  }).eq('id',_vincConsultaId);
-  if(error){toast('Erro ao vincular: '+error.message,'vermelho');return;}
-  toast(`✅ Vinculado a ${escapeHtml(pac.nome)}`,'verde');
-  fchVincular();
-  await
-
-// ── INIT ESPECÍFICO DESTA PÁGINA ──
+// Init desta página
 
 (async () => {
   const [r1, r2, r3] = await Promise.all([
@@ -4319,8 +3836,5 @@ async function confirmarVinculo(pac){
 })();
 
 </script>
-
-<div id="_toast" class="toast"></div>
-
 </body>
 </html>
