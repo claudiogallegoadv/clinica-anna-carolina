@@ -257,6 +257,18 @@ var pacSelecionado = null;
 var todosPacientes = [];
 var configClinica = {};
 
+// Carrega pacientes imediatamente via fetch direto (sem esperar o IIFE)
+(function(){
+  var auth = JSON.parse(localStorage.getItem('clinica_auth')||'{}');
+  if(!auth.ok) return;
+  var token = auth.access_token || SB_KEY;
+  fetch(SB_URL+'/rest/v1/pacientes?select=id,nome,telefone,data_nascimento,apelido&order=nome', {
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+token}
+  }).then(function(r){ return r.json(); })
+    .then(function(data){ if(Array.isArray(data)) todosPacientes = data; })
+    .catch(function(){});
+})();
+
 // ── Init ──
 async function init(){
   // Tipo da URL
