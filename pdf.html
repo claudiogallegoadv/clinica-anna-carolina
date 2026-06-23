@@ -324,19 +324,32 @@ function setTipo(tipo){
 function buscarPaciente(q){
   const lista = document.getElementById('busca-lista');
   if(!q || q.length < 2){ lista.classList.remove('show'); return; }
-  const ql = q.toLowerCase();
+  
+  // Pacientes ainda não carregaram
+  if(!todosPacientes.length){
+    lista.innerHTML = '<div class="busca-item"><span>Carregando pacientes...</span></div>';
+    lista.classList.add('show');
+    return;
+  }
+  
+  const ql = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   const res = todosPacientes.filter(p=>{
-    return (p.nome||'').toLowerCase().includes(ql) ||
-           (p.apelido||'').toLowerCase().includes(ql) ||
-           (p.telefone||'').replace(/\D/g,'').includes(q.replace(/\D/g,''));
+    const nome = (p.nome||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const apelido = (p.apelido||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const tel = (p.telefone||'').replace(/\D/g,'');
+    return nome.includes(ql) || apelido.includes(ql) || tel.includes(q.replace(/\D/g,''));
   }).slice(0,8);
-  if(!res.length){ lista.classList.remove('show'); return; }
+  
+  if(!res.length){ 
+    lista.innerHTML = '<div class="busca-item"><span style="color:var(--ct)">Nenhum paciente encontrado.</span></div>';
+    lista.classList.add('show'); 
+    return; 
+  }
   lista.innerHTML = res.map((p,i)=>`
     <div class="busca-item" data-idx="${i}">
       <strong>${esc(p.nome)}</strong>
       <span>${p.telefone||'Sem telefone'}${p.data_nascimento?' · '+fDt(p.data_nascimento):''}</span>
     </div>`).join('');
-  // Delegação correta via event listeners
   lista.querySelectorAll('.busca-item').forEach((el,i)=>{
     el.addEventListener('mousedown', e=>{ e.preventDefault(); selecionarPacienteObj(res[i]); });
   });
