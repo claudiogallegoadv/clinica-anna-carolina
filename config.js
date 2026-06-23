@@ -18,7 +18,7 @@ async function renovarTokenSeNecessario() {
     const auth = JSON.parse(localStorage.getItem('clinica_auth') || '{}');
     if (!auth.ok || !auth.refresh_token) return false;
     const faltam = auth.expires - Date.now();
-    if (faltam < 30 * 60 * 1000) {
+    if (faltam < 2 * 60 * 60 * 1000) { // Renova se faltam menos de 2 horas
       const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY },
@@ -33,7 +33,7 @@ async function renovarTokenSeNecessario() {
       }
       const novaAuth = {
         ok: true,
-        expires: Date.now() + 8 * 60 * 60 * 1000,
+        expires: Date.now() + 24 * 60 * 60 * 1000,
         access_token: data.access_token,
         refresh_token: data.refresh_token || auth.refresh_token
       };

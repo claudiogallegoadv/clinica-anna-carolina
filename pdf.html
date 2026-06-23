@@ -6,7 +6,6 @@
   <title>Documentos PDF — Clínica</title>
   
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <style>
     :root{--verde:#1D9E75;--verde-c:#E1F5EE;--verde-e:#0F6E56;--vermelho:#E24B4A;--txt:#1a1916;--ct:#6B6860;--bg:#F7F6F3;--card:#fff;--borda:#E8E6E1}
@@ -693,19 +692,37 @@ function toast(msg,tipo='ok'){
   authData = auth;
   var token = auth.access_token;
   
-  // 4. Criar cliente sb
-  sb = sbClient();
+  // 4. Função de fetch autenticado (sem SDK)
+  window._sbFetch = function(path){ 
+    return fetch(SB_URL+'/rest/v1/'+path, {
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+token,'Content-Type':'application/json'}
+    }).then(function(r){ return r.json(); });
+  };
   
-  // 5. Carregar pacientes via fetch direto (não usa SDK para evitar problema de storage)
+  // Criar sb como wrapper de fetch para compatibilidade
+  sb = {
+    from: function(table){
+      return {
+        select: function(cols){ 
+          var q = table+'?select='+encodeURIComponent(cols);
+          return {
+            limit: function(n){ return _sbFetch(q+'&limit='+n).then(function(d){ return {data:Array.isArray(d)?d:null}; }); },
+            order: function(col,opts){ return _sbFetch(q+'&order='+col+(opts&&opts.ascending===false?'.desc':'.asc')).then(function(d){ return {data:Array.isArray(d)?d:null}; }); },
+            eq: function(col,val){ return {order:function(c){ return _sbFetch(q+'&'+col+'=eq.'+encodeURIComponent(val)+'&order='+c).then(function(d){ return {data:Array.isArray(d)?d:null}; }); }, then:function(fn){ return _sbFetch(q+'&'+col+'=eq.'+encodeURIComponent(val)).then(function(d){ return fn({data:Array.isArray(d)?d:null}); }); }}; },
+            then: function(fn){ return _sbFetch(q).then(function(d){ return fn({data:Array.isArray(d)?d:null}); }); }
+          };
+        }
+      };
+    }
+  };
+  
+  // 5. Carregar pacientes
   try {
     var cached = sessionStorage.getItem('pacs_cache');
     if(cached){
       todosPacientes = JSON.parse(cached);
     } else {
-      var rp = await fetch(SB_URL+'/rest/v1/pacientes?select=id,nome,telefone,data_nascimento,apelido&order=nome', {
-        headers:{'apikey':SB_KEY,'Authorization':'Bearer '+token}
-      });
-      var dp = await rp.json();
+      var dp = await _sbFetch('pacientes?select=id,nome,telefone,data_nascimento,apelido&order=nome');
       if(Array.isArray(dp)){
         todosPacientes = dp;
         try{ sessionStorage.setItem('pacs_cache',JSON.stringify(dp)); }catch(e){}
