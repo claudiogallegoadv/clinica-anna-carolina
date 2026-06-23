@@ -248,128 +248,106 @@
 </style>
 
 <script>
-// ── Variáveis globais ──
-var _auth = JSON.parse(localStorage.getItem('clinica_auth')||'{}');
-if(!_auth.ok || _auth.expires < Date.now()) window.location.href='login.html?r=pdf.html';
+// ── PDF — carregamento com renovação de token ──
 
-var _token = _auth.access_token || SB_KEY;
+// Funções utilitárias disponíveis imediatamente
+function fmt(v){return Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function fDt(s){if(!s)return '—';var p=(s.split('T')[0]).split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+function fDtHoje(){return fDt(new Date().toISOString());}
+function fDtObj(d){return fDt(d.toISOString());}
+function idade(s){if(!s)return null;var n=new Date(),b=new Date(s),a=n.getFullYear()-b.getFullYear();if(n<new Date(n.getFullYear(),b.getMonth(),b.getDate()))a--;return a;}
+function statusLabel(s){var m={realizado:'✅ Realizado',cancelado:'❌ Cancelado',pendente:'⏳ Pendente',faltou:'🚫 Faltou'};return m[s]||s||'—';}
+
+// Variáveis globais
 var todosPacientes = [];
 var pacSelecionado = null;
 var tipoAtual = 'ficha';
 var configClinica = {};
-
-// ── Carregar pacientes via XHR síncrono (garante que está pronto antes de qualquer digitação) ──
-(function(){
-  try {
-    // Tenta cache primeiro
-    var cached = sessionStorage.getItem('pacs_cache');
-    if(cached){ todosPacientes = JSON.parse(cached); return; }
-  } catch(e){}
-  
-  // XHR síncrono — bloqueia até carregar
-  try {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', SB_URL+'/rest/v1/pacientes?select=id,nome,telefone,data_nascimento,apelido&order=nome', false); // false = síncrono
-    xhr.setRequestHeader('apikey', SB_KEY);
-    xhr.setRequestHeader('Authorization', 'Bearer '+_token);
-    xhr.send();
-    if(xhr.status === 200){
-      var data = JSON.parse(xhr.responseText);
-      if(Array.isArray(data)){
-        todosPacientes = data;
-        try{ sessionStorage.setItem('pacs_cache', JSON.stringify(data)); }catch(e){}
-      }
-    }
-  } catch(e){ console.error('Erro XHR pacientes:', e); }
-})();
-
-// ── Tipo de documento ──
-function setTipo(tipo){
-  tipoAtual = tipo;
-  ['ficha','orcamento','recibo'].forEach(function(t){
-    document.getElementById('btn-'+t).classList.toggle('active', t===tipo);
-    document.getElementById('opcoes-'+t).style.display = t===tipo?'block':'none';
-  });
-  var titulos = {ficha:'🗂️ Ficha do paciente', orcamento:'📋 Orçamento', recibo:'🧾 Recibo de pagamento'};
-  document.getElementById('hdr-titulo').textContent = titulos[tipo];
-  document.getElementById('preview-wrap').classList.remove('show');
-  verificarProntoGerar();
-}
+var _token = '';
 
 // ── Busca paciente ──
 function buscarPaciente(q){
   var lista = document.getElementById('busca-lista');
   if(!q || q.length < 2){ lista.classList.remove('show'); return; }
-  
-  var ql = q.toLowerCase().replace(/[áàãâä]/g,'a').replace(/[éèêë]/g,'e').replace(/[íìîï]/g,'i').replace(/[óòõôö]/g,'o').replace(/[úùûü]/g,'u').replace(/[ç]/g,'c');
-  
-  var res = todosPacientes.filter(function(p){
-    var nome = (p.nome||'').toLowerCase().replace(/[áàãâä]/g,'a').replace(/[éèêë]/g,'e').replace(/[íìîï]/g,'i').replace(/[óòõôö]/g,'o').replace(/[úùûü]/g,'u').replace(/[ç]/g,'c');
-    var apelido = (p.apelido||'').toLowerCase().replace(/[áàãâä]/g,'a').replace(/[éèêë]/g,'e').replace(/[íìîï]/g,'i').replace(/[óòõôö]/g,'o').replace(/[úùûü]/g,'u').replace(/[ç]/g,'c');
-    var tel = (p.telefone||'').replace(/\D/g,'');
-    return nome.includes(ql) || apelido.includes(ql) || tel.includes(q.replace(/\D/g,''));
-  }).slice(0,8);
-  
-  if(!res.length){
-    lista.innerHTML = '<div class="busca-item"><span style="color:var(--ct)">Nenhum paciente encontrado.</span></div>';
+  if(!todosPacientes.length){
+    lista.innerHTML='<div class="busca-item"><span>⏳ Aguarde...</span></div>';
     lista.classList.add('show');
+    setTimeout(function(){ if(document.getElementById('busca-input').value===q) buscarPaciente(q); },300);
     return;
   }
-  lista.innerHTML = res.map(function(p,i){
+  var ql=q.toLowerCase().replace(/[áàãâä]/g,'a').replace(/[éèêë]/g,'e').replace(/[íìîï]/g,'i').replace(/[óòõôö]/g,'o').replace(/[úùûü]/g,'u').replace(/[ç]/g,'c');
+  var res=todosPacientes.filter(function(p){
+    var n=(p.nome||'').toLowerCase().replace(/[áàãâä]/g,'a').replace(/[éèêë]/g,'e').replace(/[íìîï]/g,'i').replace(/[óòõôö]/g,'o').replace(/[úùûü]/g,'u').replace(/[ç]/g,'c');
+    var a=(p.apelido||'').toLowerCase().replace(/[áàãâä]/g,'a').replace(/[éèêë]/g,'e');
+    var t=(p.telefone||'').replace(/\D/g,'');
+    return n.includes(ql)||a.includes(ql)||t.includes(q.replace(/\D/g,''));
+  }).slice(0,8);
+  if(!res.length){
+    lista.innerHTML='<div class="busca-item"><span style="color:var(--ct)">Nenhum paciente encontrado.</span></div>';
+    lista.classList.add('show');return;
+  }
+  lista.innerHTML=res.map(function(p,i){
     return '<div class="busca-item" data-i="'+i+'"><strong>'+esc(p.nome)+'</strong><span>'+(p.telefone||'Sem telefone')+(p.data_nascimento?' · '+fDt(p.data_nascimento):'')+'</span></div>';
   }).join('');
   lista.querySelectorAll('.busca-item').forEach(function(el,i){
-    el.addEventListener('mousedown', function(e){ e.preventDefault(); selecionarPacienteObj(res[i]); });
+    el.addEventListener('mousedown',function(e){e.preventDefault();selecionarPacienteObj(res[i]);});
   });
   lista.classList.add('show');
 }
 
 function selecionarPacienteObj(p){
-  pacSelecionado = p;
-  var ini = (p.nome||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-  document.getElementById('pac-av').textContent = ini;
-  document.getElementById('pac-nome-sel').textContent = p.nome;
-  var meta = [];
-  if(p.telefone) meta.push(p.telefone);
-  if(p.data_nascimento) meta.push(fDt(p.data_nascimento));
-  document.getElementById('pac-meta-sel').textContent = meta.join(' · ') || '—';
-  document.getElementById('pac-sel').style.display = 'flex';
-  document.getElementById('busca-wrap').style.display = 'none';
+  pacSelecionado=p;
+  var ini=(p.nome||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+  document.getElementById('pac-av').textContent=ini;
+  document.getElementById('pac-nome-sel').textContent=p.nome;
+  var meta=[];
+  if(p.telefone)meta.push(p.telefone);
+  if(p.data_nascimento)meta.push(fDt(p.data_nascimento));
+  document.getElementById('pac-meta-sel').textContent=meta.join(' · ')||'—';
+  document.getElementById('pac-sel').style.display='flex';
+  document.getElementById('busca-wrap').style.display='none';
   document.getElementById('busca-lista').classList.remove('show');
   verificarProntoGerar();
 }
-
 function trocarPaciente(){
-  pacSelecionado = null;
-  document.getElementById('pac-sel').style.display = 'none';
-  document.getElementById('busca-wrap').style.display = 'block';
-  document.getElementById('busca-input').value = '';
+  pacSelecionado=null;
+  document.getElementById('pac-sel').style.display='none';
+  document.getElementById('busca-wrap').style.display='block';
+  document.getElementById('busca-input').value='';
   document.getElementById('busca-input').focus();
-  document.getElementById('btn-gerar').disabled = true;
+  document.getElementById('btn-gerar').disabled=true;
   document.getElementById('preview-wrap').classList.remove('show');
 }
-
-function verificarProntoGerar(){
-  document.getElementById('btn-gerar').disabled = !pacSelecionado;
-}
-
-document.addEventListener('click', function(e){
-  if(!e.target.closest('.busca-wrap')) document.getElementById('busca-lista').classList.remove('show');
+function verificarProntoGerar(){document.getElementById('btn-gerar').disabled=!pacSelecionado;}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.busca-wrap'))document.getElementById('busca-lista').classList.remove('show');
 });
 
-// ── Init ──
-function init(){
-  var params = new URLSearchParams(window.location.search);
-  var tipo = params.get('tipo');
-  if(tipo) setTipo(tipo);
-  document.getElementById('opt-data-rec').value = new Date().toISOString().split('T')[0];
-  
-  // Carregar config da clínica async (não bloqueia)
-  fetch(SB_URL+'/rest/v1/config_clinica?select=*&limit=1', {
+function setTipo(tipo){
+  tipoAtual=tipo;
+  ['ficha','orcamento','recibo'].forEach(function(t){
+    document.getElementById('btn-'+t).classList.toggle('active',t===tipo);
+    document.getElementById('opcoes-'+t).style.display=t===tipo?'block':'none';
+  });
+  var titulos={ficha:'🗂️ Ficha do paciente',orcamento:'📋 Orçamento',recibo:'🧾 Recibo de pagamento'};
+  document.getElementById('hdr-titulo').textContent=titulos[tipo];
+  document.getElementById('preview-wrap').classList.remove('show');
+  verificarProntoGerar();
+}
+
+function sbGet(table, params){
+  return fetch(SB_URL+'/rest/v1/'+table+'?'+params, {
     headers:{'apikey':SB_KEY,'Authorization':'Bearer '+_token}
-  }).then(function(r){return r.json();}).then(function(d){
-    if(Array.isArray(d) && d.length) configClinica = d[0];
-  }).catch(function(){});
+  }).then(function(r){return r.json();});
+}
+
+function init(){
+  var params=new URLSearchParams(window.location.search);
+  var tipo=params.get('tipo');
+  if(tipo)setTipo(tipo);
+  document.getElementById('opt-data-rec').value=new Date().toISOString().split('T')[0];
+  sbGet('config_clinica','select=*&limit=1').then(function(d){if(Array.isArray(d)&&d.length)configClinica=d[0];}).catch(function(){});
 }
 
 // ── Gerar documento ──
@@ -677,8 +655,54 @@ function toast(msg,tipo='ok'){
 }
 
 
-// ── Iniciar ──
-init();
+
+// ── INICIALIZAÇÃO — renovar token e carregar pacientes ──
+(async function start(){
+  // 1. Auth
+  var auth = JSON.parse(localStorage.getItem('clinica_auth')||'{}');
+  if(!auth.ok){ window.location.href='login.html?r=pdf.html'; return; }
+  
+  // 2. Renovar se necessário
+  if(auth.refresh_token && auth.expires - Date.now() < 2*60*60*1000){
+    try{
+      var rr=await fetch(SB_URL+'/auth/v1/token?grant_type=refresh_token',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','apikey':SB_KEY},
+        body:JSON.stringify({refresh_token:auth.refresh_token})
+      });
+      var rd=await rr.json();
+      if(rr.ok&&rd.access_token){
+        auth={ok:true,expires:Date.now()+24*60*60*1000,
+              access_token:rd.access_token,
+              refresh_token:rd.refresh_token||auth.refresh_token};
+        localStorage.setItem('clinica_auth',JSON.stringify(auth));
+      }
+    }catch(e){}
+  }
+  
+  if(!auth.ok||auth.expires<Date.now()){ window.location.href='login.html?r=pdf.html'; return; }
+  _token = auth.access_token;
+  
+  // 3. Carregar pacientes
+  try{
+    var cached=sessionStorage.getItem('pacs_cache');
+    if(cached){
+      todosPacientes=JSON.parse(cached);
+    } else {
+      var rp=await fetch(SB_URL+'/rest/v1/pacientes?select=id,nome,telefone,data_nascimento,apelido&order=nome',{
+        headers:{'apikey':SB_KEY,'Authorization':'Bearer '+_token}
+      });
+      var dp=await rp.json();
+      if(Array.isArray(dp)){
+        todosPacientes=dp;
+        try{sessionStorage.setItem('pacs_cache',JSON.stringify(dp));}catch(e){}
+      }
+    }
+  }catch(e){console.error('pacientes:',e);}
+  
+  // 4. Init
+  init();
+})();
 </script>
 </body>
 </html>
