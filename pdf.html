@@ -304,12 +304,16 @@ function buscarPaciente(q){
     return;
   }
   
-  const ql = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-  const res = todosPacientes.filter(function(p){
-    const nome = (p.nome||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    const apelido = (p.apelido||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    const tel = (p.telefone||'').replace(/\D/g,'');
-    return nome.includes(ql) || apelido.includes(ql) || tel.includes(q.replace(/\D/g,''));
+  // Filtro simples e direto — sem normalize para garantir compatibilidade
+  var ql = q.toLowerCase();
+  var res = todosPacientes.filter(function(p){
+    var nome = (p.nome||'').toLowerCase();
+    var apelido = (p.apelido||'').toLowerCase();
+    var tel = (p.telefone||'').replace(/\D/g,'');
+    // Busca direta + busca sem acentos
+    var nomeSimp = nome.replace(/[áàãâä]/g,'a').replace(/[éèêë]/g,'e').replace(/[íìîï]/g,'i').replace(/[óòõôö]/g,'o').replace(/[úùûü]/g,'u').replace(/[ç]/g,'c');
+    var qlSimp = ql.replace(/[áàãâä]/g,'a').replace(/[éèêë]/g,'e').replace(/[íìîï]/g,'i').replace(/[óòõôö]/g,'o').replace(/[úùûü]/g,'u').replace(/[ç]/g,'c');
+    return nome.includes(ql) || nomeSimp.includes(qlSimp) || apelido.includes(ql) || tel.includes(q.replace(/\D/g,''));
   }).slice(0,8);
   
   if(!res.length){ 
@@ -317,11 +321,7 @@ function buscarPaciente(q){
     lista.classList.add('show'); 
     return; 
   }
-  lista.innerHTML = res.map(function(p,i){ return `
-    <div class="busca-item" data-idx="${i}">
-      <strong>${esc(p.nome)}</strong>
-      <span>${p.telefone||'Sem telefone'}${p.data_nascimento?' · '+fDt(p.data_nascimento):''}</span>
-    </div>`; }).join('');
+  lista.innerHTML = res.map(function(p,i){ return '<div class="busca-item" data-idx="'+i+'"><strong>'+esc(p.nome)+'</strong><span>'+(p.telefone||'Sem telefone')+(p.data_nascimento?' · '+fDt(p.data_nascimento):'')+'</span></div>'; }).join('');
   lista.querySelectorAll('.busca-item').forEach(function(el,i){
     el.addEventListener('mousedown', function(e){ e.preventDefault(); selecionarPacienteObj(res[i]); });
   });
