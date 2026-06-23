@@ -720,11 +720,11 @@ function toast(msg,tipo='ok'){
   try {
     var cached = sessionStorage.getItem('pacs_cache');
     if(cached){
-      todosPacientes = JSON.parse(cached);
+      window.todosPacientes = todosPacientes = JSON.parse(cached);
     } else {
       var dp = await _sbFetch('pacientes?select=id,nome,telefone,data_nascimento,apelido&order=nome');
       if(Array.isArray(dp)){
-        todosPacientes = dp;
+        window.todosPacientes = todosPacientes = dp;
         try{ sessionStorage.setItem('pacs_cache',JSON.stringify(dp)); }catch(e){}
       }
     }
