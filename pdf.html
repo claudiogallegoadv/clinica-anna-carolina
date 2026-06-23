@@ -257,29 +257,6 @@ var pacSelecionado = null;
 var todosPacientes = [];
 var configClinica = {};
 
-// Carrega pacientes imediatamente via fetch direto (sem esperar o IIFE)
-(function(){
-  // Tenta primeiro pegar do sessionStorage (cache do index)
-  try {
-    var cached = sessionStorage.getItem('pacs_cache');
-    if(cached) { todosPacientes = JSON.parse(cached); return; }
-  } catch(e){}
-  
-  var auth = JSON.parse(localStorage.getItem('clinica_auth')||'{}');
-  if(!auth.ok) return;
-  var token = auth.access_token || SB_KEY;
-  fetch(SB_URL+'/rest/v1/pacientes?select=id,nome,telefone,data_nascimento,apelido&order=nome', {
-    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+token}
-  }).then(function(r){ return r.json(); })
-    .then(function(data){ 
-      if(Array.isArray(data)) {
-        todosPacientes = data;
-        try { sessionStorage.setItem('pacs_cache', JSON.stringify(data)); } catch(e){}
-      }
-    })
-    .catch(function(){});
-})();
-
 // ── Init ──
 async function init(){
   // Tipo da URL
@@ -317,15 +294,18 @@ function buscarPaciente(q){
   const lista = document.getElementById('busca-lista');
   if(!q || q.length < 2){ lista.classList.remove('show'); return; }
   
-  // Pacientes ainda não carregaram
+  // Se ainda carregando, aguarda e tenta novamente
   if(!todosPacientes.length){
-    lista.innerHTML = '<div class="busca-item"><span>Carregando pacientes...</span></div>';
+    lista.innerHTML = '<div class="busca-item"><span>⏳ Carregando pacientes...</span></div>';
     lista.classList.add('show');
+    setTimeout(function(){ 
+      if(document.getElementById('busca-input').value === q) buscarPaciente(q); 
+    }, 500);
     return;
   }
   
   const ql = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-  const res = todosPacientes.filter(p=>{
+  const res = todosPacientes.filter(function(p){
     const nome = (p.nome||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     const apelido = (p.apelido||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     const tel = (p.telefone||'').replace(/\D/g,'');
@@ -337,13 +317,13 @@ function buscarPaciente(q){
     lista.classList.add('show'); 
     return; 
   }
-  lista.innerHTML = res.map((p,i)=>`
+  lista.innerHTML = res.map(function(p,i){ return `
     <div class="busca-item" data-idx="${i}">
       <strong>${esc(p.nome)}</strong>
       <span>${p.telefone||'Sem telefone'}${p.data_nascimento?' · '+fDt(p.data_nascimento):''}</span>
-    </div>`).join('');
-  lista.querySelectorAll('.busca-item').forEach((el,i)=>{
-    el.addEventListener('mousedown', e=>{ e.preventDefault(); selecionarPacienteObj(res[i]); });
+    </div>`; }).join('');
+  lista.querySelectorAll('.busca-item').forEach(function(el,i){
+    el.addEventListener('mousedown', function(e){ e.preventDefault(); selecionarPacienteObj(res[i]); });
   });
   lista.classList.add('show');
 }
@@ -705,6 +685,21 @@ function toast(msg,tipo='ok'){
   if(!auth.ok || auth.expires < Date.now()) { window.location.href='login.html?r=pdf.html'; return; }
   authData = auth;
   sb = sbClient();
+  
+  // Carregar pacientes com token válido
+  try {
+    var cached = sessionStorage.getItem('pacs_cache');
+    if(cached) {
+      todosPacientes = JSON.parse(cached);
+    } else {
+      var rp = await sb.from('pacientes').select('id,nome,telefone,data_nascimento,apelido').order('nome');
+      if(rp.data) {
+        todosPacientes = rp.data;
+        try { sessionStorage.setItem('pacs_cache', JSON.stringify(rp.data)); } catch(e){}
+      }
+    }
+  } catch(e){}
+  
   init();
 })();
 </script>
