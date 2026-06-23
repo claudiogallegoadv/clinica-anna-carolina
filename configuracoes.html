@@ -334,10 +334,7 @@
 const authData = JSON.parse(localStorage.getItem('clinica_auth')||'{}');
 if(!authData.ok || authData.expires < Date.now()) window.location.href='login.html?r=configuracoes.html';
 
-const {createClient} = supabase;
-const sb = createClient(SB_URL, SB_KEY, {
-  global:{headers:{Authorization:`Bearer ${authData.access_token||SB_KEY}`}}
-});
+const sb = sbClient();
 
 let configId = null;
 let corAtual = '#1D9E75';

@@ -376,10 +376,7 @@ const authData = JSON.parse(localStorage.getItem('clinica_auth')||'{}');
 if(!authData.ok || authData.expires < Date.now()) window.location.href='login.html?r=custohora.html';
 
 // ── Supabase ──
-const {createClient} = supabase;
-const sb = createClient(SB_URL, SB_KEY, {
-  global:{headers:{Authorization:`Bearer ${authData.access_token||SB_KEY}`}}
-});
+const sb = sbClient();
 
 // ── Estado ──
 let custosFixos=[], custosVariaveis=[], procedimentos=[];

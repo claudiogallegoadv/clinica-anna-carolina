@@ -268,16 +268,12 @@ textarea{resize:vertical;min-height:70px}
   <span style="font-size:15px;font-weight:600;flex:1">📊 Relatório Geral</span>
 </div>
 <main>
-
 <div style="display:flex;gap:8px;margin-bottom:1rem;align-items:center;flex-wrap:wrap">
   <label style="font-size:13px;color:var(--ct)">Período:</label>
   <select id="rel-mes" onchange="renderRel()" style="padding:7px 10px;font-size:13px;border:1.5px solid var(--borda);border-radius:8px">
-    <option value="0">Este mês</option>
-    <option value="1">Mês passado</option>
-    <option value="3">Últimos 3 meses</option>
-    <option value="6">Últimos 6 meses</option>
-    <option value="12">Último ano</option>
-    <option value="99">Todos</option>
+    <option value="0">Este mês</option><option value="1">Mês passado</option>
+    <option value="3">Últimos 3 meses</option><option value="6">Últimos 6 meses</option>
+    <option value="12">Último ano</option><option value="99">Todos</option>
   </select>
   <div style="margin-left:auto;display:flex;gap:6px">
     <button id="btn-anual" onclick="toggleRelAnual(this)" class="btn" style="font-size:12px;padding:6px 14px">📊 Anual</button>
@@ -289,32 +285,21 @@ textarea{resize:vertical;min-height:70px}
 <div class="rel-grid" id="rel-stats"></div>
 <div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">⚠️ Inadimplência</div><div id="rel-inadimplencia"></div></div>
 <div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">🎯 Ticket médio por procedimento</div><div id="rel-ticket-proc"></div></div>
-<div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">📈 Fluxo de caixa projetado (próx. 3 meses)</div><div id="rel-fluxo"></div></div>
+<div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">📈 Fluxo de caixa projetado</div><div id="rel-fluxo"></div></div>
 <div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">🏆 Procedimentos mais realizados</div><div id="rel-procs"></div></div>
 <div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">📣 Principais indicações</div><div id="rel-indic"></div></div>
 <div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">💰 Faturamento estimado</div><div id="rel-fat"></div></div>
-<div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">🏅 Programa de Indicação — Embaixadoras</div><div id="rel-embaixadoras"></div></div>
-<div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">📊 Como as pacientes conheceram a clínica</div><div id="rel-conheceu"></div></div>
-
-</main>
+<div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">🏅 Programa de Indicação</div><div id="rel-embaixadoras"></div></div>
+<div class="card" style="margin-top:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:12px">📊 Como conheceram a clínica</div><div id="rel-conheceu"></div></div></main>
 
 <div id="_toast" class="toast"></div>
 <script>
 
 const authData = JSON.parse(localStorage.getItem('clinica_auth')||'{}');
 if(!authData.ok || authData.expires < Date.now()) window.location.href='login.html';
-// Renovar token se necessário
 if(typeof renovarTokenSeNecessario === 'function') renovarTokenSeNecessario();
+const db = sbClient();
 
-const {createClient:_sbCreate} = supabase;
-const db = _sbCreate(SB_URL, SB_KEY, {
-  global:{headers:{
-    'Authorization': `Bearer ${authData.access_token || SB_KEY}`,
-    'apikey': SB_KEY
-  }}
-});
-
-// Utilitários
 const MESES_N=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 // ── Log de auditoria global ──
@@ -356,7 +341,6 @@ const TRLIST=[
   {n:'Preenchimento de maçãs do rosto',m:12},
   {n:'Radiesse (hidroxiapatita de cálcio)',m:18},
 function toast(m,t){const e=document.getElementById('_toast');if(!e)return;e.textContent=m;e.className='toast show '+(t||'ok');setTimeout(()=>e.classList.remove('show'),3000);}
-// Módulos
 async function renderRel(){
   const mesesAtras=parseInt(document.getElementById('rel-mes').value);
   const hoje2=new Date();
@@ -606,21 +590,17 @@ async function renderRelAnual(){
   });
   const maxRec=Math.max(...recMes,1);
   const hoje=new Date();
-// Init
 
-let pacs = [], consultas = [], finDados = [];
-(async () => {
-  const [r1, r2, r3] = await Promise.all([
+var pacs=[],consultas=[],finDados=[];
+(async()=>{
+  const [r1,r2,r3]=await Promise.all([
     db.from('pacientes').select('*'),
     db.from('agenda').select('*'),
     db.from('financeiro').select('*')
   ]);
-  pacs = r1.data || [];
-  consultas = r2.data || [];
-  finDados = r3.data || [];
+  pacs=r1.data||[];consultas=r2.data||[];finDados=r3.data||[];
   renderRel();
 })();
-
 </script>
 </body>
 </html>

@@ -268,24 +268,18 @@ textarea{resize:vertical;min-height:70px}
   <span style="font-size:15px;font-weight:600;flex:1">🔍 Auditoria</span>
 </div>
 <main>
-
 <div class="card">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-    <div style="font-size:13px;font-weight:700;color:var(--txt)">🔍 Log de Auditoria</div>
+    <div style="font-size:13px;font-weight:700">🔍 Log de Auditoria</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <select id="aud-filtro-acao" onchange="renderAuditoria()" style="font-size:12px;padding:6px 8px;border:1.5px solid var(--borda);border-radius:8px">
         <option value="">Todas as ações</option>
         <option>Dados pessoais atualizados</option>
-        <option>Consulta criada</option>
-        <option>Consulta editada</option>
-        <option>Consulta cancelada</option>
-        <option>Status de consulta alterado</option>
-        <option>Lançamento financeiro criado</option>
-        <option>Lançamento financeiro editado</option>
-        <option>Lançamento financeiro excluído</option>
-        <option>Documento excluído</option>
-        <option>Entrada de estoque</option>
-        <option>Produto cadastrado</option>
+        <option>Consulta criada</option><option>Consulta editada</option>
+        <option>Consulta cancelada</option><option>Status de consulta alterado</option>
+        <option>Lançamento financeiro criado</option><option>Lançamento financeiro editado</option>
+        <option>Lançamento financeiro excluído</option><option>Documento excluído</option>
+        <option>Entrada de estoque</option><option>Produto cadastrado</option>
         <option>Exportação de dados (LGPD)</option>
       </select>
       <input type="date" id="aud-filtro-de" onchange="renderAuditoria()" style="font-size:12px;padding:6px 8px;border:1.5px solid var(--borda);border-radius:8px"/>
@@ -293,33 +287,20 @@ textarea{resize:vertical;min-height:70px}
       <button class="btn" onclick="document.getElementById('aud-filtro-acao').value='';document.getElementById('aud-filtro-de').value='';document.getElementById('aud-filtro-ate').value='';renderAuditoria()" style="font-size:12px;padding:6px 10px">✕ Limpar</button>
     </div>
   </div>
-  <div id="aud-lista" style="display:flex;flex-direction:column;gap:6px">
-    <div class="empty"><div class="empty-icon">🔍</div><p>Carregando...</p></div>
-  </div>
+  <div id="aud-lista"><div class="empty"><div class="empty-icon">🔍</div><p>Carregando...</p></div></div>
   <div id="aud-mais" style="text-align:center;padding:12px;display:none">
     <button class="btn" onclick="audOffset+=50;renderAuditoria(true)" style="font-size:12px">⬇️ Carregar mais</button>
   </div>
-</div>
-
-</main>
+</div></main>
 
 <div id="_toast" class="toast"></div>
 <script>
 
 const authData = JSON.parse(localStorage.getItem('clinica_auth')||'{}');
 if(!authData.ok || authData.expires < Date.now()) window.location.href='login.html';
-// Renovar token se necessário
 if(typeof renovarTokenSeNecessario === 'function') renovarTokenSeNecessario();
+const db = sbClient();
 
-const {createClient:_sbCreate} = supabase;
-const db = _sbCreate(SB_URL, SB_KEY, {
-  global:{headers:{
-    'Authorization': `Bearer ${authData.access_token || SB_KEY}`,
-    'apikey': SB_KEY
-  }}
-});
-
-// Utilitários
 const MESES_N=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 // ── Log de auditoria global ──
@@ -361,7 +342,6 @@ const TRLIST=[
   {n:'Preenchimento de maçãs do rosto',m:12},
   {n:'Radiesse (hidroxiapatita de cálcio)',m:18},
 function toast(m,t){const e=document.getElementById('_toast');if(!e)return;e.textContent=m;e.className='toast show '+(t||'ok');setTimeout(()=>e.classList.remove('show'),3000);}
-// Módulos
 async function renderAuditoria(append=false){
   const el=document.getElementById('aud-lista');
   const elMais=document.getElementById('aud-mais');
@@ -403,12 +383,7 @@ async function atualizarBadgeOnline(){
     const{data}=await db.from('agenda').select('id',{count:'exact',head:true}).eq('status','aguardando');
     const badge=document.getElementById('badge-online');
     if(!badge) return;
-// Init
-
-let audOffset = 0;
-let audDados = [];
-carregarAuditoria();
-
+var audOffset=0;var audDados=[];carregarAuditoria();
 </script>
 </body>
 </html>

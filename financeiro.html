@@ -268,14 +268,13 @@ textarea{resize:vertical;min-height:70px}
   <span style="font-size:15px;font-weight:600;flex:1">💰 Financeiro</span>
 </div>
 <main>
-
 <div id="fin-alertas" style="margin-bottom:8px"></div>
 <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:1rem" id="fin-cards"></div>
 <div style="display:flex;gap:8px;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
   <select id="fin-mes" style="padding:7px 10px;font-size:13px;border:1.5px solid var(--borda);border-radius:8px" onchange="carregarFinanceiro()"></select>
   <select id="fin-ano" style="padding:7px 10px;font-size:13px;border:1.5px solid var(--borda);border-radius:8px" onchange="carregarFinanceiro()"></select>
   <button class="btn pri" onclick="abrirLancamento('receita')" style="margin-left:auto">+ Receita</button>
-  <button class="btn" onclick="importarHistorico()" style="font-size:12px">📥 Importar histórico</button>
+  <button class="btn" onclick="importarHistorico()" style="font-size:12px">📥 Importar</button>
   <button class="btn" onclick="abrirLancamento('despesa')" style="background:var(--vermelho-c);border-color:var(--vermelho);color:var(--vermelho)">− Despesa</button>
   <button class="btn" onclick="exportarFinanceiro()">📥 Excel</button>
 </div>
@@ -289,9 +288,7 @@ textarea{resize:vertical;min-height:70px}
 <div id="fin-receitas"></div>
 <div id="fin-despesas" style="display:none"></div>
 <div id="fin-fluxo" style="display:none"></div>
-<div id="fin-procs" style="display:none"></div>
-
-</main>
+<div id="fin-procs" style="display:none"></div></main>
 <div id="modal-fin" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center">
   <div style="background:var(--card);border-radius:16px;padding:1.5rem;width:92%;max-width:480px;max-height:90vh;overflow-y:auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
@@ -366,18 +363,9 @@ textarea{resize:vertical;min-height:70px}
 
 const authData = JSON.parse(localStorage.getItem('clinica_auth')||'{}');
 if(!authData.ok || authData.expires < Date.now()) window.location.href='login.html';
-// Renovar token se necessário
 if(typeof renovarTokenSeNecessario === 'function') renovarTokenSeNecessario();
+const db = sbClient();
 
-const {createClient:_sbCreate} = supabase;
-const db = _sbCreate(SB_URL, SB_KEY, {
-  global:{headers:{
-    'Authorization': `Bearer ${authData.access_token || SB_KEY}`,
-    'apikey': SB_KEY
-  }}
-});
-
-// Utilitários
 const MESES_N=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 // ── Log de auditoria global ──
@@ -419,7 +407,6 @@ const TRLIST=[
   {n:'Preenchimento de maçãs do rosto',m:12},
   {n:'Radiesse (hidroxiapatita de cálcio)',m:18},
 function toast(m,t){const e=document.getElementById('_toast');if(!e)return;e.textContent=m;e.className='toast show '+(t||'ok');setTimeout(()=>e.classList.remove('show'),3000);}
-// Módulos
 // MÓDULO FINANCEIRO
 // ══════════════════════════════════════════
 
@@ -1150,17 +1137,13 @@ function mascaraTel(i){
   let v=i.value.replace(/\D/g,'').slice(0,11);
   if(v.length>10) i.value=`(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
   else if(v.length>6) i.value=`(${v.slice(0,2)}) ${v.slice(2,6)}-${v.slice(6)}`;
-// Init
 
-let pacs = [];
-let finDados = [];
-let _finLimit = {};
-(async () => {
-  const {data} = await db.from('pacientes').select('id,nome,telefone');
-  pacs = data || [];
+var pacs=[],finDados=[],_finLimit={};
+(async()=>{
+  const {data}=await db.from('pacientes').select('id,nome,telefone');
+  pacs=data||[];
   carregarFinanceiro();
 })();
-
 </script>
 </body>
 </html>

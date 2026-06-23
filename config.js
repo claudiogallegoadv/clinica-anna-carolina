@@ -1,8 +1,9 @@
 // config.js — PRODUÇÃO
-const SB_URL = 'https://nathaeuqbeqlvkftbmes.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdGhhZXVxYmVxbHZrZnRibWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4OTc4MzYsImV4cCI6MjA5NTQ3MzgzNn0.9t3q5C_h1pRb11gqRtpGGVpOUGey5TBzvMgal8h6wtg';
+// Usar var para permitir que outras páginas referenciem sem conflito de redeclaração
+var SB_URL = 'https://nathaeuqbeqlvkftbmes.supabase.co';
+var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdGhhZXVxYmVxbHZrZnRibWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4OTc4MzYsImV4cCI6MjA5NTQ3MzgzNn0.9t3q5C_h1pRb11gqRtpGGVpOUGey5TBzvMgal8h6wtg';
 
-const CLINICA_CONFIG = {
+var CLINICA_CONFIG = {
   nome: 'Dra. Anna Carolina Dias',
   especialidade: 'Harmonização Orofacial',
   logo: 'logo.jpg',
@@ -16,10 +17,7 @@ async function renovarTokenSeNecessario() {
   try {
     const auth = JSON.parse(localStorage.getItem('clinica_auth') || '{}');
     if (!auth.ok || !auth.refresh_token) return false;
-
     const faltam = auth.expires - Date.now();
-
-    // Já expirou ou faltam menos de 30 min — renova
     if (faltam < 30 * 60 * 1000) {
       const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`, {
         method: 'POST',
@@ -57,8 +55,10 @@ async function renovarTokenSeNecessario() {
 // ── Carrega config da clínica do Supabase ──
 async function carregarConfigClinica() {
   try {
+    const auth = JSON.parse(localStorage.getItem('clinica_auth') || '{}');
+    const token = auth.access_token || SB_KEY;
     const res = await fetch(`${SB_URL}/rest/v1/config_clinica?select=*&limit=1`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${token}` }
     });
     const data = await res.json();
     if (data && data.length > 0) {
@@ -76,6 +76,16 @@ async function carregarConfigClinica() {
       document.documentElement.style.setProperty('--verde', c.cor_principal || '#1D9E75');
     }
   } catch(e) { /* usa fallback */ }
+}
+
+// ── Função auxiliar para criar cliente Supabase autenticado ──
+function sbClient() {
+  const auth = JSON.parse(localStorage.getItem('clinica_auth') || '{}');
+  const token = auth.access_token || SB_KEY;
+  const { createClient } = supabase;
+  return createClient(SB_URL, SB_KEY, {
+    global: { headers: { 'Authorization': `Bearer ${token}`, 'apikey': SB_KEY } }
+  });
 }
 
 // ── Login via Supabase Auth (PIN como senha) ──
