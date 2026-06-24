@@ -189,18 +189,36 @@ function api(tabela, qs){
 // ── Busca de paciente ──
 function norm(s){return (s||'').toLowerCase().replace(/[áàãâä]/g,'a').replace(/[éèêë]/g,'e').replace(/[íìîï]/g,'i').replace(/[óòõôö]/g,'o').replace(/[úùûü]/g,'u').replace(/ç/g,'c');}
 
+var _buscarTimer=null;
 function buscar(q){
   var lista=document.getElementById('busca-lista');
   if(!q||q.length<2){lista.classList.remove('show');return;}
-  if(!PACS.length){
-    lista.innerHTML='<div class="busca-item"><span>⏳ Carregando...</span></div>';
-    lista.classList.add('show');
+  
+  // Se já tem pacientes em memória, usar direto
+  if(PACS.length){
+    var ql=norm(q);
+    var res=PACS.filter(function(p){
+      return norm(p.nome).includes(ql)||(p.telefone||'').replace(/\D/g,'').includes(q.replace(/\D/g,''));
+    }).slice(0,8);
+    mostrarResultados(res,lista);
     return;
   }
-  var ql=norm(q);
-  var res=PACS.filter(function(p){
-    return norm(p.nome).includes(ql)||(p.telefone||'').replace(/\D/g,'').includes(q.replace(/\D/g,''));
-  }).slice(0,8);
+  
+  // Busca direto no servidor sem precisar carregar tudo antes
+  lista.innerHTML='<div class="busca-item"><span style="color:var(--ct)">🔍 Buscando...</span></div>';
+  lista.classList.add('show');
+  clearTimeout(_buscarTimer);
+  _buscarTimer=setTimeout(function(){
+    if(!TOKEN){lista.innerHTML='<div class="busca-item"><span style="color:var(--vermelho)">Aguarde, conectando...</span></div>';return;}
+    fetch(SB_URL+'/rest/v1/pacientes?select=id,nome,telefone,data_nascimento&ilike.nome=*'+encodeURIComponent(q)+'*&order=nome&limit=8',{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+TOKEN}
+    }).then(function(r){return r.json();}).then(function(d){
+      if(Array.isArray(d)){mostrarResultados(d,lista);}
+    }).catch(function(){lista.innerHTML='<div class="busca-item"><span style="color:var(--vermelho)">Erro na busca.</span></div>';});
+  },400);
+}
+
+function mostrarResultados(res,lista){
   if(!res.length){lista.innerHTML='<div class="busca-item"><span style="color:var(--ct)">Nenhum paciente encontrado.</span></div>';lista.classList.add('show');return;}
   lista.innerHTML=res.map(function(p,i){return '<div class="busca-item" data-i="'+i+'"><strong>'+esc(p.nome)+'</strong><span>'+(p.telefone||'Sem telefone')+(p.data_nascimento?' · '+dt(p.data_nascimento):'')+'</span></div>';}).join('');
   lista.querySelectorAll('.busca-item').forEach(function(el,i){
