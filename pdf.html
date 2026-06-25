@@ -194,17 +194,7 @@ function buscar(q){
   var lista=document.getElementById('busca-lista');
   if(!q||q.length<2){lista.classList.remove('show');return;}
   
-  // Se já tem pacientes em memória, usar direto
-  if(PACS.length){
-    var ql=norm(q);
-    var res=PACS.filter(function(p){
-      return norm(p.nome).includes(ql)||(p.telefone||'').replace(/\D/g,'').includes(q.replace(/\D/g,''));
-    }).slice(0,8);
-    mostrarResultados(res,lista);
-    return;
-  }
-  
-  // Busca direto no servidor sem precisar carregar tudo antes
+  // Sempre busca no servidor para garantir resultado correto
   lista.innerHTML='<div class="busca-item"><span style="color:var(--ct)">🔍 Buscando...</span></div>';
   lista.classList.add('show');
   clearTimeout(_buscarTimer);
