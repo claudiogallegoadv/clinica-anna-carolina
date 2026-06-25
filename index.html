@@ -556,6 +556,18 @@ textarea{resize:vertical;min-height:70px}
       <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--txt)">📊 Como as pacientes conheceram a clínica</div>
       <div id="rel-conheceu"></div>
     </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;font-weight:600;color:var(--txt)">🎂 Aniversariantes do mês</div>
+        <select id="rel-aniv-mes" onchange="renderAniversariantesMes()" style="font-size:12px;padding:5px 10px;border:1.5px solid var(--borda);border-radius:8px">
+        </select>
+      </div>
+      <div id="rel-aniversariantes"></div>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--txt)">⏰ Retornos vencidos (sem reagendamento)</div>
+      <div id="rel-retornos-vencidos"></div>
+    </div>
   </div>
 
   <!-- CADASTRO -->
@@ -1366,7 +1378,7 @@ async function carregar(){
   if(error){toast('Erro ao carregar','vermelho');return;}
   pacs=data||[];
   try{sessionStorage.setItem('pacs_cache',JSON.stringify(pacs));}catch(e){}
-  stats();renderHoje();renderAlertas();renderPac();renderRel();
+  stats();renderHoje();renderAlertas();renderPac();renderRel();initSelectAnivMes();renderAniversariantesMes();renderRetornosVencidos();
 }
 
 async function carregarAgenda(){
@@ -4410,6 +4422,157 @@ async function renderRelAnual(){
 // ══════════════════════════════════════════
 // ITEM 6 — EXPORTAR PACIENTES CSV
 // ══════════════════════════════════════════
+
+// ══════════════════════════════════════════
+// ANIVERSARIANTES DO MÊS
+// ══════════════════════════════════════════
+const MESES_NOMES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function initSelectAnivMes(){
+  const sel=document.getElementById('rel-aniv-mes');
+  if(!sel||sel.options.length>0) return;
+  const mesAtual=new Date().getMonth();
+  MESES_NOMES.forEach((m,i)=>{
+    const opt=document.createElement('option');
+    opt.value=i+1;opt.textContent=m;
+    if(i===mesAtual) opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+
+function renderAniversariantesMes(){
+  const el=document.getElementById('rel-aniversariantes');
+  if(!el) return;
+  const sel=document.getElementById('rel-aniv-mes');
+  const mes=parseInt(sel?.value||new Date().getMonth()+1);
+  const mesStr=String(mes).padStart(2,'0');
+
+  const anivs=pacs.filter(p=>{
+    if(!p.data_nascimento) return false;
+    const [,m]=p.data_nascimento.split('-');
+    return m===mesStr;
+  }).sort((a,b)=>{
+    const da=parseInt(a.data_nascimento.split('-')[2]);
+    const db=parseInt(b.data_nascimento.split('-')[2]);
+    return da-db;
+  });
+
+  if(!anivs.length){
+    el.innerHTML=`<div style="color:var(--ct);font-size:13px;padding:.5rem 0">Nenhum aniversariante em ${MESES_NOMES[mes-1]}.</div>`;
+    return;
+  }
+
+  const hoje=new Date();
+  const diaHoje=hoje.getDate();
+  const mesHoje=hoje.getMonth()+1;
+
+  el.innerHTML=`<div style="margin-bottom:8px;font-size:12px;color:var(--ct)">${anivs.length} aniversariante${anivs.length>1?'s':''} em ${MESES_NOMES[mes-1]}</div>`+
+    anivs.map(p=>{
+      const [ano,,dia]=p.data_nascimento.split('-');
+      const diaNum=parseInt(dia);
+      const isHoje=diaNum===diaHoje&&mes===mesHoje;
+      const passou=mes===mesHoje&&diaNum<diaHoje;
+      const idade=hoje.getFullYear()-parseInt(ano);
+      const tel=(p.telefone||'').replace(/\D/g,'');
+      const msg=encodeURIComponent(`Olá ${(p.apelido||p.nome).split(' ')[0]}! 🎉🎂 Hoje é um dia especial — o seu aniversário!
+
+A equipe da Dra. Anna Carolina deseja a você um dia incrível, repleto de alegria, saúde e muito amor! 🌸✨
+
+Muitos parabéns! 🥳💚`);
+      return`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--borda);gap:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:${isHoje?'var(--rosa)':passou?'var(--bg)':'var(--rosa-c)'};color:${isHoje?'#fff':passou?'var(--ct)':'var(--rosa)'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">${dia}</div>
+          <div>
+            <div style="font-weight:600;font-size:13px;color:${passou?'var(--ct)':'var(--txt)'}">${escapeHtml(p.nome)}${isHoje?' 🎂':''}</div>
+            <div style="font-size:11px;color:var(--ct)">${idade} anos · ${escapeHtml(p.telefone||'—')}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${isHoje?`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--rosa-c);color:var(--rosa)">Hoje!</span>`:''}
+          ${tel?`<a href="https://wa.me/55${tel}?text=${msg}" target="_blank" style="padding:5px 10px;background:#25D366;color:white;border-radius:7px;font-size:11px;font-weight:600;text-decoration:none">🎉 Parabenizar</a>`:''}
+          <a href="paciente.html?id=${p.id}" style="padding:5px 10px;background:var(--verde-c);color:var(--verde-e);border-radius:7px;font-size:11px;font-weight:600;text-decoration:none;border:1px solid var(--verde)">👤 Ficha</a>
+        </div>
+      </div>`;
+    }).join('');
+}
+
+// ══════════════════════════════════════════
+// RETORNOS VENCIDOS
+// ══════════════════════════════════════════
+function renderRetornosVencidos(){
+  const el=document.getElementById('rel-retornos-vencidos');
+  if(!el) return;
+
+  const hoje=new Date();
+  const hojeStr=hoje.toISOString().split('T')[0];
+
+  // Coletar todos os tratamentos com retorno vencido
+  const vencidos=[];
+  pacs.forEach(p=>{
+    const trats=p.tratamentos_adicionais||[];
+    trats.forEach(t=>{
+      if(!t.dataRetorno||t.dataRetorno>=hojeStr) return;
+      // Verificar se não foi arquivado
+      const chave=`${t.nome}_${t.dataAtendimento||''}`;
+      const status=(p.retornos_status||{})[chave];
+      if(status==='retornou'||status==='arquivado') return;
+      const diasAtraso=Math.floor((hoje-new Date(t.dataRetorno+'T12:00:00'))/(1000*60*60*24));
+      if(diasAtraso<1) return;
+      vencidos.push({pac:p,trat:t,diasAtraso,chave});
+    });
+  });
+
+  // Ordenar por maior atraso
+  vencidos.sort((a,b)=>b.diasAtraso-a.diasAtraso);
+
+  if(!vencidos.length){
+    el.innerHTML='<div style="color:var(--verde);font-size:13px;padding:.5rem 0">✅ Nenhum retorno vencido sem reagendamento!</div>';
+    return;
+  }
+
+  // Agrupar por paciente (um paciente pode ter múltiplos tratamentos vencidos)
+  const porPac={};
+  vencidos.forEach(v=>{
+    if(!porPac[v.pac.id]) porPac[v.pac.id]={pac:v.pac,itens:[]};
+    porPac[v.pac.id].itens.push(v);
+  });
+
+  const grupos=Object.values(porPac).sort((a,b)=>
+    Math.max(...b.itens.map(i=>i.diasAtraso))-Math.max(...a.itens.map(i=>i.diasAtraso))
+  );
+
+  el.innerHTML=`<div style="font-size:12px;color:var(--ct);margin-bottom:10px">${vencidos.length} retorno${vencidos.length>1?'s':''} vencido${vencidos.length>1?'s':''} em ${grupos.length} paciente${grupos.length>1?'s':''}</div>`+
+    grupos.map(g=>{
+      const p=g.pac;
+      const tel=(p.telefone||'').replace(/\D/g,'');
+      const maiorAtraso=Math.max(...g.itens.map(i=>i.diasAtraso));
+      const cor=maiorAtraso>90?'var(--vermelho)':maiorAtraso>30?'#d97706':'#8a6000';
+      const msgTrats=g.itens.map(i=>i.trat.nome).join(', ');
+      const msg=encodeURIComponent(`Olá ${(p.apelido||p.nome).split(' ')[0]}, bom dia! 😊
+
+Já faz um tempo desde o seu procedimento de ${msgTrats} aqui na clínica da Dra. Anna Carolina Dias.
+
+Gostaríamos de te convidar para marcar seu retorno e manter os melhores resultados! 🌿✨
+
+Vamos agendar um horário para você?`);
+      return`<div style="background:var(--card);border-radius:10px;border:1px solid var(--borda);padding:12px;margin-bottom:8px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <div>
+            <div style="font-weight:700;font-size:13px">${escapeHtml(p.nome)}</div>
+            <div style="font-size:11px;color:${cor};font-weight:600;margin-top:2px">⏰ ${maiorAtraso} dia${maiorAtraso>1?'s':''} de atraso</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            ${tel?`<a href="https://wa.me/55${tel}?text=${msg}" target="_blank" style="padding:5px 10px;background:#25D366;color:white;border-radius:7px;font-size:11px;font-weight:600;text-decoration:none">📲 WhatsApp</a>`:''}
+            <a href="paciente.html?id=${p.id}" style="padding:5px 10px;background:var(--verde-c);color:var(--verde-e);border-radius:7px;font-size:11px;font-weight:600;text-decoration:none;border:1px solid var(--verde)">👤 Ficha</a>
+          </div>
+        </div>
+        ${g.itens.map(i=>{const corI=i.diasAtraso>90?'var(--vermelho)':i.diasAtraso>30?'#d97706':'var(--ct)';return`<div style="font-size:12px;color:var(--ct);padding:4px 0;border-top:1px solid var(--borda);margin-top:6px">
+          ${escapeHtml(i.trat.nome)} · retorno previsto: ${fDt(i.trat.dataRetorno)} · <span style="color:${corI};font-weight:600">${i.diasAtraso}d atrasado</span>
+        </div>`;}).join('')}
+      </div>`;
+    }).join('');
+}
+
 function exportarPacientesCSV(){
   if(!pacs.length){toast('Nenhum paciente para exportar','vermelho');return;}
   const headers=['Nome','Apelido','Telefone','CPF','RG','Nascimento','Sexo','Endereço','Instagram','Facebook','Como Conheceu','Indicação','Procedimento','Cadastro'];

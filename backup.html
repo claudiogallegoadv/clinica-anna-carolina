@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Backup — Clínica</title>
+  <script src="config.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root{--verde:#1D9E75;--verde-c:#E1F5EE;--verde-e:#0F6E56;--vermelho:#E24B4A;--vermelho-c:#FCEBEB;--txt:#1a1916;--ct:#6B6860;--bg:#F7F6F3;--card:#fff;--borda:#E8E6E1}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;font-size:15px}
+    .hdr{background:var(--verde-e);color:#fff;padding:0 1.5rem;display:flex;align-items:center;gap:1rem;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+    .hdr a{color:rgba(255,255,255,.75);text-decoration:none;font-size:13px}
+    .hdr h1{font-size:15px;font-weight:600;flex:1}
+    .wrap{max-width:800px;margin:0 auto;padding:2rem 1.5rem}
+    .card{background:var(--card);border-radius:12px;border:1px solid var(--borda);padding:1.5rem;margin-bottom:1rem;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+    .sec-title{font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.06em;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid var(--borda)}
+    .btn{padding:.6rem 1.25rem;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;border:1.5px solid var(--borda);background:var(--card);color:var(--txt);transition:.15s;display:inline-flex;align-items:center;gap:.5rem}
+    .btn:hover{border-color:var(--verde);color:var(--verde-e)}
+    .btn.pri{background:var(--verde);color:#fff;border-color:var(--verde)}
+    .btn.pri:hover{background:var(--verde-e)}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.875rem 0;border-bottom:1px solid var(--borda);flex-wrap:wrap}
+    .row:last-child{border-bottom:none}
+    .row-info{flex:1}
+    .row-title{font-weight:600;font-size:14px;color:var(--txt)}
+    .row-desc{font-size:12px;color:var(--ct);margin-top:2px}
+    .badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600}
+    .badge.ok{background:var(--verde-c);color:var(--verde-e)}
+    .badge.warn{background:#FEF3C7;color:#92400e}
+    .progress-wrap{margin-top:1.5rem;display:none}
+    .progress-bar{height:8px;background:var(--borda);border-radius:4px;overflow:hidden;margin-bottom:.5rem}
+    .progress-fill{height:100%;background:var(--verde);border-radius:4px;transition:width .3s}
+    .progress-label{font-size:12px;color:var(--ct)}
+    .log{background:var(--bg);border-radius:8px;padding:.875rem;font-size:12px;color:var(--ct);line-height:1.8;margin-top:1rem;max-height:200px;overflow-y:auto;display:none}
+    .toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;background:var(--txt);color:#fff;padding:.625rem 1.25rem;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;transform:translateY(8px)}
+    .toast.show{opacity:1;transform:none}
+    .toast.ok{background:var(--verde-e)}
+    .toast.err{background:var(--vermelho)}
+    .hist-item{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--borda);font-size:13px}
+    .hist-item:last-child{border-bottom:none}
+  </style>
+</head>
+<body>
+
+<div class="hdr">
+  <a href="gestao.html">← Gestão</a>
+  <h1>💾 Backup e Exportação</h1>
+</div>
+
+<div class="wrap">
+
+  <!-- Backup completo -->
+  <div class="card">
+    <div class="sec-title">Backup completo do sistema</div>
+
+    <div class="row">
+      <div class="row-info">
+        <div class="row-title">👥 Pacientes</div>
+        <div class="row-desc">Nome, telefone, CPF, endereço, tratamentos, lembretes e histórico completo</div>
+      </div>
+      <span class="badge ok" id="badge-pac">—</span>
+    </div>
+
+    <div class="row">
+      <div class="row-info">
+        <div class="row-title">💰 Financeiro</div>
+        <div class="row-desc">Todos os lançamentos — receitas, despesas, status e forma de pagamento</div>
+      </div>
+      <span class="badge ok" id="badge-fin">—</span>
+    </div>
+
+    <div class="row">
+      <div class="row-info">
+        <div class="row-title">📅 Agenda</div>
+        <div class="row-desc">Todos os agendamentos — data, hora, procedimento e status</div>
+      </div>
+      <span class="badge ok" id="badge-ag">—</span>
+    </div>
+
+    <div class="row">
+      <div class="row-info">
+        <div class="row-title">📦 Estoque</div>
+        <div class="row-desc">Produtos cadastrados e movimentações de estoque</div>
+      </div>
+      <span class="badge ok" id="badge-est">—</span>
+    </div>
+
+    <div style="margin-top:1.25rem;display:flex;gap:.75rem;flex-wrap:wrap">
+      <button class="btn pri" id="btn-backup" onclick="fazerBackup()">💾 Fazer backup completo (JSON)</button>
+      <button class="btn" id="btn-csv-pac" onclick="exportarCSVPacientes()">📥 Exportar pacientes (CSV)</button>
+      <button class="btn" id="btn-csv-fin" onclick="exportarCSVFinanceiro()">📥 Exportar financeiro (CSV)</button>
+    </div>
+
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      <div class="progress-label" id="progress-label">Iniciando...</div>
+    </div>
+
+    <div class="log" id="log"></div>
+  </div>
+
+  <!-- Histórico de backups -->
+  <div class="card">
+    <div class="sec-title">Histórico de backups</div>
+    <div id="hist-backups">
+      <div style="font-size:13px;color:var(--ct)">Nenhum backup registrado neste dispositivo.</div>
+    </div>
+  </div>
+
+  <!-- Info -->
+  <div class="card" style="background:var(--verde-c);border-color:#9FE1CB">
+    <div class="sec-title" style="color:var(--verde-e)">ℹ️ Sobre o backup</div>
+    <div style="font-size:13px;color:var(--verde-e);line-height:1.7">
+      O backup completo exporta <strong>todos os dados</strong> em formato JSON — pode ser guardado como arquivo de segurança.<br/>
+      Os arquivos CSV são ideais para abrir no Excel.<br/>
+      <strong>Recomendado:</strong> fazer backup ao menos 1x por semana e guardar em local seguro (Google Drive, etc).
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Auth
+const auth = JSON.parse(localStorage.getItem('clinica_auth')||'{}');
+if(!auth.ok || auth.expires < Date.now()) window.location.href='login.html?r=backup.html';
+
+const TOKEN = auth.access_token;
+
+function toast(m,t){const e=document.getElementById('toast');e.textContent=m;e.className='toast show '+(t||'ok');setTimeout(()=>e.classList.remove('show'),3500);}
+
+function setProgress(pct, label){
+  document.getElementById('progress-fill').style.width=pct+'%';
+  document.getElementById('progress-label').textContent=label;
+}
+function log(msg){
+  const el=document.getElementById('log');
+  el.style.display='block';
+  el.innerHTML+=msg+'<br/>';
+  el.scrollTop=el.scrollHeight;
+}
+
+async function fetchAll(tabela, select='*'){
+  const PAGE=1000;
+  let all=[], offset=0, continua=true;
+  while(continua){
+    const r=await fetch(`${SB_URL}/rest/v1/${tabela}?select=${select}&limit=${PAGE}&offset=${offset}&order=id`,{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+TOKEN}
+    });
+    const d=await r.json();
+    if(!Array.isArray(d)||!d.length){continua=false;break;}
+    all=[...all,...d];
+    if(d.length<PAGE) continua=false;
+    else offset+=PAGE;
+  }
+  return all;
+}
+
+async function contarRegistros(){
+  const tabelas=[
+    {id:'pac',tabela:'pacientes'},
+    {id:'fin',tabela:'financeiro'},
+    {id:'ag',tabela:'agenda'},
+    {id:'est',tabela:'produtos'}
+  ];
+  for(const {id,tabela} of tabelas){
+    try{
+      const r=await fetch(`${SB_URL}/rest/v1/${tabela}?select=id&limit=1`,{
+        headers:{'apikey':SB_KEY,'Authorization':'Bearer '+TOKEN,'Prefer':'count=exact'}
+      });
+      const count=r.headers.get('content-range')?.split('/')?.[1]||'?';
+      document.getElementById('badge-'+id).textContent=count+' registros';
+    }catch(e){document.getElementById('badge-'+id).textContent='Erro';}
+  }
+}
+
+async function fazerBackup(){
+  const btn=document.getElementById('btn-backup');
+  btn.disabled=true;btn.textContent='⏳ Exportando...';
+  document.getElementById('progress-wrap').style.display='block';
+  document.getElementById('log').innerHTML='';
+
+  try{
+    setProgress(5,'Carregando pacientes...');log('📥 Buscando pacientes...');
+    const pacientes=await fetchAll('pacientes');
+    log(`✅ ${pacientes.length} pacientes`);
+
+    setProgress(30,'Carregando financeiro...');log('📥 Buscando financeiro...');
+    const financeiro=await fetchAll('financeiro');
+    log(`✅ ${financeiro.length} lançamentos`);
+
+    setProgress(55,'Carregando agenda...');log('📥 Buscando agenda...');
+    const agenda=await fetchAll('agenda');
+    log(`✅ ${agenda.length} agendamentos`);
+
+    setProgress(70,'Carregando estoque...');log('📥 Buscando produtos...');
+    const produtos=await fetchAll('produtos');
+    const movimentos=await fetchAll('estoque_movimentos');
+    log(`✅ ${produtos.length} produtos, ${movimentos.length} movimentos`);
+
+    setProgress(85,'Carregando planos de tratamento...');log('📥 Buscando planos...');
+    const planos=await fetchAll('planos_tratamento');
+    const planoItens=await fetchAll('plano_itens');
+    log(`✅ ${planos.length} planos, ${planoItens.length} itens`);
+
+    setProgress(95,'Montando arquivo...');
+
+    const backup={
+      versao:'1.0',
+      gerado_em:new Date().toISOString(),
+      sistema:'Clínica Anna Carolina',
+      totais:{pacientes:pacientes.length,financeiro:financeiro.length,agenda:agenda.length,produtos:produtos.length},
+      dados:{pacientes,financeiro,agenda,produtos,movimentos_estoque:movimentos,planos_tratamento:planos,plano_itens:planoItens}
+    };
+
+    const json=JSON.stringify(backup,null,2);
+    const blob=new Blob([json],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const data=new Date().toISOString().split('T')[0];
+    a.href=url;a.download=`backup_clinica_${data}.json`;
+    document.body.appendChild(a);a.click();
+    document.body.removeChild(a);URL.revokeObjectURL(url);
+
+    setProgress(100,'Backup concluído! ✅');
+    log(`🎉 Backup completo: ${(json.length/1024).toFixed(1)} KB`);
+
+    // Salvar histórico no localStorage
+    const hist=JSON.parse(localStorage.getItem('backup_hist')||'[]');
+    hist.unshift({data:new Date().toISOString(),totais:backup.totais});
+    localStorage.setItem('backup_hist',JSON.stringify(hist.slice(0,10)));
+    renderHist();
+
+    toast('Backup exportado com sucesso! ✅','ok');
+  }catch(e){
+    log('❌ Erro: '+e.message);
+    toast('Erro ao exportar: '+e.message,'err');
+  }finally{
+    btn.disabled=false;btn.textContent='💾 Fazer backup completo (JSON)';
+  }
+}
+
+async function exportarCSVPacientes(){
+  const btn=document.getElementById('btn-csv-pac');
+  btn.disabled=true;btn.textContent='⏳ Exportando...';
+  try{
+    const pacs=await fetchAll('pacientes','id,nome,apelido,telefone,cpf,rg,data_nascimento,sexo,rua,numero,bairro,cidade,cep,instagram,facebook,como_conheceu,indicacao,tratamento,data_atendimento,criado_em,observacoes');
+    const headers=['Nome','Apelido','Telefone','CPF','RG','Nascimento','Sexo','Rua','Número','Bairro','Cidade','CEP','Instagram','Facebook','Como conheceu','Indicação','Procedimento','Data atendimento','Cadastrado em','Observações'];
+    const rows=pacs.map(p=>[
+      p.nome||'',p.apelido||'',p.telefone||'',p.cpf||'',p.rg||'',
+      p.data_nascimento||'',p.sexo||'',p.rua||'',p.numero||'',
+      p.bairro||'',p.cidade||'',p.cep||'',
+      p.instagram||'',p.facebook||'',p.como_conheceu||'',p.indicacao||'',
+      p.tratamento||'',(p.data_atendimento||'').split('T')[0],
+      (p.criado_em||'').split('T')[0],p.observacoes||''
+    ]);
+    baixarCSV([headers,...rows],'pacientes_'+new Date().toISOString().split('T')[0]+'.csv');
+    toast(pacs.length+' pacientes exportados ✅','ok');
+  }catch(e){toast('Erro: '+e.message,'err');}
+  finally{btn.disabled=false;btn.textContent='📥 Exportar pacientes (CSV)';}
+}
+
+async function exportarCSVFinanceiro(){
+  const btn=document.getElementById('btn-csv-fin');
+  btn.disabled=true;btn.textContent='⏳ Exportando...';
+  try{
+    const fin=await fetchAll('financeiro','*');
+    const headers=['Data','Tipo','Descrição','Categoria','Valor','Forma Pagamento','Status','Observações'];
+    const rows=fin.sort((a,b)=>a.data.localeCompare(b.data)).map(l=>[
+      (l.data||'').split('T')[0],
+      l.tipo==='receita'?'Receita':'Despesa',
+      l.descricao||'',l.categoria||'',
+      l.valor||0,l.forma_pagamento||'',
+      l.status==='recebido'?'Recebido':'A receber',l.obs||''
+    ]);
+    baixarCSV([headers,...rows],'financeiro_completo_'+new Date().toISOString().split('T')[0]+'.csv');
+    toast(fin.length+' lançamentos exportados ✅','ok');
+  }catch(e){toast('Erro: '+e.message,'err');}
+  finally{btn.disabled=false;btn.textContent='📥 Exportar financeiro (CSV)';}
+}
+
+function baixarCSV(linhas, nome){
+  const csv=linhas.map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=nome;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+function renderHist(){
+  const hist=JSON.parse(localStorage.getItem('backup_hist')||'[]');
+  const el=document.getElementById('hist-backups');
+  if(!hist.length){el.innerHTML='<div style="font-size:13px;color:var(--ct)">Nenhum backup registrado neste dispositivo.</div>';return;}
+  el.innerHTML=hist.map(h=>{
+    const d=new Date(h.data);
+    const dStr=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    return`<div class="hist-item">
+      <div>
+        <div style="font-weight:600;font-size:13px">💾 ${dStr}</div>
+        <div style="font-size:11px;color:var(--ct)">${h.totais.pacientes} pacientes · ${h.totais.financeiro} lançamentos · ${h.totais.agenda} agendamentos</div>
+      </div>
+      <span class="badge ok">✅ OK</span>
+    </div>`;
+  }).join('');
+}
+
+// Init
+contarRegistros();
+renderHist();
+</script>
+</body>
+</html>
