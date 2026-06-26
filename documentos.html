@@ -387,6 +387,7 @@ textarea{resize:vertical}
         <button class="btn" onclick="voltarDocs()">← Voltar</button>
         <button class="btn" onclick="imprimirOrcamento()">🖨️ Imprimir</button>
         <button class="btn" aria-label="Confirmar" style="background:var(--verde);color:white;border-color:var(--verde)" onclick="abrirModalRealizado()">✅ Procedimento realizado</button>
+        <button class="btn" onclick="abrirModalValorRecebido()" style="background:var(--verde-c);color:var(--verde-e);border-color:var(--verde)" title="Registrar valor recebido e crédito">💰 Valor recebido</button>
         <button class="btn pri" onclick="salvarDoc('orcamento')">✓ Salvar orçamento</button>
       </div>
     </div>
@@ -394,6 +395,64 @@ textarea{resize:vertical}
 </main>
 
 <!-- MODAL: CONFIRMAR PROCEDIMENTO REALIZADO -->
+<!-- MODAL VALOR RECEBIDO -->
+<div id="modal-valor-rec" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1001;align-items:center;justify-content:center">
+  <div style="background:var(--card);border-radius:16px;padding:1.5rem;width:92%;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,.2)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <div style="font-size:16px;font-weight:700">💰 Registrar valor recebido</div>
+      <button onclick="fecharModalValorRec()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--ct)">✕</button>
+    </div>
+
+    <div id="vr-aviso-credito" style="display:none;background:var(--verde-c);border:1.5px solid var(--verde);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--verde-e);margin-bottom:1rem;font-weight:600"></div>
+
+    <div style="margin-bottom:1rem">
+      <label style="font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.05em">Procedimento(s)</label>
+      <div id="vr-proc-desc" style="font-size:13px;color:var(--txt);margin-top:4px;padding:8px 10px;background:var(--bg);border-radius:8px;line-height:1.5"></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.05em">Valor do procedimento</label>
+        <div id="vr-total" style="font-size:18px;font-weight:700;color:var(--txt);margin-top:4px">R$ 0,00</div>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.05em">Valor recebido (R$)</label>
+        <input type="number" id="vr-valor" min="0" step="0.01" placeholder="0,00"
+          style="width:100%;padding:8px 10px;border:1.5px solid var(--verde);border-radius:8px;font-size:16px;font-weight:600;margin-top:4px"
+          oninput="calcVR()"/>
+      </div>
+    </div>
+
+    <div id="vr-resultado" style="display:none;border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:13px;font-weight:600"></div>
+
+    <div style="margin-bottom:1rem">
+      <label style="font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.05em">Forma de pagamento</label>
+      <select id="vr-pgto" style="width:100%;padding:9px 11px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;margin-top:4px">
+        <option value="pix">💠 Pix</option>
+        <option value="dinheiro">💵 Dinheiro</option>
+        <option value="debito">💳 Débito</option>
+        <option value="credito-1x">💳 Crédito 1x</option>
+        <option value="credito-2x">💳 Crédito 2x</option>
+        <option value="credito-3x">💳 Crédito 3x</option>
+        <option value="credito-6x">💳 Crédito 6x</option>
+        <option value="transferencia">🏦 Transferência</option>
+        <option value="outro">Outro</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:1.25rem">
+      <label style="font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.05em">Observação (opcional)</label>
+      <input type="text" id="vr-obs" placeholder="Ex: pagou adiantado para próximo procedimento"
+        style="width:100%;padding:9px 11px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;margin-top:4px"/>
+    </div>
+
+    <div style="display:flex;gap:.75rem">
+      <button onclick="fecharModalValorRec()" style="flex:1;padding:.75rem;border:1.5px solid var(--borda);border-radius:8px;background:var(--card);font-size:14px;cursor:pointer;font-family:inherit">Cancelar</button>
+      <button onclick="salvarValorRecebido()" id="btn-salvar-vr" style="flex:2;padding:.75rem;border:none;border-radius:8px;background:var(--verde);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">💾 Registrar</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-realizado" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center">
   <div style="background:var(--card);border-radius:16px;padding:1.5rem;width:92%;max-width:520px;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;gap:1rem">
 
@@ -2232,6 +2291,137 @@ function sincDiasVerificacao(){
 }
 
 // ── MODAL PROCEDIMENTO REALIZADO ──
+// ══════════════════════════════════════════
+// MODAL VALOR RECEBIDO
+// ══════════════════════════════════════════
+async function abrirModalValorRecebido(){
+  if(!pacSelecionada){toast('Selecione um paciente primeiro!','vermelho');return;}
+  const itens=getOrcItens().filter(i=>i.trat);
+  if(!itens.length){toast('Adicione ao menos um tratamento!','vermelho');return;}
+
+  const total=itens.reduce((s,i)=>s+(parseFloat(i.val)||0),0);
+  document.getElementById('vr-total').textContent=fmtBRL(total);
+  document.getElementById('vr-proc-desc').textContent=itens.map(i=>i.trat).join(' + ');
+  document.getElementById('vr-valor').value='';
+  document.getElementById('vr-obs').value='';
+  document.getElementById('vr-pgto').value='pix';
+  document.getElementById('vr-resultado').style.display='none';
+
+  // Verificar crédito existente
+  const avisoEl=document.getElementById('vr-aviso-credito');
+  avisoEl.style.display='none';
+  try{
+    const {data}=await db.from('financeiro').select('valor').eq('paciente_id',pacSelecionada.id).eq('tipo','receita').eq('categoria','Crédito Paciente').eq('status','pendente');
+    const totalCred=(data||[]).reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+    if(totalCred>0){
+      avisoEl.style.display='block';
+      avisoEl.innerHTML='💚 Paciente tem <strong>'+fmtBRL(totalCred)+'</strong> de crédito disponível. <button onclick="aplicarCredVR('+totalCred+','+total+')" style="margin-left:8px;padding:3px 10px;background:var(--verde);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Abater</button>';
+    }
+  }catch(e){}
+
+  document.getElementById('modal-valor-rec').style.display='flex';
+}
+
+function aplicarCredVR(credito, total){
+  const restante=Math.max(0, total-credito);
+  document.getElementById('vr-valor').value=restante.toFixed(2);
+  calcVR();
+}
+
+function calcVR(){
+  const totalEl=document.getElementById('vr-total');
+  const total=parseFloat((totalEl?.textContent||'').replace(/[^0-9,]/g,'').replace(',','.'))||0;
+  const recebido=parseFloat(document.getElementById('vr-valor')?.value)||0;
+  const res=document.getElementById('vr-resultado');
+  if(!recebido){res.style.display='none';return;}
+  if(recebido>total){
+    const cred=recebido-total;
+    res.style.display='block';
+    res.style.background='var(--verde-c)';
+    res.style.color='var(--verde-e)';
+    res.textContent='💚 Crédito a registrar: '+fmtBRL(cred)+' (saldo a favor da paciente)';
+  } else if(recebido<total){
+    const falta=total-recebido;
+    res.style.display='block';
+    res.style.background='var(--amarelo-c)';
+    res.style.color='#8a6000';
+    res.textContent='⚠️ Falta receber: '+fmtBRL(falta)+' — será registrado como pendente';
+  } else {
+    res.style.display='block';
+    res.style.background='var(--verde-c)';
+    res.style.color='var(--verde-e)';
+    res.textContent='✅ Valor exato — quitado!';
+  }
+}
+
+function fecharModalValorRec(){
+  document.getElementById('modal-valor-rec').style.display='none';
+}
+
+async function salvarValorRecebido(){
+  if(!pacSelecionada){return;}
+  const btn=document.getElementById('btn-salvar-vr');
+  btn.disabled=true;btn.textContent='Salvando...';
+
+  const itens=getOrcItens().filter(i=>i.trat);
+  const total=itens.reduce((s,i)=>s+(parseFloat(i.val)||0),0);
+  const recebido=parseFloat(document.getElementById('vr-valor').value)||0;
+  const pgto=document.getElementById('vr-pgto').value;
+  const obs=document.getElementById('vr-obs').value.trim();
+  const hoje=new Date().toISOString().split('T')[0];
+  const descProc=itens.map(i=>i.trat).join(' + ')+' — '+pacSelecionada.nome;
+  const cat=document.getElementById('orc-categoria')?.value||'Harmonização Orofacial';
+
+  if(!recebido){toast('Digite o valor recebido','vermelho');btn.disabled=false;btn.textContent='💾 Registrar';return;}
+
+  try{
+    const valorLancar=Math.min(recebido,total);
+    // Lançar o que foi recebido
+    await db.from('financeiro').insert({
+      tipo:'receita', data:hoje,
+      descricao:descProc,
+      categoria:cat, valor:valorLancar,
+      forma_pagamento:pgto, status:'recebido',
+      paciente_id:pacSelecionada.id,
+      obs:obs||null
+    });
+
+    // Se recebeu mais → crédito
+    if(recebido>total){
+      const cred=recebido-total;
+      await db.from('financeiro').insert({
+        tipo:'receita', data:hoje,
+        descricao:'💚 Crédito disponível — '+pacSelecionada.nome+' (pago a mais em '+descProc+')',
+        categoria:'Crédito Paciente', valor:cred,
+        forma_pagamento:pgto, status:'pendente',
+        paciente_id:pacSelecionada.id,
+        obs:'Crédito a abater no próximo procedimento. Recebeu '+fmtBRL(recebido)+' para procedimento de '+fmtBRL(total)
+      });
+      toast('💚 Recebido! Crédito de '+fmtBRL(cred)+' registrado','verde');
+    }
+    // Se recebeu menos → pendente
+    else if(recebido<total){
+      const falta=total-recebido;
+      await db.from('financeiro').insert({
+        tipo:'receita', data:hoje,
+        descricao:descProc+' (saldo pendente)',
+        categoria:cat, valor:falta,
+        forma_pagamento:pgto, status:'pendente',
+        paciente_id:pacSelecionada.id,
+        obs:'Recebeu '+fmtBRL(recebido)+' de '+fmtBRL(total)+'. Falta: '+fmtBRL(falta)
+      });
+      toast('Registrado! Falta receber '+fmtBRL(falta),'verde');
+    } else {
+      toast('✅ Pagamento registrado!','verde');
+    }
+
+    fecharModalValorRec();
+  }catch(e){
+    toast('Erro ao registrar: '+e.message,'vermelho');
+  }
+  btn.disabled=false;btn.textContent='💾 Registrar';
+}
+
 function abrirModalRealizado(){
   if(!pacSelecionada){toast('Selecione um paciente primeiro!','vermelho');return;}
   const itens=getOrcItens().filter(i=>i.trat);
