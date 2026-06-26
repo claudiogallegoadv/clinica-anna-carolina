@@ -396,60 +396,39 @@ textarea{resize:vertical}
 
 <!-- MODAL: CONFIRMAR PROCEDIMENTO REALIZADO -->
 <!-- MODAL VALOR RECEBIDO -->
+<!-- MODAL EXTRATO DO ORÇAMENTO -->
 <div id="modal-valor-rec" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1001;align-items:center;justify-content:center">
-  <div style="background:var(--card);border-radius:16px;padding:1.5rem;width:92%;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,.2)">
+  <div style="background:var(--card);border-radius:16px;padding:1.5rem;width:92%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2)">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-      <div style="font-size:16px;font-weight:700">💰 Registrar valor recebido</div>
+      <div style="font-size:16px;font-weight:700">💰 Extrato do orçamento</div>
       <button onclick="fecharModalValorRec()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--ct)">✕</button>
     </div>
 
-    <div id="vr-aviso-credito" style="display:none;background:var(--verde-c);border:1.5px solid var(--verde);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--verde-e);margin-bottom:1rem;font-weight:600"></div>
-
-    <div style="margin-bottom:1rem">
-      <label style="font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.05em">Procedimento(s)</label>
-      <div id="vr-proc-desc" style="font-size:13px;color:var(--txt);margin-top:4px;padding:8px 10px;background:var(--bg);border-radius:8px;line-height:1.5"></div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem">
-      <div>
-        <label style="font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.05em">Valor do procedimento</label>
-        <div id="vr-total" style="font-size:18px;font-weight:700;color:var(--txt);margin-top:4px">R$ 0,00</div>
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.05em">Valor recebido (R$)</label>
-        <input type="number" id="vr-valor" min="0" step="0.01" placeholder="0,00"
-          style="width:100%;padding:8px 10px;border:1.5px solid var(--verde);border-radius:8px;font-size:16px;font-weight:600;margin-top:4px"
-          oninput="calcVR()"/>
+    <!-- Resumo do orçamento -->
+    <div id="vr-resumo" style="background:var(--bg);border-radius:10px;padding:12px 14px;margin-bottom:1rem">
+      <div style="font-size:12px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Orçamento</div>
+      <div id="vr-proc-desc" style="font-size:13px;color:var(--txt);line-height:1.6;margin-bottom:8px"></div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div><div style="font-size:11px;color:var(--ct)">Valor total</div><div id="vr-total" style="font-size:16px;font-weight:700;color:var(--txt)">—</div></div>
+        <div><div style="font-size:11px;color:var(--ct)">Total recebido</div><div id="vr-recebido" style="font-size:16px;font-weight:700;color:var(--verde)">—</div></div>
+        <div><div style="font-size:11px;color:var(--ct)">Saldo</div><div id="vr-saldo" style="font-size:16px;font-weight:700">—</div></div>
       </div>
     </div>
 
-    <div id="vr-resultado" style="display:none;border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:13px;font-weight:600"></div>
-
-    <div style="margin-bottom:1rem">
-      <label style="font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.05em">Forma de pagamento</label>
-      <select id="vr-pgto" style="width:100%;padding:9px 11px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;margin-top:4px">
-        <option value="pix">💠 Pix</option>
-        <option value="dinheiro">💵 Dinheiro</option>
-        <option value="debito">💳 Débito</option>
-        <option value="credito-1x">💳 Crédito 1x</option>
-        <option value="credito-2x">💳 Crédito 2x</option>
-        <option value="credito-3x">💳 Crédito 3x</option>
-        <option value="credito-6x">💳 Crédito 6x</option>
-        <option value="transferencia">🏦 Transferência</option>
-        <option value="outro">Outro</option>
-      </select>
+    <!-- Lista de lançamentos -->
+    <div style="font-size:12px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Lançamentos</div>
+    <div id="vr-lancamentos" style="margin-bottom:1rem">
+      <div style="font-size:13px;color:var(--ct);text-align:center;padding:1rem">⏳ Carregando...</div>
     </div>
 
-    <div style="margin-bottom:1.25rem">
-      <label style="font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.05em">Observação (opcional)</label>
-      <input type="text" id="vr-obs" placeholder="Ex: pagou adiantado para próximo procedimento"
-        style="width:100%;padding:9px 11px;border:1.5px solid var(--borda);border-radius:8px;font-size:14px;margin-top:4px"/>
+    <!-- Crédito disponível -->
+    <div id="vr-credito-box" style="display:none;background:var(--verde-c);border:1.5px solid var(--verde);border-radius:10px;padding:12px 14px;margin-bottom:1rem">
+      <div style="font-size:12px;font-weight:700;color:var(--verde-e);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">💚 Crédito disponível</div>
+      <div id="vr-credito-val" style="font-size:18px;font-weight:700;color:var(--verde-e)"></div>
+      <div style="font-size:11px;color:var(--verde-e);margin-top:2px">Será abatido no próximo procedimento</div>
     </div>
 
-    <div style="display:flex;gap:.75rem">
-      <button onclick="fecharModalValorRec()" style="flex:1;padding:.75rem;border:1.5px solid var(--borda);border-radius:8px;background:var(--card);font-size:14px;cursor:pointer;font-family:inherit">Cancelar</button>
-      <button onclick="salvarValorRecebido()" id="btn-salvar-vr" style="flex:2;padding:.75rem;border:none;border-radius:8px;background:var(--verde);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">💾 Registrar</button>
-    </div>
+    <button onclick="fecharModalValorRec()" style="width:100%;padding:.75rem;border:1.5px solid var(--borda);border-radius:8px;background:var(--card);font-size:14px;cursor:pointer;font-family:inherit">Fechar</button>
   </div>
 </div>
 
@@ -2294,132 +2273,98 @@ function sincDiasVerificacao(){
 // ══════════════════════════════════════════
 // MODAL VALOR RECEBIDO
 // ══════════════════════════════════════════
+// ══════════════════════════════════════════
+// EXTRATO DO ORÇAMENTO
+// ══════════════════════════════════════════
 async function abrirModalValorRecebido(){
   if(!pacSelecionada){toast('Selecione um paciente primeiro!','vermelho');return;}
   const itens=getOrcItens().filter(i=>i.trat);
   if(!itens.length){toast('Adicione ao menos um tratamento!','vermelho');return;}
 
   const total=itens.reduce((s,i)=>s+(parseFloat(i.val)||0),0);
+  const descProc=itens.map(i=>i.trat+(i.val?' ('+fmtBRL(i.val)+')':'')).join('<br>');
+
+  document.getElementById('vr-proc-desc').innerHTML=descProc;
   document.getElementById('vr-total').textContent=fmtBRL(total);
-  document.getElementById('vr-proc-desc').textContent=itens.map(i=>i.trat).join(' + ');
-  document.getElementById('vr-valor').value='';
-  document.getElementById('vr-obs').value='';
-  document.getElementById('vr-pgto').value='pix';
-  document.getElementById('vr-resultado').style.display='none';
-
-  // Verificar crédito existente
-  const avisoEl=document.getElementById('vr-aviso-credito');
-  avisoEl.style.display='none';
-  try{
-    const {data}=await db.from('financeiro').select('valor').eq('paciente_id',pacSelecionada.id).eq('tipo','receita').eq('categoria','Crédito Paciente').eq('status','pendente');
-    const totalCred=(data||[]).reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
-    if(totalCred>0){
-      avisoEl.style.display='block';
-      avisoEl.innerHTML='💚 Paciente tem <strong>'+fmtBRL(totalCred)+'</strong> de crédito disponível. <button onclick="aplicarCredVR('+totalCred+','+total+')" style="margin-left:8px;padding:3px 10px;background:var(--verde);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Abater</button>';
-    }
-  }catch(e){}
-
+  document.getElementById('vr-recebido').textContent='⏳';
+  document.getElementById('vr-saldo').textContent='⏳';
+  document.getElementById('vr-lancamentos').innerHTML='<div style="font-size:13px;color:var(--ct);text-align:center;padding:1rem">⏳ Carregando...</div>';
+  document.getElementById('vr-credito-box').style.display='none';
   document.getElementById('modal-valor-rec').style.display='flex';
-}
 
-function aplicarCredVR(credito, total){
-  const restante=Math.max(0, total-credito);
-  document.getElementById('vr-valor').value=restante.toFixed(2);
-  calcVR();
-}
+  // Buscar lançamentos do paciente para este orçamento
+  try{
+    const {data:lancs} = await db.from('financeiro')
+      .select('*')
+      .eq('paciente_id', pacSelecionada.id)
+      .eq('tipo','receita')
+      .order('data',{ascending:true});
 
-function calcVR(){
-  const totalEl=document.getElementById('vr-total');
-  const total=parseFloat((totalEl?.textContent||'').replace(/[^0-9,]/g,'').replace(',','.'))||0;
-  const recebido=parseFloat(document.getElementById('vr-valor')?.value)||0;
-  const res=document.getElementById('vr-resultado');
-  if(!recebido){res.style.display='none';return;}
-  if(recebido>total){
-    const cred=recebido-total;
-    res.style.display='block';
-    res.style.background='var(--verde-c)';
-    res.style.color='var(--verde-e)';
-    res.textContent='💚 Crédito a registrar: '+fmtBRL(cred)+' (saldo a favor da paciente)';
-  } else if(recebido<total){
-    const falta=total-recebido;
-    res.style.display='block';
-    res.style.background='var(--amarelo-c)';
-    res.style.color='#8a6000';
-    res.textContent='⚠️ Falta receber: '+fmtBRL(falta)+' — será registrado como pendente';
-  } else {
-    res.style.display='block';
-    res.style.background='var(--verde-c)';
-    res.style.color='var(--verde-e)';
-    res.textContent='✅ Valor exato — quitado!';
+    const fins = lancs||[];
+    const descBase = itens.map(i=>i.trat).join(' + ')+' — '+pacSelecionada.nome;
+
+    // Filtrar lançamentos relacionados a este orçamento (por descrição)
+    const lancOrc = fins.filter(l=>
+      l.descricao && (
+        l.descricao.includes(itens[0]?.trat||'') ||
+        l.descricao.includes('Crédito Paciente') ||
+        l.categoria==='Crédito Paciente'
+      )
+    );
+
+    // Calcular totais
+    const recebidoTotal = fins.filter(l=>l.status==='recebido'&&l.categoria!=='Crédito Paciente').reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+    const creditoDisp = fins.filter(l=>l.categoria==='Crédito Paciente'&&l.status==='pendente').reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+    const pendente = fins.filter(l=>l.status==='pendente'&&l.categoria!=='Crédito Paciente').reduce((s,l)=>s+(parseFloat(l.valor)||0),0);
+
+    document.getElementById('vr-recebido').textContent=fmtBRL(recebidoTotal);
+    const saldo=total-recebidoTotal;
+    const saldoEl=document.getElementById('vr-saldo');
+    if(saldo<=0){
+      saldoEl.textContent='✅ Quitado';
+      saldoEl.style.color='var(--verde)';
+    } else {
+      saldoEl.textContent='⚠️ '+fmtBRL(saldo)+' pendente';
+      saldoEl.style.color='var(--amarelo)';
+    }
+
+    // Montar lista de lançamentos
+    const pgtoMap={pix:'💠 Pix',dinheiro:'💵 Dinheiro',debito:'💳 Débito',transferencia:'🏦 Transferência',outro:'Outro'};
+    const fmtPg=p=>pgtoMap[p]||(p&&p.startsWith('credito')?'💳 Crédito':p||'—');
+
+    const html = fins.map(l=>{
+      const isCred=l.categoria==='Crédito Paciente';
+      const bg=isCred?'var(--verde-c)':l.status==='recebido'?'var(--bg)':'var(--amarelo-c)';
+      const cor=isCred?'var(--verde-e)':l.status==='recebido'?'var(--txt)':'#8a6000';
+      const badge=isCred?'<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:var(--verde);color:#fff;font-weight:700;margin-left:6px">💚 Crédito</span>':
+        l.status==='recebido'?'<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:var(--verde-c);color:var(--verde);font-weight:600;margin-left:6px">✅ Recebido</span>':
+        '<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:var(--amarelo-c);color:#8a6000;font-weight:600;margin-left:6px">⏳ Pendente</span>';
+      return`<div style="background:${bg};border-radius:8px;padding:10px 12px;margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:600;color:${cor}">${escapeHtml(l.descricao||'—')}${badge}</div>
+            <div style="font-size:11px;color:var(--ct);margin-top:3px">${fDt(l.data)} · ${fmtPg(l.forma_pagamento)}${l.obs?' · <em>'+escapeHtml(l.obs)+'</em>':''}</div>
+          </div>
+          <div style="font-size:15px;font-weight:700;color:${cor};white-space:nowrap">${fmtBRL(l.valor)}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    document.getElementById('vr-lancamentos').innerHTML = html || '<div style="font-size:13px;color:var(--ct);text-align:center;padding:1rem">Nenhum lançamento encontrado.</div>';
+
+    // Mostrar crédito disponível
+    if(creditoDisp>0){
+      document.getElementById('vr-credito-box').style.display='block';
+      document.getElementById('vr-credito-val').textContent=fmtBRL(creditoDisp);
+    }
+
+  }catch(e){
+    document.getElementById('vr-lancamentos').innerHTML='<div style="color:var(--ct);font-size:13px">Erro ao carregar lançamentos.</div>';
   }
 }
 
 function fecharModalValorRec(){
   document.getElementById('modal-valor-rec').style.display='none';
-}
-
-async function salvarValorRecebido(){
-  if(!pacSelecionada){return;}
-  const btn=document.getElementById('btn-salvar-vr');
-  btn.disabled=true;btn.textContent='Salvando...';
-
-  const itens=getOrcItens().filter(i=>i.trat);
-  const total=itens.reduce((s,i)=>s+(parseFloat(i.val)||0),0);
-  const recebido=parseFloat(document.getElementById('vr-valor').value)||0;
-  const pgto=document.getElementById('vr-pgto').value;
-  const obs=document.getElementById('vr-obs').value.trim();
-  const hoje=new Date().toISOString().split('T')[0];
-  const descProc=itens.map(i=>i.trat).join(' + ')+' — '+pacSelecionada.nome;
-  const cat=document.getElementById('orc-categoria')?.value||'Harmonização Orofacial';
-
-  if(!recebido){toast('Digite o valor recebido','vermelho');btn.disabled=false;btn.textContent='💾 Registrar';return;}
-
-  try{
-    const valorLancar=Math.min(recebido,total);
-    // Lançar o que foi recebido
-    await db.from('financeiro').insert({
-      tipo:'receita', data:hoje,
-      descricao:descProc,
-      categoria:cat, valor:valorLancar,
-      forma_pagamento:pgto, status:'recebido',
-      paciente_id:pacSelecionada.id,
-      obs:obs||null
-    });
-
-    // Se recebeu mais → crédito
-    if(recebido>total){
-      const cred=recebido-total;
-      await db.from('financeiro').insert({
-        tipo:'receita', data:hoje,
-        descricao:'💚 Crédito disponível — '+pacSelecionada.nome+' (pago a mais em '+descProc+')',
-        categoria:'Crédito Paciente', valor:cred,
-        forma_pagamento:pgto, status:'pendente',
-        paciente_id:pacSelecionada.id,
-        obs:'Crédito a abater no próximo procedimento. Recebeu '+fmtBRL(recebido)+' para procedimento de '+fmtBRL(total)
-      });
-      toast('💚 Recebido! Crédito de '+fmtBRL(cred)+' registrado','verde');
-    }
-    // Se recebeu menos → pendente
-    else if(recebido<total){
-      const falta=total-recebido;
-      await db.from('financeiro').insert({
-        tipo:'receita', data:hoje,
-        descricao:descProc+' (saldo pendente)',
-        categoria:cat, valor:falta,
-        forma_pagamento:pgto, status:'pendente',
-        paciente_id:pacSelecionada.id,
-        obs:'Recebeu '+fmtBRL(recebido)+' de '+fmtBRL(total)+'. Falta: '+fmtBRL(falta)
-      });
-      toast('Registrado! Falta receber '+fmtBRL(falta),'verde');
-    } else {
-      toast('✅ Pagamento registrado!','verde');
-    }
-
-    fecharModalValorRec();
-  }catch(e){
-    toast('Erro ao registrar: '+e.message,'vermelho');
-  }
-  btn.disabled=false;btn.textContent='💾 Registrar';
 }
 
 function abrirModalRealizado(){
