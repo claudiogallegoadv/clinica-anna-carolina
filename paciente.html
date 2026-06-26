@@ -1831,7 +1831,7 @@ async function renderFinanceiro(){
       </div>
       <div style="margin-top:10px;border-top:1px solid rgba(0,0,0,.08);padding-top:8px">
         ${finsCredito.map(l=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;color:var(--verde-e)">
-          <span>${escHtml(l.descricao||'Crédito')}</span>
+          <span>${escapeHtml(l.descricao||'Crédito')}</span>
           <span style="font-weight:600">${fmtBRL(l.valor)} · ${fDt(l.data)}</span>
         </div>`).join('')}
       </div>
