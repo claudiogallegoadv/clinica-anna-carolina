@@ -3456,8 +3456,6 @@ window.confirmarRealizado = async function() {
   const valorPendente = isParcial ? (totalReal - entrada) : (statusPgto === 'pendente' ? totalReal : 0);
 
   try {
-    console.log('[DEBUG] Iniciando confirmarRealizado sobrescrito');
-    console.log('[DEBUG] realizados:', realizados.length, '| dataAtend:', dataAtend, '| statusPgto:', statusPgto);
     // 1. Salvar/atualizar plano de tratamento
     let planoId = window._planoAtual?.id;
 
@@ -3694,7 +3692,7 @@ window.confirmarRealizado = async function() {
 
   } catch(e) {
     console.error('Erro ao confirmar:', e);
-    toast('Erro ao salvar. Verifique o console.', 'vermelho');
+    toast('Erro: ' + (e?.message || e?.details || JSON.stringify(e) || 'desconhecido'), 'vermelho');
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar e registrar'; }
   }
