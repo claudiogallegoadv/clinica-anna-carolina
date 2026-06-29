@@ -1773,6 +1773,7 @@ async function renderFinanceiro(){
   const finsPorPlano = {};
   const finsLegado = [];
   fins.forEach(l => {
+    if(l.categoria === 'Crédito Paciente') return; // créditos exibidos separado
     if (l.orcamento_id) {
       if (!finsPorPlano[l.orcamento_id]) finsPorPlano[l.orcamento_id] = [];
       finsPorPlano[l.orcamento_id].push(l);
@@ -1818,10 +1819,10 @@ async function renderFinanceiro(){
     ${totalCredito>0?`<div class="rc" style="border:2px solid var(--verde);background:var(--verde-c)"><div class="ri" style="background:#fff">💚</div><div><div class="rn" style="color:var(--verde-e)">${fmtBRL(totalCredito)}</div><div class="rl" style="color:var(--verde-e);font-weight:700">Crédito disponível</div></div></div>`:''}
   `;
 
-  // ── Renderizar créditos disponíveis ──
+  // ── Montar HTML de crédito (será prefixado ao histórico) ──
+  let htmlCredito = '';
   if(totalCredito > 0){
-    const credEl = document.getElementById('fin-historico');
-    const credHtml = `<div style="background:var(--verde-c);border:2px solid var(--verde);border-radius:12px;padding:14px;margin-bottom:14px">
+    htmlCredito = `<div style="background:var(--verde-c);border:2px solid var(--verde);border-radius:12px;padding:14px;margin-bottom:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <div>
           <div style="font-size:14px;font-weight:700;color:var(--verde-e)">💚 Crédito disponível</div>
@@ -1836,9 +1837,6 @@ async function renderFinanceiro(){
         </div>`).join('')}
       </div>
     </div>`;
-    credEl.innerHTML = credHtml;
-  } else {
-    document.getElementById('fin-historico').innerHTML = '';
   }
 
   // ── Renderizar card de plano ──
@@ -1957,13 +1955,13 @@ async function renderFinanceiro(){
     }
   }
 
-  if (!html) {
+  if (!html && !htmlCredito) {
     histEl.innerHTML = '<div class="empty"><div class="empty-icon">💰</div><p>Nenhum pagamento registrado.</p></div>';
     document.getElementById('fin-pendencias-card').style.display = 'none';
     return;
   }
 
-  histEl.innerHTML = html;
+  histEl.innerHTML = htmlCredito + html;
 
   // 8. Pendências globais
   const temPend = totalPendente > 0;
