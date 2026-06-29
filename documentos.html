@@ -397,6 +397,37 @@ textarea{resize:vertical}
 <!-- MODAL: CONFIRMAR PROCEDIMENTO REALIZADO -->
 <!-- MODAL VALOR RECEBIDO -->
 <!-- MODAL EXTRATO DO ORÇAMENTO -->
+<!-- MODAL AGENDAR RETORNO -->
+<div id="modal-agendar-retorno" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1002;align-items:center;justify-content:center">
+  <div style="background:var(--card);border-radius:16px;padding:1.5rem;width:92%;max-width:400px;box-shadow:0 8px 40px rgba(0,0,0,.25);text-align:center">
+    <div style="font-size:28px;margin-bottom:.75rem">📅</div>
+    <div style="font-size:16px;font-weight:700;color:var(--txt);margin-bottom:.5rem">Agendar retorno?</div>
+    <div id="ret-desc" style="font-size:13px;color:var(--ct);margin-bottom:1.25rem;line-height:1.5"></div>
+
+    <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:1.25rem;flex-wrap:wrap">
+      <div style="text-align:left">
+        <label style="font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.04em">Data do retorno</label>
+        <input type="date" id="ret-data" style="display:block;padding:9px 11px;border:1.5px solid var(--verde);border-radius:8px;font-size:14px;margin-top:4px;font-family:inherit"/>
+      </div>
+      <div style="text-align:left">
+        <label style="font-size:11px;font-weight:700;color:var(--ct);text-transform:uppercase;letter-spacing:.04em">Horário</label>
+        <input type="time" id="ret-hora" value="09:00" style="display:block;padding:9px 11px;border:1.5px solid var(--verde);border-radius:8px;font-size:14px;margin-top:4px;font-family:inherit"/>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:.75rem">
+      <button onclick="document.getElementById('modal-agendar-retorno').style.display='none'" 
+        style="flex:1;padding:.75rem;border:1.5px solid var(--borda);border-radius:8px;background:var(--card);font-size:14px;cursor:pointer;font-family:inherit;color:var(--ct)">
+        Agora não
+      </button>
+      <button onclick="confirmarAgendarRetorno()" id="btn-confirmar-ret"
+        style="flex:2;padding:.75rem;border:none;border-radius:8px;background:var(--verde);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">
+        📅 Agendar retorno
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-valor-rec" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1001;align-items:center;justify-content:center">
   <div style="background:var(--card);border-radius:16px;padding:1.5rem;width:92%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2)">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
@@ -3638,6 +3669,30 @@ window.confirmarRealizado = async function() {
     document.getElementById('modal-parcial-check').checked = false;
     document.getElementById('modal-parcial-box').style.display = 'none';
 
+    // Oferecer agendar retorno se tiver data de verificação
+    const verData = document.getElementById('modal-ver-data')?.value;
+    const verDias = parseInt(document.getElementById('modal-ver-dias')?.value||0);
+    if(verDias > 0 && verData && pacSelecionada){
+      const trats = [];
+      document.querySelectorAll('#modal-trats-lista .modal-trat-item').forEach(el=>{
+        if(el.querySelector('.modal-trat-check')?.checked) trats.push(el.querySelector('.modal-trat-nome')?.textContent||'');
+      });
+      const descRetorno = trats.length ? trats.join(' + ') : 'Retorno';
+      document.getElementById('ret-desc').innerHTML = 
+        `<strong>${pacSelecionada.apelido||pacSelecionada.nome.split(' ')[0]}</strong> — ${descRetorno}<br/>Retorno sugerido em <strong>${verDias} dias</strong> (${fDt(verData)})`;
+      document.getElementById('ret-data').value = verData;
+      document.getElementById('ret-hora').value = '09:00';
+      // Guardar dados para agendar
+      window._retornoParaAgendar = {
+        paciente_id: pacSelecionada.id,
+        nome: pacSelecionada.nome,
+        telefone: pacSelecionada.telefone,
+        procedimento: descRetorno,
+        data: verData
+      };
+      setTimeout(()=>document.getElementById('modal-agendar-retorno').style.display='flex', 400);
+    }
+
   } catch(e) {
     console.error('Erro ao confirmar:', e);
     toast('Erro ao salvar. Verifique o console.', 'vermelho');
@@ -3645,6 +3700,45 @@ window.confirmarRealizado = async function() {
     if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar e registrar'; }
   }
 };
+
+// ── AGENDAR RETORNO APÓS PROCEDIMENTO ──
+async function confirmarAgendarRetorno(){
+  const btn = document.getElementById('btn-confirmar-ret');
+  btn.disabled = true; btn.textContent = '⏳ Agendando...';
+
+  const dados = window._retornoParaAgendar;
+  if(!dados){ document.getElementById('modal-agendar-retorno').style.display='none'; return; }
+
+  const data = document.getElementById('ret-data').value;
+  const hora = document.getElementById('ret-hora').value;
+
+  if(!data || !hora){
+    toast('Preencha a data e o horário!','vermelho');
+    btn.disabled=false; btn.textContent='📅 Agendar retorno';
+    return;
+  }
+
+  try{
+    const {error} = await db.from('agenda').insert({
+      paciente_id: dados.paciente_id,
+      data: data,
+      hora: hora,
+      procedimento: dados.procedimento,
+      status: 'agendado',
+      tipo: 'retorno',
+      obs: 'Retorno agendado automaticamente após procedimento'
+    });
+
+    if(error) throw error;
+
+    document.getElementById('modal-agendar-retorno').style.display='none';
+    toast('📅 Retorno agendado para '+fDt(data)+' às '+hora+'!','verde');
+    window._retornoParaAgendar = null;
+  }catch(e){
+    toast('Erro ao agendar: '+e.message,'vermelho');
+    btn.disabled=false; btn.textContent='📅 Agendar retorno';
+  }
+}
 
 // ── SOBRESCREVER salvarDoc para orçamento ──
 const _salvarDocOriginal = window.salvarDoc;
