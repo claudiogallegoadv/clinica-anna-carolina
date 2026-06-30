@@ -415,6 +415,21 @@ textarea{resize:vertical;min-height:70px}
 
     <!-- ═════════════════════════════ DOCUMENTOS ═══ -->
     <div id="p-documentos" class="panel">
+      <!-- Fichas Antigas Digitalizadas -->
+      <div class="card" style="margin-bottom:1.25rem">
+        <div class="sec-title" style="margin-top:0">🗂️ Fichas Antigas (Digitalizadas)</div>
+        <p style="font-size:12px;color:var(--ct);margin-bottom:12px">Fotografe fichas em papel para guardar digitalmente. As imagens são comprimidas automaticamente antes do envio.</p>
+        <input type="file" id="ficha-input" accept="image/*" capture="environment" multiple onchange="uploadFichasAntigas(this.files)" style="display:none">
+        <button class="btn pri" onclick="document.getElementById('ficha-input').click()">📷 Digitalizar Ficha</button>
+        <div id="ficha-progress" style="display:none;margin-top:10px">
+          <div style="background:var(--borda);border-radius:6px;height:6px;overflow:hidden">
+            <div id="ficha-progress-fill" style="background:var(--verde);height:100%;width:0%;transition:.2s"></div>
+          </div>
+          <div id="ficha-progress-status" style="font-size:12px;color:var(--ct);margin-top:4px"></div>
+        </div>
+        <div id="fichas-lista" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:14px"></div>
+      </div>
+
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:1rem">
         <a href="#" id="btn-novo-doc" class="btn pri">+ Novo documento</a>
       </div>
@@ -650,7 +665,7 @@ textarea{resize:vertical;min-height:70px}
 
 <script>
 const {createClient}=supabase;
-const db=sbClient();
+const db=createClient(SB_URL,SB_KEY);
 // Aviso automático: qualquer insert/update/delete/upsert que falhar mostra toast de erro,
 // mesmo que o código que chamou não verifique 'error' explicitamente.
 (function(){
@@ -718,7 +733,7 @@ function aba(id,btn){
   btn.classList.add('active');
   if(id==='historico') renderHistorico();
   if(id==='fotos') renderFotos();
-  if(id==='documentos') renderDocumentos();
+  if(id==='documentos'){ renderDocumentos(); carregarFichasAntigas(); }
   if(id==='lembretes') renderLembretes();
   if(id==='financeiro') renderFinanceiro();
 }
@@ -1201,6 +1216,97 @@ function openLightbox(url){
   document.getElementById('lb-img').src=url;
   document.getElementById('lightbox').classList.add('open');
 }
+
+// ══════════════════ FICHAS ANTIGAS DIGITALIZADAS ══════════════════
+// Comprime a imagem no navegador (canvas) antes de enviar: redimensiona
+// para no máx. 1800px de largura e exporta como JPEG qualidade 80%.
+// Isso reduz fotos de celular (3-8MB) para ~200-500KB, evitando pesar
+// o Storage sem perder legibilidade do documento.
+function comprimirImagem(file){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    const reader=new FileReader();
+    reader.onload=e=>{ img.src=e.target.result; };
+    reader.onerror=reject;
+    img.onload=()=>{
+      const MAX_W=1800;
+      let w=img.width, h=img.height;
+      if(w>MAX_W){ h=Math.round(h*(MAX_W/w)); w=MAX_W; }
+      const canvas=document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      canvas.toBlob(blob=>{
+        if(!blob){ reject(new Error('Falha ao comprimir')); return; }
+        resolve(blob);
+      },'image/jpeg',0.8);
+    };
+    img.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadFichasAntigas(files){
+  if(!files||!files.length) return;
+  const prog=document.getElementById('ficha-progress');
+  const fill=document.getElementById('ficha-progress-fill');
+  const status=document.getElementById('ficha-progress-status');
+  prog.style.display='block';
+
+  for(let i=0;i<files.length;i++){
+    const f=files[i];
+    status.textContent=`Comprimindo e enviando ${i+1} de ${files.length}...`;
+    fill.style.width=Math.round((i/files.length)*100)+'%';
+    try{
+      const blob=await comprimirImagem(f);
+      const ts=Date.now();
+      const path=`${pac.id}/fichas/${ts}.jpg`;
+      const{error}=await db.storage.from('fotos-pacientes').upload(path,blob,{cacheControl:'3600',upsert:false,contentType:'image/jpeg'});
+      if(error) toast(`Erro ao enviar página ${i+1}`,'vermelho');
+    }catch(e){
+      toast(`Erro ao processar página ${i+1}`,'vermelho');
+    }
+  }
+
+  fill.style.width='100%';
+  status.textContent='Pronto!';
+  setTimeout(()=>{prog.style.display='none';fill.style.width='0%';status.textContent='';},1200);
+  toast('Ficha digitalizada! ✅','verde');
+  document.getElementById('ficha-input').value='';
+  await registrarHistorico('Ficha antiga digitalizada', `${files.length} página(s) anexada(s)`);
+  await carregarFichasAntigas();
+}
+
+async function carregarFichasAntigas(){
+  const{data}=await db.storage.from('fotos-pacientes').list(`${pac.id}/fichas/`,{sortBy:{column:'created_at',order:'desc'}});
+  renderFichasAntigas(data||[]);
+}
+
+function renderFichasAntigas(arquivos){
+  const cont=document.getElementById('fichas-lista');
+  if(!arquivos.length){
+    cont.innerHTML='<p style="font-size:12px;color:var(--ct);grid-column:1/-1">Nenhuma ficha digitalizada ainda.</p>';
+    return;
+  }
+  cont.innerHTML=arquivos.map(f=>{
+    const url=db.storage.from('fotos-pacientes').getPublicUrl(`${pac.id}/fichas/${f.name}`).data.publicUrl;
+    const data=f.created_at?new Date(f.created_at).toLocaleDateString('pt-BR'):'';
+    return`<div style="position:relative">
+      <img src="${url}" onclick="openLightbox('${url}')" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px;cursor:pointer;border:1px solid var(--borda)"/>
+      <button onclick="deletarFichaAntiga('${f.name}')" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);color:white;border:none;border-radius:6px;width:22px;height:22px;cursor:pointer;font-size:12px;line-height:1">✕</button>
+      <div style="font-size:10px;color:var(--ct);text-align:center;margin-top:2px">${data}</div>
+    </div>`;
+  }).join('');
+}
+
+async function deletarFichaAntiga(filename){
+  if(!confirm('Excluir esta página da ficha digitalizada?')) return;
+  const{error}=await db.storage.from('fotos-pacientes').remove([`${pac.id}/fichas/${filename}`]);
+  if(error){ toast('Erro ao excluir','vermelho'); return; }
+  toast('Página excluída','verde');
+  await registrarHistorico('Ficha antiga excluída', 'Página removida da ficha digitalizada');
+  await carregarFichasAntigas();
+}
+
 
 // ANTES/DEPOIS
 function fotoTab(tab,btn){
