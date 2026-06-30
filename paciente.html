@@ -2350,12 +2350,18 @@ async function removerFoto(){
 // ── HISTÓRICO DE ALTERAÇÕES ──
 async function registrarHistorico(acao, descricao){
   if(!pac?.id) return;
-  await db.from('historico_paciente').insert({
-    paciente_id: pac.id,
-    acao,
-    descricao,
-    criado_em: new Date().toISOString()
-  });
+  try{
+    await db.from('historico_paciente').insert({
+      paciente_id: pac.id,
+      acao,
+      descricao,
+      criado_em: new Date().toISOString()
+    });
+  }catch(e){
+    // Log de auditoria nunca deve travar o fluxo principal (salvar cadastro,
+    // orçamento, etc). Se falhar, só avisa no console, sem interromper nada.
+    console.warn('[historico]', e);
+  }
 }
 
 async function carregarHistoricoPaciente(){
