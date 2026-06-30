@@ -897,7 +897,7 @@ textarea{resize:vertical;min-height:70px}
 
 <script>
 const {createClient}=supabase;
-const db=sbClient();
+const db=createClient(SB_URL,SB_KEY);
 // Aviso automático: qualquer insert/update/delete/upsert que falhar mostra toast de erro,
 // mesmo que o código que chamou não verifique 'error' explicitamente.
 (function(){
@@ -1395,7 +1395,13 @@ async function carregar(){
 }
 
 async function carregarAgenda(){
-  const{data}=await db.from('agenda').select('*').order('hora');
+  const{data,error}=await db.from('agenda').select('*').order('hora');
+  if(error){
+    console.warn('[agenda]',error);
+    // Mesmo com erro, renderiza com o que tem em memória
+    renderCal();renderConsDia(agDia);renderConsMes();renderHoje();renderAgendaStats();renderLembretesAmanha();
+    return;
+  }
   consultas=data||[];renderCal();renderConsDia(agDia);renderConsMes();renderHoje();renderAgendaStats();renderLembretesAmanha();
 }
 
@@ -4215,6 +4221,11 @@ async function marcarStatus(id, status){
   if(error){toast('Erro ao atualizar','vermelho');return;}
   const msgs={realizado:'✅ Marcado como realizado!',faltou:'❌ Marcado como faltou',pendente:'↩ Status revertido'};
   toast(msgs[status]||'Atualizado','verde');
+  // Atualiza localmente na memória ANTES de rebuscar, garante que a tela
+  // mostre o estado novo mesmo que o fetch de recarga venha com dado cacheado
+  const idx=consultas.findIndex(c=>c.id===id);
+  if(idx>=0) consultas[idx].status=status;
+  renderHoje();
   const cLog=consultas.find(c=>c.id===id);
   await logAuditoria('Status de consulta alterado',`${cLog?.nome||id} → ${status} · ${cLog?.data||''} ${(cLog?.hora||'').slice(0,5)}`,cLog?.paciente_id||null);
   await carregarAgenda();
