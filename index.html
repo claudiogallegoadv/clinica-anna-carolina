@@ -959,7 +959,8 @@ const MESES_N=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Ag
 // ── Log de auditoria global ──
 async function logAuditoria(acao, descricao, paciente_id=null){
   try{
-    await db.from('historico_paciente').insert({
+    // Usa _dbClient direto (sem wrapper de toast) — falha de auditoria é silenciosa
+    await _dbClient.from('historico_paciente').insert({
       paciente_id: paciente_id||null,
       acao,
       descricao,
