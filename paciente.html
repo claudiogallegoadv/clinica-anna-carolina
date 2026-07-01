@@ -664,15 +664,12 @@ textarea{resize:vertical;min-height:70px}
 <div class="toast" id="toast"></div>
 
 <script>
-const {createClient}=supabase;
-const db=createClient(SB_URL,SB_KEY);
-// Aviso automático: qualquer insert/update/delete/upsert que falhar mostra toast de erro,
-// mesmo que o código que chamou não verifique 'error' explicitamente.
-(function(){
-  const _from=db.from.bind(db);
-  const _ACAO={insert:'salvar',update:'atualizar',delete:'excluir',upsert:'salvar'};
-  db.from=function(tabela){
-    const qb=_from(tabela);
+// Wrapper autenticado: usa sbClient() do config.js (JWT do usuário logado)
+// necessário para RLS de escrita (insert/update/delete).
+const _ACAO_ERR={insert:'salvar',update:'atualizar',delete:'excluir',upsert:'salvar'};
+const db={
+  from:function(tabela){
+    const qb=sbClient().from(tabela);
     ['insert','update','delete','upsert'].forEach(function(metodo){
       const orig=qb[metodo];
       if(typeof orig!=='function')return;
@@ -683,7 +680,7 @@ const db=createClient(SB_URL,SB_KEY);
           return origThen(function(r){
             if(r&&r.error){
               console.error('['+tabela+'.'+metodo+']',r.error);
-              if(typeof toast==='function')toast('Erro ao '+_ACAO[metodo]+' ('+tabela+'): '+(r.error.message||'falha desconhecida'),'vermelho');
+              if(typeof toast==='function')toast('Erro ao '+_ACAO_ERR[metodo]+' ('+tabela+'): '+(r.error.message||'falha desconhecida'),'vermelho');
             }
             return onOk?onOk(r):r;
           },onErr);
@@ -692,8 +689,8 @@ const db=createClient(SB_URL,SB_KEY);
       };
     });
     return qb;
-  };
-})();
+  }
+};
 
 let pac=null;
 let todasFotos=[];
