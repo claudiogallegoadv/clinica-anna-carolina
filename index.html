@@ -3417,8 +3417,9 @@ function verificarDupTel(val){
   if(tel.length<10){aviso.style.display='none';return;}
   const dup=pacs.find(p=>p.telefone&&p.telefone.replace(/\D/g,'')===tel);
   if(dup){
-    aviso.innerHTML=`⚠️ Número já usado por: <strong>${dup.nome}</strong> — <a href="paciente.html?id=${dup.id}" target="_blank" style="color:#7a5800;font-weight:700">Ver ficha →</a><br>
-      <button onclick="usarComoResponsavel(${J(dup)})" style="margin-top:6px;padding:5px 12px;background:var(--amarelo);border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;color:#fff">👤 Usar como responsável e copiar endereço</button>`;
+    window._dupResponsavel = dup;
+    aviso.innerHTML=`⚠️ Número já usado por: <strong>${escapeHtml(dup.nome)}</strong> — <a href="paciente.html?id=${dup.id}" target="_blank" style="color:#7a5800;font-weight:700">Ver ficha →</a><br>
+      <button onclick="usarComoResponsavel(window._dupResponsavel)" style="margin-top:6px;padding:5px 12px;background:var(--amarelo);border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;color:#fff">👤 Usar como responsável e copiar endereço</button>`;
     aviso.style.display='block';
   } else {
     aviso.style.display='none';
@@ -3864,7 +3865,8 @@ function selResp(p){
   // Oferecer cópia de endereço via botão se o responsável tiver endereço
   if(p.rua&&!document.getElementById('f-rua').value){
     const aviso=document.getElementById('dup-tel-aviso');
-    aviso.innerHTML=`<button onclick="usarComoResponsavel(${J(p)})" style="padding:5px 12px;background:var(--amarelo);border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;color:#fff">📍 Copiar endereço de ${escapeHtml(p.nome)}?</button>`;
+    window._dupResponsavel = p;
+    aviso.innerHTML=`<button onclick="usarComoResponsavel(window._dupResponsavel)" style="padding:5px 12px;background:var(--amarelo);border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;color:#fff">📍 Copiar endereço de ${escapeHtml(p.nome)}?</button>`;
     aviso.style.display='block';
   }
 }
