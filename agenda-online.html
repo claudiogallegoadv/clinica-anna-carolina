@@ -173,7 +173,17 @@
 const SB_URL='https://nathaeuqbeqlvkftbmes.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdGhhZXVxYmVxbHZrZnRibWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4OTc4MzYsImV4cCI6MjA5NTQ3MzgzNn0.9t3q5C_h1pRb11gqRtpGGVpOUGey5TBzvMgal8h6wtg';
 const{createClient}=supabase;
-const db=createClient(SB_URL,SB_KEY);
+// Página pública: usa anon key. RLS deve permitir INSERT com status='aguardando' e origem='online'
+const _noOp={getItem:()=>null,setItem:()=>{},removeItem:()=>{}};
+const db=createClient(SB_URL,SB_KEY,{
+  auth:{storage:_noOp,persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},
+  global:{fetch:(url,opts={})=>{
+    const _h=new Headers(opts.headers||{});
+    _h.set('apikey',SB_KEY);
+    // Sem Authorization — usuário anônimo, RLS controla o acesso
+    return fetch(url,{...opts,headers:_h});
+  }}
+});
 
 // Config padrão — lida do localStorage (configurada no painel da clínica)
 const rawConf=JSON.parse(localStorage.getItem('conf_ag_online')||'{}');
@@ -368,6 +378,11 @@ async function confirmarAgendamento(){
   }
   const btn=document.getElementById('btn-confirmar');
   btn.disabled=true;btn.textContent='Enviando...';
+  // Timeout de segurança — desbloqueia botão após 15s se não houver resposta
+  const _timeout=setTimeout(()=>{
+    btn.disabled=false;btn.textContent='✅ Confirmar solicitação';
+    alert('A solicitação demorou mais que o esperado. Verifique sua conexão e tente novamente.');
+  },15000);
   const nome=document.getElementById('p-nome').value.trim();
   const tel=document.getElementById('p-tel').value.replace(/\D/g,'');
   const proc=document.getElementById('p-proc').value.trim();
@@ -383,12 +398,14 @@ async function confirmarAgendamento(){
       status:'aguardando',
       origem:'online',
     });
+    clearTimeout(_timeout);
     if(error){
       btn.disabled=false;btn.textContent='✅ Confirmar solicitação';
       console.error('[agenda-online] erro ao inserir:',error);
       alert('Erro ao enviar: '+error.message);return;
     }
   }catch(e){
+    clearTimeout(_timeout);
     btn.disabled=false;btn.textContent='✅ Confirmar solicitação';
     console.error('[agenda-online] exceção ao enviar:',e);
     alert('Erro ao enviar solicitação. Verifique sua conexão e tente novamente.');return;
