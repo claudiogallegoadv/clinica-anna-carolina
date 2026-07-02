@@ -4484,6 +4484,8 @@ function compartilharWppAgOnline(){
 
 // Chamar no carregar inicial
 setTimeout(renderPedidosOnline, 1500);
+// Atualiza pedidos online a cada 2 minutos (detecta novos sem precisar recarregar)
+setInterval(renderPedidosOnline, 2 * 60 * 1000);
 
 // ══════════════════════════════════════════
 // ITEM 5 — RELATÓRIO ANUAL
